@@ -54,7 +54,11 @@ features:
 
 supervised:
   backend: auto               # auto -> LightGBM if installed, else hist_gbdt
-  task: multiclass
+  # Headline task is BINARY on the temporal split: attack classes are largely
+  # disjoint across the Mon-Wed / Thu-Fri boundary, so the honest temporal number
+  # is "can we flag later-day (partly novel) attacks?". Multiclass attack-naming
+  # is trained/evaluated on the stratified split via an override.
+  task: binary
   class_weight: balanced
   n_estimators: 600
   learning_rate: 0.05

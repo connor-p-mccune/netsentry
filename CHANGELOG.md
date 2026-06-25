@@ -31,3 +31,11 @@ semantic versioning once released.
   with `remainder="drop"` as a firewall. `netsentry prep` now persists both
   split strategies. Added the no-leakage, fit-on-train-only, and split-integrity
   test battery.
+- Supervised models (`models/`): a common `BaseModel` interface, majority +
+  logistic-regression baselines, and a gradient-boosted classifier (LightGBM,
+  scikit-learn `HistGradientBoosting` fallback) with balanced sample weights,
+  early stopping, and deterministic seeding. A deployable `ModelBundle`
+  (pipeline + model + metadata) is the single serving artifact.
+- Training (`training/`): `netsentry train supervised` fits on the temporal
+  split, trains baselines, evaluates honestly, and logs params/metrics/artifacts/
+  environment to MLflow (with a local-file fallback). Determinism test included.

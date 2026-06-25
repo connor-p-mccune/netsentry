@@ -129,6 +129,12 @@ testpaths = ["tests"]
 markers = [
   "slow: tests needing heavy optional deps, the real dataset, or a trained model",
 ]
+filterwarnings = [
+  # LightGBM 4.x records default feature names even when fit on a numpy array,
+  # so a later numpy predict trips this sklearn check. Verified benign: the
+  # pipeline emits a consistent ndarray at train and serve time (no skew).
+  "ignore:X does not have valid feature names:UserWarning",
+]
 
 [tool.coverage.run]
 source = ["netsentry"]

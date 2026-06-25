@@ -55,6 +55,28 @@ investigate leakage before celebrating, and write down what was found.
   split, and a test asserts the imputer's learned median equals the *train*
   median, not the combined one. Validation is always carved from train.
 
+## Phase 4 — baseline & supervised model
+
+Synthetic-data results (seed 42), binary attack-vs-benign:
+
+| split | model PR-AUC | majority baseline | macro-F1 |
+|---|---|---|---|
+| **temporal** (honest headline) | **0.478** | 0.253 | 0.62 |
+| stratified (optimistic ref) | 0.729 | 0.221 | 0.78 |
+
+- **This is the thesis in one table.** The optimistic stratified split looks ~50%
+  better than the honest temporal split. That gap is the leakage/over-optimism
+  story other CIC-IDS projects hide.
+- **Honesty checks pass:** the model beats its majority baseline on both splits
+  (so it genuinely learns), and *nothing* is suspiciously high — no metric near
+  1.0, so no leakage to chase. (Real CIC-IDS2017 numbers will differ; these are
+  the synthetic stand-in.)
+- **Determinism** is enforced (LightGBM `deterministic=True`; a test trains twice
+  and asserts identical probabilities).
+- **Tracking robustness:** recent MLflow gates the file store, so `track_run`
+  opts in via `MLFLOW_ALLOW_FILE_STORE` and, crucially, falls back to a local
+  JSON run log on *any* MLflow error — tracking can never break a training run.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

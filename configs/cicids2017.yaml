@@ -23,8 +23,3 @@ split:
   #   Friday    = Bot, PortScan, DDoS
   train_days: [Monday, Tuesday, Wednesday]
   test_days: [Thursday, Friday]
-
-supervised:
-  # Real dataset is large and well-separated for some classes; keep the honest
-  # headline model free of Destination Port.
-  task: multiclass
