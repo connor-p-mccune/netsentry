@@ -1,0 +1,45 @@
+# Data & models — never commit
+data/
+models/
+mlruns/
+*.parquet
+*.csv
+*.pkl
+*.joblib
+*.pt
+*.onnx
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.eggs/
+build/
+dist/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local-only project memory, build notes, and agent/editor config (not committed)
+CLAUDE.md
+CLAUDE.local.md
+BUILD_PROMPTS.md
+SETUP.md
+.claude/

@@ -1,0 +1,104 @@
+# NetSentry default configuration.
+# Every knob the code reads lives here (or in an override file). Environment
+# variables prefixed NETSENTRY_ (nested delimiter "__") take final precedence,
+# e.g. NETSENTRY_SEED=7 or NETSENTRY_SUPERVISED__LEARNING_RATE=0.1.
+
+project_name: netsentry
+seed: 42
+
+paths:
+  data_raw: data/raw
+  data_processed: data/processed
+  models_dir: models
+  reports_dir: docs/reports
+  figures_dir: docs/figures
+  mlruns_dir: mlruns
+
+data:
+  source_url: null            # set to a CIC-IDS2017 mirror, or download manually
+  archive_name: cic-ids2017.zip
+  expected_csv_count: 8
+  use_corrected_labels: false # Engelen et al. (WTMC 2021) corrected re-release
+  allow_synthetic: true       # generate schema-faithful synthetic data if absent
+  synthetic_rows: 60000
+  synthetic_attack_fraction: 0.22
+  drop_duplicates: true
+  negative_sentinel_columns:
+    - Init_Win_bytes_forward
+    - Init_Win_bytes_backward
+  negative_sentinel_strategy: keep   # keep -1 as an informative sentinel
+
+labels:
+  benign_label: BENIGN
+  consolidation:
+    "Web Attack - Brute Force": Web Attack
+    "Web Attack - XSS": Web Attack
+    "Web Attack - Sql Injection": Web Attack
+
+split:
+  strategy: temporal          # HEADLINE: temporal/by-day. stratified = reference
+  day_column: Day
+  train_days: [Monday, Tuesday, Wednesday]
+  test_days: [Thursday, Friday]
+  stratified_test_size: 0.2
+  val_size: 0.2               # carved from TRAIN only
+  persist: true
+
+features:
+  feature_set: full_no_port   # headline drops Destination Port (see ml.md)
+  scaler: standard
+  impute_strategy: median
+  encode_destination_port: false
+  destination_port_top_k: 32
+
+supervised:
+  backend: auto               # auto -> LightGBM if installed, else hist_gbdt
+  task: multiclass
+  class_weight: balanced
+  n_estimators: 600
+  learning_rate: 0.05
+  num_leaves: 63
+  max_depth: -1
+  subsample: 0.8
+  colsample_bytree: 0.8
+  min_child_samples: 50
+  reg_lambda: 1.0
+  early_stopping_rounds: 50
+  n_jobs: -1
+  tune: false
+  tune_trials: 25
+
+anomaly:
+  iforest_n_estimators: 200
+  iforest_max_samples: auto
+  iforest_contamination: 0.02
+  target_fpr: 0.01
+  autoencoder:
+    hidden_dims: [64, 32, 16]
+    epochs: 30
+    batch_size: 512
+    learning_rate: 0.001
+    weight_decay: 0.00001
+    early_stopping_patience: 5
+
+thresholds:
+  fpr_targets: [0.001, 0.01]  # 0.1% and 1% false-positive budgets
+  primary_fpr: 0.001
+  assumed_flows_per_day: 1000000
+  calibrate: true
+  calibration_method: isotonic
+
+mlflow:
+  enabled: true
+  experiment_name: netsentry
+  tracking_uri: null          # defaults to a local file store under mlruns/
+
+serving:
+  host: 0.0.0.0
+  port: 8000
+  artifact_path: null         # defaults to the latest bundle in models_dir
+  default_threshold_profile: fpr_0.1pct
+  max_batch_size: 1000
+  top_k_features: 5
+  cors_origins: ["*"]
+  log_payloads: false

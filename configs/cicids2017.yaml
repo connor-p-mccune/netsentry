@@ -1,0 +1,30 @@
+# CIC-IDS2017-specific overrides (merged on top of default.yaml).
+# Use with: netsentry <cmd> --config configs/default.yaml --override configs/cicids2017.yaml
+#
+# CIC-IDS2017 ships 8 daily CSVs (Mon–Fri; Wed/Thu/Fri split morning/afternoon).
+# The dataset requires manual download/registration from the CIC; set source_url
+# to a mirror you are licensed to use, or place the CSVs in data/raw/ yourself.
+
+data:
+  source_url: null
+  expected_csv_count: 8
+  use_corrected_labels: false
+  # The real dataset is large; do not silently synthesise it in place of a true
+  # download for the headline run.
+  allow_synthetic: false
+
+split:
+  strategy: temporal
+  # CIC-IDS2017 day -> attack families:
+  #   Monday    = benign baseline
+  #   Tuesday   = FTP-Patator, SSH-Patator
+  #   Wednesday = DoS family + Heartbleed
+  #   Thursday  = Web Attacks + Infiltration
+  #   Friday    = Bot, PortScan, DDoS
+  train_days: [Monday, Tuesday, Wednesday]
+  test_days: [Thursday, Friday]
+
+supervised:
+  # Real dataset is large and well-separated for some classes; keep the honest
+  # headline model free of Destination Port.
+  task: multiclass
