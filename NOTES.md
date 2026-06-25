@@ -115,6 +115,22 @@ Synthetic-data results (seed 42), binary attack-vs-benign:
   explainer degrades to model feature importances so the API still returns
   `top_features` (a documented approximation).
 
+## Phase 8 — serving
+
+- The served bundle is the **multiclass** model (so it can name attacks) plus a
+  benign-fit Isolation Forest for the anomaly score. The honest temporal-split
+  numbers remain the reported headline; the served model is the namer/scorer.
+- **Live latency** (single flow, local, SHAP per request): p50 ≈ 47 ms, p95 ≈
+  56 ms, p99 ≈ 76 ms, ~21 req/s single-process. SHAP is the dominant cost — the
+  expected trade-off for per-prediction explanations.
+- **Contract coherence fix.** `is_attack` is the actionable thresholded decision;
+  at the strict 0.1%-FPR profile a flow can have a high `attack_probability` yet
+  not be flagged. To avoid a confusing "named an attack but is_attack=false"
+  response, `predicted_class` now agrees with the decision (benign when not
+  flagged), while `attack_probability` is still reported for transparency.
+- Input is validated against the real feature columns (unknown key or non-numeric
+  value -> 422); missing features are imputed by the fitted pipeline.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

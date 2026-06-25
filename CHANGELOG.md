@@ -51,3 +51,8 @@ semantic versioning once released.
 - Explainability (`explain/shap_explainer.py`): SHAP `TreeExplainer` with a
   feature-importance fallback; a global-importance figure/section in the eval
   report and top-k per-prediction contributions for the API.
+- Serving (`serving/`): a FastAPI service loading one pipeline+model+anomaly
+  bundle at startup — `/health`, `/predict`, `/predict/batch`, `/metrics`
+  (Prometheus) — with request validation (422 on bad input), operator-selectable
+  threshold profiles, SHAP explanations in every response, and latency middleware.
+  `netsentry serve` runs it; `netsentry benchmark` reports p50/p95/p99 + throughput.

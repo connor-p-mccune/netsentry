@@ -143,9 +143,14 @@ def serve(
     """Run the FastAPI inference service."""
     import uvicorn
 
+    from netsentry.models.registry import latest_bundle
     from netsentry.serving.app import create_app
+    from netsentry.serving.bundle import build_serving_bundle
 
     settings = _load(config, override)
+    if settings.serving.artifact_path is None and latest_bundle(settings) is None:
+        logger.info("No model bundle found; building a serving bundle (requires `prep`).")
+        build_serving_bundle(settings)
     app_obj = create_app(settings)
     uvicorn.run(
         app_obj,

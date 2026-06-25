@@ -19,6 +19,8 @@ from sklearn.preprocessing import label_binarize
 
 from netsentry.data.clean import BINARY_TARGET, MULTICLASS_TARGET
 from netsentry.data.split import load_split
+from netsentry.evaluation.metrics import attack_probability, threshold_at_fpr
+from netsentry.features.feature_sets import model_features
 from netsentry.features.pipeline import build_pipeline
 from netsentry.log import get_logger
 from netsentry.models.registry import ModelBundle, save_bundle
@@ -49,6 +51,24 @@ class FitResult:
 
 def _target_column(task: str) -> str:
     return BINARY_TARGET if task == "binary" else MULTICLASS_TARGET
+
+
+def _profile_name(fpr: float) -> str:
+    """e.g. 0.001 -> 'fpr_0.1pct', 0.01 -> 'fpr_1pct'."""
+    return f"fpr_{fpr * 100:g}pct"
+
+
+def _threshold_profiles(
+    settings: Settings, task: str, y_val: np.ndarray, proba_val: np.ndarray, classes: np.ndarray
+) -> dict[str, float]:
+    """Attack-probability thresholds calibrated on validation at each target FPR."""
+    benign = settings.labels.benign_label
+    probs = attack_probability(proba_val, classes, benign)
+    y_bin = y_val.astype(int) if task == "binary" else (y_val.astype(str) != benign).astype(int)
+    return {
+        _profile_name(fpr): threshold_at_fpr(y_bin, probs, fpr)
+        for fpr in settings.thresholds.fpr_targets
+    }
 
 
 def quick_metrics(
@@ -103,8 +123,10 @@ def fit_supervised(settings: Settings) -> FitResult:
         )
 
     model = SupervisedClassifier(settings).fit(x_train, y_train, eval_set=(x_val, y_val))
+    proba_val = model.predict_proba(x_val)
     proba_test = model.predict_proba(x_test)
     metrics = quick_metrics(y_test, proba_test, model.classes_, task)
+    thresholds = _threshold_profiles(settings, task, y_val, proba_val, model.classes_)
 
     bundle = ModelBundle(
         pipeline=pipeline,
@@ -115,17 +137,21 @@ def fit_supervised(settings: Settings) -> FitResult:
             "split_strategy": strategy,
             "backend": model.backend,
             "classes": [str(c) for c in model.classes_],
+            "benign_label": settings.labels.benign_label,
+            "input_columns": model_features(settings),
+            "default_threshold_profile": settings.serving.default_threshold_profile,
             "n_features": int(x_train.shape[1]),
             "n_train": len(y_train),
             "created_at": datetime.now(UTC).isoformat(),
             "metrics": metrics,
         },
+        thresholds=thresholds,
     )
     return FitResult(
         bundle=bundle,
         classes=model.classes_,
         y_val=y_val,
-        proba_val=model.predict_proba(x_val),
+        proba_val=proba_val,
         y_test=y_test,
         proba_test=proba_test,
         baselines=baseline_metrics,

@@ -27,6 +27,18 @@ def positive_scores(proba: np.ndarray, classes: np.ndarray) -> np.ndarray:
     return np.asarray(proba[:, pos])
 
 
+def attack_probability(
+    proba: np.ndarray, classes: np.ndarray, benign_label: str = "BENIGN"
+) -> np.ndarray:
+    """P(attack) from a proba matrix, for either a binary or multiclass model."""
+    class_list = list(classes)
+    if 1 in class_list and 0 in class_list:  # binary {0,1}
+        return np.asarray(proba[:, class_list.index(1)])
+    if benign_label in class_list:  # multiclass: 1 - P(benign)
+        return np.asarray(1.0 - proba[:, class_list.index(benign_label)])
+    return np.asarray(1.0 - proba[:, 0])
+
+
 def threshold_at_fpr(y_true: np.ndarray, scores: np.ndarray, target_fpr: float) -> float:
     """Highest score threshold whose FPR does not exceed ``target_fpr``.
 

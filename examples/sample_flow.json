@@ -1,0 +1,17 @@
+{
+  "flow": {
+    "Flow Duration": 1200,
+    "Total Fwd Packets": 8,
+    "Total Backward Packets": 12,
+    "Total Length of Fwd Packets": 480,
+    "Total Length of Bwd Packets": 7200,
+    "Flow Bytes/s": 90000,
+    "Flow Packets/s": 5000,
+    "Fwd Packet Length Mean": 60,
+    "Bwd Packet Length Mean": 600,
+    "Average Packet Size": 350,
+    "SYN Flag Count": 1,
+    "ACK Flag Count": 1,
+    "Init_Win_bytes_forward": 8192
+  }
+}

@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from sklearn.pipeline import Pipeline
 
     from netsentry.config import Settings
+    from netsentry.models.anomaly import AnomalyDetector
     from netsentry.models.base import BaseModel
 
 logger = get_logger(__name__)
@@ -28,11 +29,19 @@ logger = get_logger(__name__)
 
 @dataclass
 class ModelBundle:
-    """A fitted preprocessing pipeline + model + descriptive metadata."""
+    """A fitted preprocessing pipeline + model + descriptive metadata.
+
+    Optionally carries decision-threshold profiles (attack-probability thresholds
+    calibrated at target FPRs) and a benign-fit anomaly detector, so the single
+    artifact is everything the serving layer needs.
+    """
 
     pipeline: Pipeline
     model: BaseModel
     metadata: dict[str, object] = field(default_factory=dict)
+    thresholds: dict[str, float] = field(default_factory=dict)
+    anomaly_detector: AnomalyDetector | None = None
+    anomaly_threshold: float | None = None
 
     def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
         """Preprocess a raw flow frame and return class probabilities."""
