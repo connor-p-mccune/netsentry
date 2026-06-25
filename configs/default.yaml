@@ -17,6 +17,7 @@ paths:
 data:
   source_url: null            # set to a CIC-IDS2017 mirror, or download manually
   archive_name: cic-ids2017.zip
+  archive_sha256: null        # optional: verify the downloaded archive checksum
   expected_csv_count: 8
   use_corrected_labels: false # Engelen et al. (WTMC 2021) corrected re-release
   allow_synthetic: true       # generate schema-faithful synthetic data if absent

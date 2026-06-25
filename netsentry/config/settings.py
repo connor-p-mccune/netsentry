@@ -18,7 +18,7 @@ from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, Settings
 
 # Per-call YAML payload, injected by the loader as a *low-priority* settings
 # source so environment variables override YAML (which overrides model defaults).
-_yaml_overrides: ContextVar[dict[str, Any]] = ContextVar("_yaml_overrides", default={})
+_yaml_overrides: ContextVar[dict[str, Any] | None] = ContextVar("_yaml_overrides", default=None)
 
 
 class _YamlSettingsSource(PydanticBaseSettingsSource):
@@ -29,7 +29,7 @@ class _YamlSettingsSource(PydanticBaseSettingsSource):
         return None, field_name, False
 
     def __call__(self) -> dict[str, Any]:
-        return dict(_yaml_overrides.get())
+        return dict(_yaml_overrides.get() or {})
 
 
 class PathsConfig(BaseModel):
@@ -48,6 +48,7 @@ class DataConfig(BaseModel):
 
     source_url: str | None = None
     archive_name: str = "cic-ids2017.zip"
+    archive_sha256: str | None = None  # verify the downloaded archive if provided
     expected_csv_count: int = 8
     use_corrected_labels: bool = False
     # When the real dataset is unavailable, a clearly-labelled synthetic dataset

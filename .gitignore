@@ -1,7 +1,8 @@
-# Data & models — never commit
-data/
-models/
-mlruns/
+# Data & models — never commit. Anchored to the repo root with a leading slash
+# so they do NOT also match the source packages netsentry/data and netsentry/models.
+/data/
+/models/
+/mlruns/
 *.parquet
 *.csv
 *.pkl
@@ -21,13 +22,13 @@ __pycache__/
 venv/
 *.egg-info/
 .eggs/
-build/
-dist/
+/build/
+/dist/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
 .coverage
-htmlcov/
+/htmlcov/
 
 # Notebooks
 .ipynb_checkpoints/
