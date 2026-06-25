@@ -126,11 +126,11 @@ def evaluate(
     override: OverrideOpt = None,
 ) -> None:
     """Generate the operational metrics report and figures."""
-    from netsentry.evaluation.report import build_report
+    from netsentry.evaluation.report import run_evaluation
 
     settings = _load(config, override)
-    out = settings.paths.reports_dir / "evaluation.md"
-    build_report(settings, {}, out)
+    out = run_evaluation(settings)
+    logger.info("Evaluation report ready", extra={"path": str(out)})
 
 
 @app.command()

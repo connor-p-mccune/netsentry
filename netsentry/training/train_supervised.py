@@ -9,6 +9,7 @@ establish a baseline and a determinism check.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
@@ -29,6 +30,21 @@ if TYPE_CHECKING:
     from netsentry.config import Settings
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class FitResult:
+    """A fitted supervised model plus its validation/test predictions."""
+
+    bundle: ModelBundle
+    classes: np.ndarray
+    y_val: np.ndarray
+    proba_val: np.ndarray
+    y_test: np.ndarray
+    proba_test: np.ndarray
+    baselines: dict[str, dict[str, float]]
+    task: str
+    strategy: str
 
 
 def _target_column(task: str) -> str:
@@ -53,8 +69,12 @@ def quick_metrics(
     return metrics
 
 
-def train_supervised(settings: Settings) -> dict[str, Any]:
-    """Run supervised training end-to-end; return a result summary."""
+def fit_supervised(settings: Settings) -> FitResult:
+    """Fit the pipeline + model on the configured split; return val/test predictions.
+
+    Shared by ``train_supervised`` (which tracks + persists) and the evaluation
+    framework (which fits several split/task combinations to build the report).
+    """
     seed_everything(settings.seed)
     strategy = settings.split.strategy
     task = settings.supervised.task
@@ -83,7 +103,8 @@ def train_supervised(settings: Settings) -> dict[str, Any]:
         )
 
     model = SupervisedClassifier(settings).fit(x_train, y_train, eval_set=(x_val, y_val))
-    metrics = quick_metrics(y_test, model.predict_proba(x_test), model.classes_, task)
+    proba_test = model.predict_proba(x_test)
+    metrics = quick_metrics(y_test, proba_test, model.classes_, task)
 
     bundle = ModelBundle(
         pipeline=pipeline,
@@ -100,6 +121,27 @@ def train_supervised(settings: Settings) -> dict[str, Any]:
             "metrics": metrics,
         },
     )
+    return FitResult(
+        bundle=bundle,
+        classes=model.classes_,
+        y_val=y_val,
+        proba_val=model.predict_proba(x_val),
+        y_test=y_test,
+        proba_test=proba_test,
+        baselines=baseline_metrics,
+        task=task,
+        strategy=strategy,
+    )
+
+
+def train_supervised(settings: Settings) -> dict[str, Any]:
+    """Run supervised training end-to-end; persist the bundle and log the run."""
+    result = fit_supervised(settings)
+    bundle = result.bundle
+    task, strategy = result.task, result.strategy
+    metrics = quick_metrics(result.y_test, result.proba_test, result.classes, task)
+    baseline_metrics = result.baselines
+
     bundle_path = settings.paths.models_dir / f"supervised_{task}_{strategy}.joblib"
     save_bundle(bundle, bundle_path)
 
@@ -108,10 +150,10 @@ def train_supervised(settings: Settings) -> dict[str, Any]:
             {
                 "task": task,
                 "split_strategy": strategy,
-                "backend": model.backend,
+                "backend": bundle.metadata["backend"],
                 "seed": settings.seed,
-                "n_features": int(x_train.shape[1]),
-                "n_train": len(y_train),
+                "n_features": bundle.metadata["n_features"],
+                "n_train": bundle.metadata["n_train"],
                 "class_weight": settings.supervised.class_weight,
                 "n_estimators": settings.supervised.n_estimators,
                 "learning_rate": settings.supervised.learning_rate,

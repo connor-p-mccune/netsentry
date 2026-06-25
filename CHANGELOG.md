@@ -39,3 +39,8 @@ semantic versioning once released.
 - Training (`training/`): `netsentry train supervised` fits on the temporal
   split, trains baselines, evaluates honestly, and logs params/metrics/artifacts/
   environment to MLflow (with a local-file fallback). Determinism test included.
+- Evaluation (`evaluation/`): operational metrics (PR-AUC, ROC-AUC, per-class
+  P/R/F1, TPR@fixed-FPR with val-chosen thresholds, alerts/day); PR/ROC/threshold/
+  confusion figures; and a `netsentry eval` report contrasting the honest temporal
+  split with the optimistic stratified split. Metrics are unit-tested on
+  hand-computed cases.

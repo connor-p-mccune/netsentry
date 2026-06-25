@@ -77,6 +77,18 @@ Synthetic-data results (seed 42), binary attack-vs-benign:
   opts in via `MLFLOW_ALLOW_FILE_STORE` and, crucially, falls back to a local
   JSON run log on *any* MLflow error — tracking can never break a training run.
 
+## Phase 5 — evaluation framework
+
+- The report leads with **operational** metrics. On the synthetic temporal split,
+  the operating points are sobering and honest: ~**2.4% detection at a 0.1% FP
+  budget**, rising to ~13% at a 1% budget (~11k false alerts/day). Low detection
+  at a tight FP budget is the *expected* shape for cross-day-type generalisation —
+  and exactly why the anomaly detector (Phase 6) and threshold tuning matter.
+- The report renders the temporal-vs-stratified PR-AUC gap (+0.250) front and
+  centre, with figures (PR/ROC/threshold/confusion) saved to `docs/figures/`.
+- Metric correctness is unit-tested on hand-computed confusion matrices so an
+  averaging/off-by-one bug can't silently invalidate every downstream number.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
