@@ -17,3 +17,9 @@ semantic versioning once released.
   idempotent, checksum-verifying `download` command; and a schema-faithful
   synthetic data generator (with the dataset's defects and imbalance) for
   development and CI. Data Card filled in.
+- Cleaning pipeline (`clean.py`): whitespace-stripped headers, Inf→NaN, exact
+  duplicate removal, label normalization/consolidation, binary + multiclass
+  targets, and configurable negative-sentinel handling — each step logged with
+  before/after counts. `netsentry prep` writes `data/processed/clean.parquet`.
+- EDA notebook (`notebooks/01_eda.ipynb`) and `docs/EDA_SUMMARY.md` covering
+  imbalance, missingness, feature signal, and the `Destination Port` leakage trap.

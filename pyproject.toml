@@ -54,6 +54,7 @@ train = [
   "seaborn>=0.13",
 ]
 ae = ["torch>=2.2"]
+notebooks = ["jupyterlab>=4.0", "ipykernel>=6.29", "nbconvert>=7.0"]
 serve = [
   "fastapi>=0.110",
   "uvicorn[standard]>=0.29",

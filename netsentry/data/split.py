@@ -14,6 +14,6 @@ if TYPE_CHECKING:
     from netsentry.config import Settings
 
 
-def make_splits(settings: "Settings") -> object:
+def make_splits(settings: Settings) -> object:
     """Produce persisted train/val/test splits per the configured strategy."""
     raise NotImplementedError("Implemented in Phase 3")
