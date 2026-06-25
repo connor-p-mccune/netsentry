@@ -44,3 +44,7 @@ semantic versioning once released.
   confusion figures; and a `netsentry eval` report contrasting the honest temporal
   split with the optimistic stratified split. Metrics are unit-tested on
   hand-computed cases.
+- Anomaly detection (`models/anomaly.py`, `training/train_anomaly.py`): benign-only
+  Isolation Forest and a PyTorch autoencoder with FPR-calibrated thresholds.
+  `netsentry train anomaly` reports leave-one-attack-out detection per held-out
+  class and an ensemble comparison (supervised + anomaly) on the temporal split.

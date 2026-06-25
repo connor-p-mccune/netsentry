@@ -89,6 +89,21 @@ Synthetic-data results (seed 42), binary attack-vs-benign:
 - Metric correctness is unit-tested on hand-computed confusion matrices so an
   averaging/off-by-one bug can't silently invalidate every downstream number.
 
+## Phase 6 — anomaly detection (novel attacks)
+
+- Leave-one-attack-out (synthetic): benign-only detectors catch ~**10% of a
+  never-seen attack class at a 1% benign FP budget** (Isolation Forest and the
+  autoencoder land close). Modest — detecting truly unseen behaviour at a tight
+  FP budget is genuinely hard, and saying so is the honest thing.
+- **The ensemble result is the payoff.** On the temporal test (later-day, partly
+  novel attacks), PR-AUC is: supervised-only 0.478, anomaly-only 0.393,
+  **combined 0.506** — the rank-mean ensemble beats *both*. That is the argument
+  for pairing a classifier with a benign-only detector: neither alone covers both
+  known and novel regimes.
+- The autoencoder standardises on benign-train stats and early-stops on a benign
+  holdout; thresholds for both detectors are calibrated to a benign FP budget, so
+  "how much benign noise fires" is an explicit operator choice.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

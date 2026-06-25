@@ -140,6 +140,8 @@ class AnomalyConfig(BaseModel):
     iforest_contamination: float = 0.02
     autoencoder: AutoencoderConfig = Field(default_factory=AutoencoderConfig)
     target_fpr: float = 0.01
+    loao_min_samples: int = 50  # skip leave-one-attack-out for classes rarer than this
+    detectors: list[str] = Field(default_factory=lambda: ["iforest", "autoencoder"])
 
 
 class ThresholdConfig(BaseModel):

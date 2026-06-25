@@ -78,6 +78,8 @@ anomaly:
   iforest_max_samples: auto
   iforest_contamination: 0.02
   target_fpr: 0.01
+  loao_min_samples: 50          # skip leave-one-attack-out for rarer classes
+  detectors: [iforest, autoencoder]
   autoencoder:
     hidden_dims: [64, 32, 16]
     epochs: 30
