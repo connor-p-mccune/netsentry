@@ -1,0 +1,33 @@
+# Keep the build context small and reproducible.
+.git/
+.github/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Data, models, tracking — never bake these into an image.
+data/
+models/
+mlruns/
+*.parquet
+*.csv
+*.joblib
+*.pt
+*.onnx
+
+# Not needed at build/serve time.
+tests/
+notebooks/
+docs/
+.env
+.env.*
+CLAUDE.md
+BUILD_PROMPTS.md
+SETUP.md
+.claude/

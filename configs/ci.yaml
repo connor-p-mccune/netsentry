@@ -1,0 +1,10 @@
+# Small, fast overrides for the CI train-smoke test (synthetic data).
+data:
+  synthetic_rows: 5000
+supervised:
+  n_estimators: 80
+anomaly:
+  detectors: [iforest]   # no Torch in the CI image
+  loao_min_samples: 30
+mlflow:
+  enabled: false         # use the local file logger in CI

@@ -1,0 +1,26 @@
+# Batch training/evaluation image (full ML stack, minus the optional Torch AE).
+# syntax=docker/dockerfile:1
+FROM python:3.11-slim AS builder
+WORKDIR /app
+ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+COPY pyproject.toml README.md ./
+COPY netsentry ./netsentry
+RUN pip install --upgrade pip && pip install ".[train]"
+
+FROM python:3.11-slim AS runtime
+ENV PATH="/opt/venv/bin:$PATH" PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --uid 1000 netsentry
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+COPY configs ./configs
+RUN mkdir -p /app/models /app/data /app/mlruns && chown -R netsentry:netsentry /app
+USER netsentry
+# e.g. `docker run netsentry-train download` then `... prep` then `... train supervised`
+ENTRYPOINT ["netsentry"]
+CMD ["--help"]

@@ -2,7 +2,8 @@
 # `python -m ...` commands directly (see each target).
 PY ?= python
 
-.PHONY: help install install-all lint format typecheck test test-fast check clean
+.PHONY: help install install-all lint format typecheck test test-fast check clean \
+	smoke docker-serve docker-train docker-up docker-down
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -35,6 +36,24 @@ test-fast: ## Skip slow (heavy-dep / dataset) tests
 	$(PY) -m pytest -m "not slow"
 
 check: lint typecheck test ## Run before every commit
+
+smoke: ## Run the full pipeline on a tiny synthetic dataset
+	$(PY) -m netsentry.cli download -o configs/ci.yaml
+	$(PY) -m netsentry.cli prep -o configs/ci.yaml
+	$(PY) -m netsentry.cli train supervised -o configs/ci.yaml
+	$(PY) -m netsentry.cli eval -o configs/ci.yaml
+
+docker-serve: ## Build the serving image
+	docker build -f docker/Dockerfile.serve -t netsentry-serve .
+
+docker-train: ## Build the training image
+	docker build -f docker/Dockerfile.train -t netsentry-train .
+
+docker-up: ## Run the API via docker compose (builds a synthetic model on first run)
+	docker compose -f docker/docker-compose.yml up --build
+
+docker-down: ## Stop the compose stack
+	docker compose -f docker/docker-compose.yml down
 
 clean: ## Remove caches and build artifacts
 	rm -rf .mypy_cache .ruff_cache .pytest_cache htmlcov .coverage build dist ./*.egg-info

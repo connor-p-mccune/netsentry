@@ -1,0 +1,32 @@
+# Run the NetSentry inference API:  docker compose -f docker/docker-compose.yml up --build
+# On first start (no mounted bundle) it builds a synthetic demo model, then serves.
+services:
+  serve:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.serve
+    image: netsentry-serve
+    ports:
+      - "8000:8000"
+    environment:
+      NETSENTRY_SERVING__PORT: "8000"
+      NETSENTRY_LOG_JSON: "1"
+    volumes:
+      # Mount a pre-trained bundle here to skip the synthetic bootstrap.
+      - ../models:/app/models
+      - ../data:/app/data
+    restart: unless-stopped
+
+  # Optional MLflow tracking UI. Point training at it with
+  # NETSENTRY_MLFLOW__TRACKING_URI=http://mlflow:5000
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.16.2
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../mlruns:/mlflow
+    profiles: ["tracking"]

@@ -56,3 +56,7 @@ semantic versioning once released.
   (Prometheus) — with request validation (422 on bad input), operator-selectable
   threshold profiles, SHAP explanations in every response, and latency middleware.
   `netsentry serve` runs it; `netsentry benchmark` reports p50/p95/p99 + throughput.
+- Containerization & CI: multi-stage, non-root `serve`/`train` Docker images, a
+  `docker-compose.yml` (with an optional MLflow service), and a CI workflow that
+  runs lint/typecheck/test, a synthetic train-smoke + slow tests, a non-blocking
+  `pip-audit`, and a serving-image build. Makefile docker/smoke targets added.

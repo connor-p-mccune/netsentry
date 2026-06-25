@@ -1,0 +1,29 @@
+# Multi-stage, slim, non-root image for the NetSentry inference API.
+# syntax=docker/dockerfile:1
+FROM python:3.11-slim AS builder
+WORKDIR /app
+ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+# Inference needs the serving stack plus the model/explainer deps (not the full
+# training stack — no MLflow/Optuna/Torch — to keep the image lean).
+COPY pyproject.toml README.md ./
+COPY netsentry ./netsentry
+RUN pip install --upgrade pip \
+    && pip install ".[serve]" "lightgbm>=4.1" "shap>=0.44"
+
+FROM python:3.11-slim AS runtime
+ENV PATH="/opt/venv/bin:$PATH" PYTHONUNBUFFERED=1 NETSENTRY_LOG_JSON=1
+RUN useradd --create-home --uid 1000 netsentry
+WORKDIR /app
+COPY --from=builder /opt/venv /opt/venv
+COPY configs ./configs
+COPY docker/serve-entrypoint.sh /usr/local/bin/serve-entrypoint.sh
+RUN chmod +x /usr/local/bin/serve-entrypoint.sh \
+    && mkdir -p /app/models /app/data /app/mlruns \
+    && chown -R netsentry:netsentry /app
+USER netsentry
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"
+ENTRYPOINT ["serve-entrypoint.sh"]

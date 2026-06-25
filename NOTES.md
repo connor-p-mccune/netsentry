@@ -131,6 +131,21 @@ Synthetic-data results (seed 42), binary attack-vs-benign:
 - Input is validated against the real feature columns (unknown key or non-numeric
   value -> 422); missing features are imputed by the fitted pipeline.
 
+## Phase 9 — containerization & CI
+
+- Multi-stage, slim, non-root images: a lean `serve` image (serving + LightGBM +
+  SHAP, no MLflow/Torch) and a full `train` image. The serve entrypoint builds a
+  synthetic demo bundle on first start, so `docker compose up` works standalone.
+- CI gains a **train-smoke** job (full `download → prep → train → eval → anomaly`
+  on a tiny synthetic dataset via `configs/ci.yaml`) plus the slow integration
+  tests, a non-blocking `pip-audit`, and a serving-image build.
+- The fast `quality` job runs on `[dev]` only — the graceful fallbacks
+  (hist_gbdt, importance-based explanations) mean the full non-slow suite passes
+  without LightGBM/SHAP/Torch installed.
+- Caveat: Docker can't run in this build environment, so the Dockerfiles are
+  written to best practice and the compose/CI YAML and the exact smoke commands
+  were validated locally; the image build itself is exercised in CI.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
