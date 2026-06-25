@@ -27,7 +27,3 @@ notebooks/
 docs/
 .env
 .env.*
-CLAUDE.md
-BUILD_PROMPTS.md
-SETUP.md
-.claude/

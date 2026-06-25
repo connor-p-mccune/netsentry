@@ -4,7 +4,10 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to follow
 semantic versioning once released.
 
-## [Unreleased]
+## [0.1.0] — 2026-06-25
+
+First end-to-end release: the pipeline trains, evaluates, and serves, with honest
+temporal-split metrics and a synthetic data path so it runs out-of-the-box.
 
 ### Added
 - Project scaffolding: installable `netsentry` package (PEP 621), typed
@@ -60,3 +63,6 @@ semantic versioning once released.
   `docker-compose.yml` (with an optional MLflow service), and a CI workflow that
   runs lint/typecheck/test, a synthetic train-smoke + slow tests, a non-blocking
   `pip-audit`, and a serving-image build. Makefile docker/smoke targets added.
+- Documentation: README with honest headline results and the methodology story,
+  a completed model card and data card, an architecture overview, an MIT license,
+  and `NOTES.md` capturing decisions and self-audits.

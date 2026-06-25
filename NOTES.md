@@ -146,6 +146,29 @@ Synthetic-data results (seed 42), binary attack-vs-benign:
   written to best practice and the compose/CI YAML and the exact smoke commands
   were validated locally; the image build itself is exercised in CI.
 
+## Phase 10 — docs & canonical results
+
+The committed report/figures and the README headline come from one canonical run
+on the **default 60k-row synthetic** dataset (seed 42). These supersede the
+smaller dev-run numbers noted in earlier phases:
+
+| Metric (synthetic) | Value |
+|---|---|
+| Binary PR-AUC — temporal (honest) | 0.529 (baseline 0.250) |
+| Binary PR-AUC — stratified (optimistic) | 0.786 |
+| Over-optimism gap | +0.257 |
+| Detection @ 0.1% / 1% FPR (temporal) | 9.1% / 21.0% |
+| Anomaly LOAO avg detection @ 1% FPR | 8.5% (AE), 4.3% (iForest) |
+| Ensemble vs best single (temporal PR-AUC) | 0.537 vs 0.529 |
+| Latency p50 / p95 | ~47 / ~56 ms |
+
+- The story holds at scale: the honest temporal split is ~0.26 PR-AUC below the
+  optimistic shuffled split, nothing is suspiciously near 1.0, and the autoencoder
+  out-detects the Isolation Forest on novel attacks while the ensemble edges past
+  either alone.
+- These are **synthetic** numbers (clearly labelled everywhere); the real
+  CIC-IDS2017 run uses the identical commands.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

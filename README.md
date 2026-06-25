@@ -1,8 +1,5 @@
 # NetSentry — ML Network Intrusion Detection
 
-> Fill the `<…>` placeholders with your **real** measured numbers as you complete
-> the build. Do not invent results — the honest numbers are the impressive part.
-
 **A reproducible, leakage-safe machine-learning pipeline that detects network
 intrusions in flow data — pairing a supervised classifier for known attacks with
 an unsupervised anomaly detector for novel ones, served behind a real-time API
@@ -22,35 +19,49 @@ split) and a metric (accuracy) that is meaningless on data that is ~80% benign.
 NetSentry is built to be the project that does it right:
 
 - **Leakage-safe by construction** — identifier/timestamp columns are dropped and
-  all preprocessing is fit on the training split only. (A test enforces it.)
+  all preprocessing is fit on the training split only (a `remainder="drop"`
+  `ColumnTransformer` is the firewall; a test enforces no leak survives).
 - **Honestly evaluated** — the headline result uses a **temporal / by-day split**,
   not a shuffled one, and the optimistic random-split number is reported beside
   it so the gap is visible.
-- **Operational metrics** — leads with PR-AUC, per-class recall, and
-  **detection rate at a fixed 0.1% false-positive budget**, because in a SOC the
-  binding constraint is analyst time, not raw accuracy.
+- **Operational metrics** — leads with PR-AUC, per-class recall, and **detection
+  rate at a fixed false-positive budget**, because in a SOC the binding
+  constraint is analyst time, not raw accuracy.
 - **Detects the unknown** — a benign-only anomaly detector flags attack classes
   the supervised model never trained on (leave-one-attack-out).
 - **Explainable** — every prediction returns the top contributing features (SHAP).
 
+> ### ⚠️ A note on the numbers below
+> The CIC-IDS2017 dataset requires registration with the CIC and is not shipped
+> here. So that the whole pipeline is reproducible out-of-the-box, NetSentry
+> includes a **schema-faithful synthetic data generator** (same columns, same
+> defects, same imbalance, per-day attack layout). **The metrics below are from
+> that synthetic stand-in — they demonstrate the methodology, not real-world
+> performance.** To reproduce on the real data, drop the CSVs in `data/raw/`
+> (or set `data.source_url`) and re-run; the commands and framing are identical.
+
 ## Headline results
 
-> _Temporal split (the honest number). See `docs/` for full report + figures._
+> _Temporal split (the honest number), on synthetic data. Full report + figures
+> in [`docs/reports/evaluation.md`](docs/reports/evaluation.md) and
+> [`docs/figures/`](docs/figures)._
 
 | Metric | Score |
 |---|---|
-| PR-AUC (binary benign/attack) | `<…>` |
-| Macro-F1 (multiclass) | `<…>` |
-| Detection rate @ 0.1% FPR | `<…>` |
-| Detection rate @ 1% FPR | `<…>` |
-| Anomaly detector — held-out attack detection (avg) | `<…>` |
-| Inference latency (p95, single flow) | `<…> ms` |
-| Throughput | `<…> req/s` |
+| PR-AUC, attack vs benign (temporal, **honest**) | **0.529** (baseline 0.250) |
+| PR-AUC, attack vs benign (stratified, optimistic) | 0.786 |
+| **Over-optimism gap** (stratified − temporal) | **+0.257** |
+| Detection rate @ 0.1% FPR / @ 1% FPR (temporal) | 9.1% / 21.0% |
+| Anomaly detector — avg detection of held-out attacks @ 1% FPR | 8.5% (autoencoder), 4.3% (iForest) |
+| Ensemble vs best single scorer (temporal PR-AUC) | 0.537 vs 0.529 |
+| Inference latency p50 / p95 (single flow, local) | ~47 / ~56 ms |
+| Throughput (single process, SHAP per request) | ~21 req/s |
 
-> Reference (optimistic) stratified-split PR-AUC: `<…>` — reported only to show
-> the leakage gap; the temporal number above is the one that matters.
+![Precision–Recall: temporal vs stratified](docs/figures/pr_curve.png)
 
-![Results](docs/figures/pr_curve.png)
+The optimistic shuffled split scores markedly higher than the honest temporal
+split. **That gap is the finding** — it is the over-optimism most CIC-IDS write-ups
+ship as a headline. Reporting the temporal number is the point.
 
 ## Architecture
 
@@ -62,20 +73,25 @@ pipeline+model artifact and returns predictions with explanations.
 ## Tech stack
 
 Python 3.11 · scikit-learn · LightGBM · PyTorch · SHAP · MLflow · FastAPI ·
-pydantic · Prometheus · Docker · GitHub Actions · pytest/ruff/mypy.
+pydantic · Prometheus · Docker · GitHub Actions · pytest/ruff/black/mypy.
+
+Heavy ML libraries are optional extras with graceful fallbacks (LightGBM →
+scikit-learn `HistGradientBoosting`, SHAP → permutation importance, MLflow →
+local file logging, autoencoder → Isolation Forest), so the core install runs
+anywhere and the pipeline degrades rather than breaks.
 
 ## Quickstart
 
 ```bash
-make install
-netsentry download          # fetch CIC-IDS2017 into data/raw
-netsentry prep              # clean + honest splits + features
-netsentry train supervised  # train LightGBM, log to MLflow
-netsentry train anomaly     # train benign-only anomaly detector
-netsentry eval              # generate metrics report + figures
-netsentry serve             # FastAPI on :8000
-# or:
-docker compose -f docker/docker-compose.yml up
+make install                        # editable install + dev/train extras + hooks
+netsentry download                  # fetch CIC-IDS2017 (or generate synthetic data)
+netsentry prep                      # clean + honest splits + persisted features
+netsentry train supervised          # train LightGBM, log to MLflow
+netsentry train anomaly             # benign-only anomaly detector + leave-one-attack-out
+netsentry eval                      # operational metrics report + figures
+netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
+# or, one command:
+docker compose -f docker/docker-compose.yml up --build
 ```
 
 Example prediction:
@@ -83,22 +99,31 @@ Example prediction:
 ```bash
 curl -X POST localhost:8000/predict -H 'content-type: application/json' \
   -d @examples/sample_flow.json
-# → {"predicted_class":"DoS Hulk","attack_probability":0.97,
-#    "anomaly_score":0.83,"top_features":[...],"model_version":"0.1.0"}
+# → {"predicted_class":"DDoS","is_attack":true,"attack_probability":0.95,
+#    "anomaly_score":0.37,"is_anomaly":false,
+#    "top_features":[{"feature":"...","contribution":0.21}, ...],
+#    "model_version":"0.1.0","threshold_profile":"fpr_0.1pct"}
 ```
+
+`is_attack` is the thresholded decision at the selected `threshold_profile`
+(operator-selectable via `?profile=fpr_1pct`); `attack_probability` is the raw
+score for transparency.
 
 ## Reproducibility
 
 Every result is reproducible from a logged config + seed. `netsentry eval`
 regenerates the report and figures; MLflow holds params, metrics, artifacts, and
-the environment for each run.
+the environment for each run. Splits are persisted with content hashes so the
+same rows never drift between train and test. Engineering decisions and
+self-audits are logged in [`NOTES.md`](NOTES.md).
 
 ## Limitations
 
 See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md). NetSentry consumes pre-computed
-flow features (not raw packets), is trained on a 2017 dataset, and is a rigorous
-reference implementation and demo — not a drop-in production NIDS.
+flow features (not raw packets), is trained/evaluated on a 2017 dataset (here a
+synthetic stand-in), and is a rigorous reference implementation and demo — not a
+drop-in production NIDS.
 
 ## License
 
-MIT
+MIT — see [`LICENSE`](LICENSE).

@@ -37,10 +37,3 @@ venv/
 .DS_Store
 .idea/
 .vscode/
-
-# Local-only project memory, build notes, and agent/editor config (not committed)
-CLAUDE.md
-CLAUDE.local.md
-BUILD_PROMPTS.md
-SETUP.md
-.claude/

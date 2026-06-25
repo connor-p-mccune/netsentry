@@ -1,6 +1,6 @@
 # NetSentry — Evaluation Report
 
-_Generated 2026-06-25 15:44 UTC. Numbers below are on
+_Generated 2026-06-25 16:14 UTC. Numbers below are on
 the **synthetic** CIC-IDS2017 stand-in unless you have run on the real dataset;
 the methodology and framing are identical either way._
 
@@ -10,15 +10,15 @@ The honest number: trained on earlier days, tested on later days (largely
 **novel** attack types). This is what generalisation to tomorrow's traffic looks
 like.
 
-- **PR-AUC: 0.478** (majority-class baseline: 0.253)
-- ROC-AUC: 0.656
+- **PR-AUC: 0.529** (majority-class baseline: 0.250)
+- ROC-AUC: 0.668
 
 ### Operating points (threshold chosen on validation at a fixed FP budget)
 
 | FPR budget | detection (TPR) | achieved FPR | ~false alerts/day |
 |---|---|---|---|
-| 0.1% | 2.4% | 0.000% | 0 |
-| 1.0% | 13.0% | 1.518% | 11,337 |
+| 0.1% | 9.1% | 0.059% | 441 |
+| 1.0% | 21.0% | 0.876% | 6,571 |
 
 > A SOC reads the first row as: "at a 0.1%
 > false-positive budget, the detector catches this fraction of attacks, at roughly
@@ -31,9 +31,9 @@ like.
 
 | Split | Binary PR-AUC |
 |---|---|
-| **Temporal (honest, headline)** | **0.478** |
-| Stratified (optimistic reference) | 0.729 |
-| **Gap (over-optimism)** | **+0.250** |
+| **Temporal (honest, headline)** | **0.529** |
+| Stratified (optimistic reference) | 0.786 |
+| **Gap (over-optimism)** | **+0.257** |
 
 A naive shuffled split scores markedly higher because near-duplicate flows from
 one attack burst land on both sides and all attack types are seen in training.
@@ -50,20 +50,21 @@ disjoint across the day boundary.
 
 | class | precision | recall | F1 | support |
 |---|---|---|---|---|
-| BENIGN | 0.88 | 0.95 | 0.91 | 623 |
-| Bot | 0.00 | 0.00 | 0.00 | 5 |
-| DDoS | 0.66 | 0.78 | 0.71 | 32 |
-| DoS GoldenEye | 0.25 | 0.07 | 0.11 | 15 |
-| DoS Hulk | 0.70 | 0.66 | 0.68 | 47 |
-| DoS Slowhttptest | 0.00 | 0.00 | 0.00 | 7 |
-| DoS slowloris | 0.00 | 0.00 | 0.00 | 6 |
-| FTP-Patator | 0.00 | 0.00 | 0.00 | 10 |
-| Infiltration | 0.00 | 0.00 | 0.00 | 1 |
-| PortScan | 0.75 | 0.63 | 0.68 | 43 |
-| SSH-Patator | 0.00 | 0.00 | 0.00 | 7 |
-| Web Attack | 0.00 | 0.00 | 0.00 | 4 |
-| **macro avg** | 0.27 | 0.26 | 0.26 | |
-| **weighted avg** | 0.80 | 0.84 | 0.82 | |
+| BENIGN | 0.91 | 0.93 | 0.92 | 9354 |
+| Bot | 0.00 | 0.00 | 0.00 | 70 |
+| DDoS | 0.75 | 0.81 | 0.78 | 488 |
+| DoS GoldenEye | 0.49 | 0.41 | 0.45 | 210 |
+| DoS Hulk | 0.71 | 0.80 | 0.75 | 717 |
+| DoS Slowhttptest | 0.34 | 0.12 | 0.17 | 95 |
+| DoS slowloris | 0.30 | 0.23 | 0.26 | 105 |
+| FTP-Patator | 0.10 | 0.01 | 0.01 | 140 |
+| Heartbleed | 0.00 | 0.00 | 0.00 | 2 |
+| Infiltration | 0.00 | 0.00 | 0.00 | 8 |
+| PortScan | 0.64 | 0.75 | 0.69 | 623 |
+| SSH-Patator | 0.23 | 0.02 | 0.04 | 130 |
+| Web Attack | 0.00 | 0.00 | 0.00 | 58 |
+| **macro avg** | 0.34 | 0.31 | 0.31 | |
+| **weighted avg** | 0.83 | 0.86 | 0.84 | |
 
 ![Confusion matrix](../figures/confusion_matrix.png)
 
@@ -73,16 +74,16 @@ Attribution method: **shap**. The features driving attack predictions (per-predi
 
 | rank | feature | importance |
 |---|---|---|
-| 1 | numeric__Total Fwd Packets | 0.8173 |
-| 2 | numeric__Flow Packets/s | 0.5786 |
-| 3 | numeric__Flow Bytes/s | 0.4986 |
-| 4 | numeric__SYN Flag Count | 0.3557 |
-| 5 | numeric__Flow Duration | 0.3461 |
-| 6 | numeric__Flow IAT Mean | 0.1827 |
-| 7 | numeric__Flow IAT Max | 0.1712 |
-| 8 | numeric__Max Packet Length | 0.1287 |
-| 9 | numeric__Fwd IAT Total | 0.1146 |
-| 10 | numeric__Fwd IAT Mean | 0.1109 |
+| 1 | numeric__Total Fwd Packets | 0.7833 |
+| 2 | numeric__Flow Packets/s | 0.6910 |
+| 3 | numeric__Flow Bytes/s | 0.5729 |
+| 4 | numeric__Flow Duration | 0.5336 |
+| 5 | numeric__SYN Flag Count | 0.4597 |
+| 6 | numeric__Flow IAT Mean | 0.2348 |
+| 7 | numeric__Flow IAT Max | 0.1331 |
+| 8 | numeric__Flow IAT Std | 0.0829 |
+| 9 | numeric__Average Packet Size | 0.0684 |
+| 10 | numeric__Bwd IAT Std | 0.0632 |
 
 ![Global feature importance](../figures/shap_global.png)
 
