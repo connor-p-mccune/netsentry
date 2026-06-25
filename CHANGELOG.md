@@ -23,3 +23,11 @@ semantic versioning once released.
   before/after counts. `netsentry prep` writes `data/processed/clean.parquet`.
 - EDA notebook (`notebooks/01_eda.ipynb`) and `docs/EDA_SUMMARY.md` covering
   imbalance, missingness, feature signal, and the `Destination Port` leakage trap.
+- Honest splitting (`split.py`): temporal/by-day (headline), stratified
+  (reference), and leave-one-attack-out (anomaly) strategies, with validation
+  carved from train only and content-hashed, persisted partitions.
+- Leakage-safe feature pipeline (`features/pipeline.py`): a single
+  `ColumnTransformer` (train-fit median impute → scale → optional port encoding)
+  with `remainder="drop"` as a firewall. `netsentry prep` now persists both
+  split strategies. Added the no-leakage, fit-on-train-only, and split-integrity
+  test battery.

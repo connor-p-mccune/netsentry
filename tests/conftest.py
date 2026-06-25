@@ -34,6 +34,15 @@ def settings(default_config_path: Path) -> Settings:
 
 
 @pytest.fixture
+def clean_synth(settings: Settings) -> pd.DataFrame:
+    """A small cleaned synthetic dataset (with a Day column) for split/feature tests."""
+    from netsentry.data.clean import clean_dataframe
+    from netsentry.data.synthetic import generate_synthetic
+
+    return clean_dataframe(generate_synthetic(settings, rows=6000, seed=123), settings)
+
+
+@pytest.fixture
 def quirky_raw() -> pd.DataFrame:
     """A minimal raw frame carrying every CIC-IDS2017 quirk we must handle.
 

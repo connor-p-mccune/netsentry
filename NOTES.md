@@ -26,6 +26,35 @@ investigate leakage before celebrating, and write down what was found.
   present) Torch from one config seed; estimators get the same seed via
   `random_state`.
 
+## Phase 2 — cleaning & EDA
+
+- The synthetic EDA shows the shape we expect: ~78% benign, a long rare-class
+  tail (Heartbleed/Infiltration in the dozens), missingness concentrated in the
+  rate columns (Inf→NaN), and moderate feature signal (top |corr| ≈ 0.3). No
+  single feature separates attacks — which is the honest baseline we want.
+- `Destination Port` attack-rate is wildly uneven (≈0.62 on port 80, ≈0 on
+  several others). That is the leakage trap made visible: it justifies dropping
+  the port from the headline model.
+
+## Phase 3 — splits & the leakage firewall
+
+- **Surprise worth stating loudly.** With the temporal split (train Mon–Wed, test
+  Thu–Fri), the attack *classes* are largely **disjoint across the boundary**:
+  Patator + DoS + Heartbleed are in train; Web Attack + Infiltration + Bot +
+  PortScan + DDoS are in test. A multiclass classifier literally cannot *name* a
+  class it never saw.
+  - **Consequence for framing:** the temporal HEADLINE is naturally a **binary**
+    (attack vs benign) *generalization* test — can the model flag later-day,
+    partly-novel attacks at all? "Name the attack" (multiclass per-class) is the
+    honest job of the **stratified** reference split. And this disjointness is
+    precisely why the unsupervised **anomaly detector** (Phase 6) earns its keep.
+- **Firewall:** the feature `ColumnTransformer` uses `remainder="drop"`, so only
+  explicitly-listed feature columns are ever modelled; a test injects identifier
+  columns and asserts they vanish from `get_feature_names_out()`.
+- **Fit-on-train-only** is structural: the single `Pipeline` is fit on the train
+  split, and a test asserts the imputer's learned median equals the *train*
+  median, not the combined one. Validation is always carved from train.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

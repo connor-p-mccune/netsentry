@@ -86,11 +86,13 @@ def prep(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
 ) -> None:
-    """Clean the raw data into a processed parquet (splitting added in Phase 3)."""
+    """Clean the raw data and produce persisted, honest train/val/test splits."""
     from netsentry.data.clean import clean_raw
+    from netsentry.data.split import make_splits
 
     settings = _load(config, override)
     processed = clean_raw(settings)
+    make_splits(settings)
     logger.info("Prep complete", extra={"processed": str(processed)})
 
 
