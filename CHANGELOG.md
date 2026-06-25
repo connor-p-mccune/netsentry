@@ -48,3 +48,6 @@ semantic versioning once released.
   Isolation Forest and a PyTorch autoencoder with FPR-calibrated thresholds.
   `netsentry train anomaly` reports leave-one-attack-out detection per held-out
   class and an ensemble comparison (supervised + anomaly) on the temporal split.
+- Explainability (`explain/shap_explainer.py`): SHAP `TreeExplainer` with a
+  feature-importance fallback; a global-importance figure/section in the eval
+  report and top-k per-prediction contributions for the API.

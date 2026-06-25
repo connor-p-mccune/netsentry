@@ -134,6 +134,8 @@ filterwarnings = [
   # so a later numpy predict trips this sklearn check. Verified benign: the
   # pipeline emits a consistent ndarray at train and serve time (no skew).
   "ignore:X does not have valid feature names:UserWarning",
+  # SHAP returns a list of arrays for binary LightGBM; we handle both forms.
+  "ignore:LightGBM binary classifier with TreeExplainer:UserWarning",
 ]
 
 [tool.coverage.run]

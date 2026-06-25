@@ -104,6 +104,17 @@ Synthetic-data results (seed 42), binary attack-vs-benign:
   holdout; thresholds for both detectors are calibrated to a benign FP budget, so
   "how much benign noise fires" is an explicit operator choice.
 
+## Phase 7 — explainability
+
+- SHAP `TreeExplainer` on the headline LightGBM model powers both a global
+  importance figure (in the eval report) and top-k per-prediction contributions
+  (returned by the API in Phase 8). A flagged flow without a reason isn't
+  actionable, so explanations are treated as part of the contract.
+- Robustness: recent SHAP returns a *list* of arrays for binary LightGBM; the
+  reducer handles list / 2-D / 3-D outputs. If SHAP isn't installed, the
+  explainer degrades to model feature importances so the API still returns
+  `top_features` (a documented approximation).
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

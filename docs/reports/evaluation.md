@@ -1,6 +1,6 @@
 # NetSentry — Evaluation Report
 
-_Generated 2026-06-25 15:25 UTC. Numbers below are on
+_Generated 2026-06-25 15:44 UTC. Numbers below are on
 the **synthetic** CIC-IDS2017 stand-in unless you have run on the real dataset;
 the methodology and framing are identical either way._
 
@@ -66,6 +66,25 @@ disjoint across the day boundary.
 | **weighted avg** | 0.80 | 0.84 | 0.82 | |
 
 ![Confusion matrix](../figures/confusion_matrix.png)
+
+## Explainability — SHAP global importance
+
+Attribution method: **shap**. The features driving attack predictions (per-prediction contributions are returned by the API):
+
+| rank | feature | importance |
+|---|---|---|
+| 1 | numeric__Total Fwd Packets | 0.8173 |
+| 2 | numeric__Flow Packets/s | 0.5786 |
+| 3 | numeric__Flow Bytes/s | 0.4986 |
+| 4 | numeric__SYN Flag Count | 0.3557 |
+| 5 | numeric__Flow Duration | 0.3461 |
+| 6 | numeric__Flow IAT Mean | 0.1827 |
+| 7 | numeric__Flow IAT Max | 0.1712 |
+| 8 | numeric__Max Packet Length | 0.1287 |
+| 9 | numeric__Fwd IAT Total | 0.1146 |
+| 10 | numeric__Fwd IAT Mean | 0.1109 |
+
+![Global feature importance](../figures/shap_global.png)
 
 ## Notes
 

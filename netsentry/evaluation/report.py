@@ -13,8 +13,10 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
+from netsentry.data.split import load_split
 from netsentry.evaluation import metrics as M
 from netsentry.evaluation import plots
+from netsentry.explain.shap_explainer import ShapExplainer
 from netsentry.log import get_logger
 from netsentry.training.tracking import track_run
 from netsentry.training.train_supervised import FitResult, fit_supervised
@@ -109,7 +111,9 @@ def run_evaluation(settings: Settings) -> Path:
 
     operating_md, operating_metrics = _operating_table(headline, settings)
     per_class_md = _per_class_table(multiclass)
+    explain_md, shap_fig = _explain_section(settings, headline)
 
+    figures = {"pr": pr_fig, "roc": roc_fig, "threshold": thr_fig, "confusion": cm_fig}
     report = _render_markdown(
         settings=settings,
         headline=headline,
@@ -118,7 +122,8 @@ def run_evaluation(settings: Settings) -> Path:
         gap=gap,
         operating_md=operating_md,
         per_class_md=per_class_md,
-        figures={"pr": pr_fig, "roc": roc_fig, "threshold": thr_fig, "confusion": cm_fig},
+        explain_md=explain_md,
+        figures=figures,
     )
     out_path = settings.paths.reports_dir / REPORT_NAME
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -134,10 +139,37 @@ def run_evaluation(settings: Settings) -> Path:
                 **{f"headline_{k}": v for k, v in operating_metrics.items()},
             }
         )
-        for fig in (pr_fig, roc_fig, thr_fig, cm_fig, out_path):
+        artifacts = [pr_fig, roc_fig, thr_fig, cm_fig, out_path]
+        if shap_fig is not None:
+            artifacts.append(shap_fig)
+        for fig in artifacts:
             run.log_artifact(fig)
 
     return out_path
+
+
+def _explain_section(settings: Settings, headline: FitResult) -> tuple[str, Path | None]:
+    """Global SHAP importance for the headline model (skipped gracefully on error)."""
+    try:
+        background_rows = load_split(settings, "temporal", "test")
+        sample = background_rows.sample(min(200, len(background_rows)), random_state=settings.seed)
+        background = headline.bundle.pipeline.transform(sample)
+        explainer = ShapExplainer(headline.bundle)
+        fig = explainer.plot_global(background, settings.paths.figures_dir / "shap_global.png")
+        rows = ["| rank | feature | importance |", "|---|---|---|"]
+        for i, (name, value) in enumerate(explainer.global_importance(background, top_n=10), 1):
+            rows.append(f"| {i} | {name} | {value:.4f} |")
+        body = "\n".join(rows)
+        md = (
+            "## Explainability — SHAP global importance\n\n"
+            f"Attribution method: **{explainer.mode}**. The features driving attack "
+            "predictions (per-prediction contributions are returned by the API):\n\n"
+            f"{body}\n\n![Global feature importance](../figures/{fig.name})\n"
+        )
+        return md, fig
+    except Exception as exc:  # explanations are valuable but must not break the report
+        logger.warning("SHAP section skipped (%s)", exc)
+        return "", None
 
 
 def _render_markdown(
@@ -149,6 +181,7 @@ def _render_markdown(
     gap: float,
     operating_md: str,
     per_class_md: str,
+    explain_md: str,
     figures: dict[str, Path],
 ) -> str:
     maj = headline.baselines["majority"]["pr_auc"]
@@ -204,6 +237,7 @@ disjoint across the day boundary.
 
 ![Confusion matrix]({fig_rel['confusion'].as_posix()})
 
+{explain_md}
 ## Notes
 
 - Accuracy is intentionally absent from the headline: on ~80%-benign data it is
