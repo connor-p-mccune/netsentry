@@ -169,6 +169,19 @@ smaller dev-run numbers noted in earlier phases:
 - These are **synthetic** numbers (clearly labelled everywhere); the real
   CIC-IDS2017 run uses the identical commands.
 
+## Stretch S5 — ONNX export + quantization
+
+- `netsentry onnx` exports the gradient-boosted classifier to ONNX (via skl2onnx +
+  onnxmltools; the `ai.onnx.ml` opset is pinned to 3 because the LightGBM converter
+  emits v5) and benchmarks ONNX Runtime vs the Python path.
+- **Honest results (synthetic, 2000-flow batch):** probabilities match sklearn to
+  ~1e-7 (100% argmax agreement); ONNX Runtime is ~1.4x the Python throughput (76k
+  vs 53k flows/s). **Dynamic quantization is a no-op for trees** — a
+  `TreeEnsembleClassifier` has no quantizable matmul weights, so the quantized model
+  is the same size and not faster (slightly slower here). The report states this
+  plainly rather than claiming a quantization win; quantization is the lever for the
+  autoencoder, not the trees.
+
 ## Stretch S3 — Streamlit demo dashboard
 
 - `netsentry demo` (or `streamlit run netsentry/demo/dashboard.py`) serves a live

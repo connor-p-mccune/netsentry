@@ -22,6 +22,10 @@ semantic versioning once released.
 - Streamlit demo dashboard (`netsentry demo`): pick/edit a flow and see the live
   verdict, anomaly score, and SHAP explanation; verified headless via Streamlit
   AppTest. Optional `demo` extra.
+- ONNX export + quantized inference (`netsentry onnx`): export the classifier to
+  ONNX, verify it matches sklearn (~1e-7), and benchmark ONNX Runtime (~1.4x the
+  Python path) against dynamic quantization (a documented no-op for tree ensembles).
+  Optional `onnx` extra.
 
 ### Changed
 - Serving request metrics are now labelled by the matched route template instead of

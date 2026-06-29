@@ -36,7 +36,7 @@ pipeline runs end-to-end on the bundled synthetic data.
 | S2 | Drift monitoring (PSI + Prometheus gauge) | ✅ Done |
 | S3 | Streamlit demo dashboard | ✅ Done |
 | S4 | vulnpipe finding triage | ✅ Done |
-| S5 | ONNX export + quantized inference | ⬜ Not started |
+| S5 | ONNX export + quantized inference | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -190,6 +190,16 @@ whose traffic looks like an active attack** — triage by what's actually being
 exploited, not CVSS alone. Fusion weights are config (`triage.*`). See
 [`docs/reports/triage.md`](docs/reports/triage.md) and the contract in
 `netsentry/integrations/vulnpipe.py`.
+
+## ONNX export
+
+`netsentry onnx` exports the trained classifier to ONNX and benchmarks ONNX
+Runtime against the Python path: identical probabilities (max diff ~1e-7) at
+**~1.4x throughput** (76k vs 53k flows/s on a 2000-flow batch) — the case for a
+low-overhead or non-Python serving target. It also reports, honestly, that dynamic
+quantization is a no-op for tree ensembles (a `TreeEnsembleClassifier` carries no
+quantizable matmul weights, so the quantized model is unchanged in size and speed).
+See [`docs/reports/onnx.md`](docs/reports/onnx.md). Optional `onnx` extra.
 
 ## Limitations
 

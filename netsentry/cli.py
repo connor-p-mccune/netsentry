@@ -253,5 +253,18 @@ def demo(
     raise SystemExit(subprocess.run(cmd, check=False).returncode)
 
 
+@app.command("onnx")
+def onnx_export(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Export the model to ONNX, quantize, and benchmark against the sklearn path."""
+    from netsentry.serving.onnx_export import run_onnx_export
+
+    settings = _load(config, override)
+    out = run_onnx_export(settings)
+    logger.info("ONNX report ready", extra={"path": str(out)})
+
+
 if __name__ == "__main__":
     app()
