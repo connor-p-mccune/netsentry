@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to follow
 semantic versioning once released.
 
+## [Unreleased]
+
+### Added
+- Drift monitoring (`netsentry/monitoring`): a Population Stability Index (PSI)
+  implementation, a `netsentry drift` report contrasting a current dataset with a
+  reference (feature drift + model-score drift; default temporal test-vs-train),
+  and an in-serving rolling-window monitor exporting `netsentry_feature_drift_psi_max`
+  / `_mean` Prometheus gauges. The drift reference travels inside the serving bundle.
+
+### Changed
+- Serving request metrics are now labelled by the matched route template instead of
+  the raw URL path, bounding Prometheus label cardinality (unauthenticated callers
+  could otherwise mint unbounded time series via arbitrary paths).
+
 ## [0.1.0] — 2026-06-25
 
 First end-to-end release: the pipeline trains, evaluates, and serves, with honest

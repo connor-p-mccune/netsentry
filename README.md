@@ -32,7 +32,8 @@ pipeline runs end-to-end on the bundled synthetic data.
 | 8 | FastAPI serving | ✅ Done |
 | 9 | Containerization & CI | ✅ Done |
 | 10 | Docs, model card, README | ✅ Done |
-| S1–S5 | Stretch (cross-dataset, drift, Streamlit demo, …) | ⬜ Not started |
+| S2 | Drift monitoring (PSI + Prometheus gauge) | ✅ Done |
+| S1, S3–S5 | Stretch (cross-dataset, Streamlit, ONNX, vulnpipe) | ⬜ Not started |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -142,6 +143,19 @@ regenerates the report and figures; MLflow holds params, metrics, artifacts, and
 the environment for each run. Splits are persisted with content hashes so the
 same rows never drift between train and test. Engineering decisions and
 self-audits are logged in [`NOTES.md`](NOTES.md).
+
+## Monitoring & drift
+
+Models decay when production traffic drifts away from training data. `netsentry
+drift` reports the **Population Stability Index (PSI)** per feature (and of the
+model's output score) for a current dataset versus a reference — by default the
+temporal **test** split versus the **train** split, which measures exactly how
+much later-day traffic moves. On the synthetic stand-in the model-score drift is
+~0.16 (moderate) — a concrete reason the honest temporal split is harder than a
+shuffled one. In serving the same check runs continuously: `/metrics` exposes
+`netsentry_feature_drift_psi_max` / `_mean` over a rolling window of requests, and
+the drift reference travels inside the model bundle so a deployed model
+self-monitors. See [`docs/reports/drift.md`](docs/reports/drift.md).
 
 ## Limitations
 

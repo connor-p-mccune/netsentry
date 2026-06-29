@@ -95,6 +95,13 @@ thresholds:
   calibrate: true
   calibration_method: isotonic
 
+monitoring:
+  psi_bins: 10
+  psi_moderate: 0.1           # PSI >= this is a moderate distribution shift
+  psi_major: 0.25             # PSI >= this is a major shift worth investigating
+  serving_window: 500         # flows buffered before serving recomputes drift gauges
+  reference_rows: 5000        # reference sample summarised into the serving bundle
+
 mlflow:
   enabled: true
   experiment_name: netsentry

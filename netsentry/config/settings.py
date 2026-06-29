@@ -154,6 +154,16 @@ class ThresholdConfig(BaseModel):
     calibration_method: Literal["isotonic", "sigmoid"] = "isotonic"
 
 
+class MonitoringConfig(BaseModel):
+    """Data-drift monitoring (PSI) — the production-decay early-warning system."""
+
+    psi_bins: int = 10
+    psi_moderate: float = 0.1  # PSI >= this is a moderate distribution shift
+    psi_major: float = 0.25  # PSI >= this is a major shift worth investigating
+    serving_window: int = 500  # flows buffered before serving recomputes drift gauges
+    reference_rows: int = 5000  # reference sample summarised into the serving bundle
+
+
 class MLflowConfig(BaseModel):
     """Experiment tracking. Falls back to local file logging if MLflow is absent."""
 
@@ -198,6 +208,7 @@ class Settings(BaseSettings):
     supervised: SupervisedConfig = Field(default_factory=SupervisedConfig)
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
+    monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
     serving: ServingConfig = Field(default_factory=ServingConfig)
 

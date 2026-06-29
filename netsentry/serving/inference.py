@@ -19,6 +19,7 @@ from netsentry.explain.shap_explainer import ShapExplainer
 from netsentry.features.feature_sets import model_features
 from netsentry.log import get_logger
 from netsentry.models.registry import latest_bundle, load_bundle
+from netsentry.monitoring.monitor import DriftMonitor
 from netsentry.serving.schemas import FeatureContribution, PredictionResponse
 
 if TYPE_CHECKING:
@@ -50,11 +51,42 @@ class InferenceEngine:
         self.default_profile = str(
             meta.get("default_threshold_profile", settings.serving.default_threshold_profile)
         )
+        self.drift = self._build_monitor(settings)
         self.loaded_at = datetime.now(UTC).isoformat()
         logger.info(
             "Loaded model bundle",
             extra={"path": str(path), "version": self.version, "classes": len(self.bundle.classes)},
         )
+
+    def _build_monitor(self, settings: Settings) -> DriftMonitor | None:
+        """Reconstruct the drift monitor from the bundle's reference, if it carries one."""
+        summary = self.bundle.metadata.get("drift_reference")
+        if not isinstance(summary, dict):
+            return None
+        try:
+            return DriftMonitor.from_summary(
+                summary,
+                window=settings.monitoring.serving_window,
+                moderate=settings.monitoring.psi_moderate,
+                major=settings.monitoring.psi_major,
+            )
+        except Exception as exc:  # monitoring is best-effort, never fatal
+            logger.warning("Drift monitor disabled (%s)", exc)
+            return None
+
+    def _observe_drift(self, frame: pd.DataFrame) -> None:
+        """Feed served flows to the rolling drift monitor and export gauges."""
+        if self.drift is None:
+            return
+        try:
+            report = self.drift.observe(frame)
+            if report is not None:
+                from netsentry.serving import metrics as M
+
+                M.FEATURE_DRIFT_PSI_MAX.set(report.max_psi)
+                M.FEATURE_DRIFT_PSI_MEAN.set(report.mean_psi)
+        except Exception as exc:  # drift monitoring must never break a prediction
+            logger.warning("Drift observation skipped (%s)", exc)
 
     def _frame(self, flows: list[dict[str, float]]) -> pd.DataFrame:
         """Build a feature frame with every expected column (missing -> NaN)."""
@@ -71,6 +103,7 @@ class InferenceEngine:
         profile = profile or self.default_profile
         top_k = top_k or self.settings.serving.top_k_features
         frame = self._frame(flows)
+        self._observe_drift(frame)
 
         proba = self.bundle.predict_proba(frame)
         classes = self.bundle.classes

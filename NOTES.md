@@ -169,6 +169,23 @@ smaller dev-run numbers noted in earlier phases:
 - These are **synthetic** numbers (clearly labelled everywhere); the real
   CIC-IDS2017 run uses the identical commands.
 
+## Stretch S2 — drift monitoring (PSI)
+
+- Added `netsentry/monitoring`: a Population Stability Index implementation
+  (quantile-binned, reference-fit), a `DriftReport`, a `netsentry drift` report
+  (feature + model-score PSI, default temporal train-vs-test), and a rolling
+  in-serving monitor that exports `netsentry_feature_drift_psi_max`/`_mean` gauges.
+- **The honest read on the synthetic data:** across the Mon-Wed → Thu-Fri
+  boundary, max feature PSI ≈ 0.11 and **score drift ≈ 0.16** (both "moderate").
+  That is the same phenomenon the temporal split punishes, now measured directly —
+  later-day traffic really does drift, so a model tuned on earlier days is partly
+  extrapolating. Input/score drift is the signal you watch in production to catch
+  this *before* the labels (and the damage) arrive.
+- The serving monitor is deliberately bounded and safe: a tumbling window, two
+  gauges (no per-feature label cardinality), and every step wrapped so monitoring
+  can never break a prediction. The reference travels inside the bundle, so a
+  deployed model self-monitors without the processed dataset.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

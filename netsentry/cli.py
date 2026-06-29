@@ -134,6 +134,27 @@ def evaluate(
 
 
 @app.command()
+def drift(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    reference: Annotated[
+        Path | None,
+        typer.Option(help="Reference dataset (parquet/csv); default: temporal train split."),
+    ] = None,
+    current: Annotated[
+        Path | None,
+        typer.Option(help="Current dataset (parquet/csv); default: temporal test split."),
+    ] = None,
+) -> None:
+    """Report feature/score drift (PSI) of a current dataset against a reference."""
+    from netsentry.monitoring.report import run_drift_report
+
+    settings = _load(config, override)
+    out = run_drift_report(settings, reference_path=reference, current_path=current)
+    logger.info("Drift report ready", extra={"path": str(out)})
+
+
+@app.command()
 def serve(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

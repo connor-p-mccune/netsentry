@@ -14,9 +14,11 @@ from typing import TYPE_CHECKING
 
 from netsentry.data.clean import MULTICLASS_TARGET
 from netsentry.data.split import load_split
+from netsentry.features.feature_sets import model_features
 from netsentry.log import get_logger
 from netsentry.models.anomaly import build_anomaly_detector
 from netsentry.models.registry import ModelBundle
+from netsentry.monitoring.monitor import reference_summary
 from netsentry.training.train_supervised import fit_supervised
 
 if TYPE_CHECKING:
@@ -50,6 +52,17 @@ def build_serving_bundle(settings: Settings) -> Path:
         )
         bundle.anomaly_detector = detector
         bundle.anomaly_threshold = detector.threshold
+
+    # Carry a compact drift reference (per-feature PSI bins) so the deployed model
+    # can self-monitor input drift at serve time without the processed dataset.
+    stored_cols = bundle.metadata.get("input_columns")
+    feature_cols = list(stored_cols) if isinstance(stored_cols, list) else model_features(variant)
+    reference = train.sample(
+        min(len(train), variant.monitoring.reference_rows), random_state=variant.seed
+    )
+    bundle.metadata["drift_reference"] = reference_summary(
+        reference, feature_cols, bins=variant.monitoring.psi_bins
+    )
 
     path = settings.paths.models_dir / SERVING_BUNDLE_NAME
     bundle.save(path)
