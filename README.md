@@ -32,8 +32,9 @@ pipeline runs end-to-end on the bundled synthetic data.
 | 8 | FastAPI serving | ✅ Done |
 | 9 | Containerization & CI | ✅ Done |
 | 10 | Docs, model card, README | ✅ Done |
+| S1 | Cross-dataset generalization study | ✅ Done |
 | S2 | Drift monitoring (PSI + Prometheus gauge) | ✅ Done |
-| S1, S3–S5 | Stretch (cross-dataset, Streamlit, ONNX, vulnpipe) | ⬜ Not started |
+| S3–S5 | Stretch (Streamlit demo, ONNX export, vulnpipe) | ⬜ Not started |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -156,6 +157,18 @@ shuffled one. In serving the same check runs continuously: `/metrics` exposes
 `netsentry_feature_drift_psi_max` / `_mean` over a rolling window of requests, and
 the drift reference travels inside the model bundle so a deployed model
 self-monitors. See [`docs/reports/drift.md`](docs/reports/drift.md).
+
+## Cross-dataset generalization
+
+The strongest honesty test is whether the model transfers to a *different*
+dataset. `netsentry crosseval` scores the trained bundle, unchanged, on a foreign
+**NetFlow-schema** dataset adapted into CIC features — most CIC features have no
+NetFlow equivalent and are imputed, so detection transfers only through shared
+behaviour. On the synthetic stand-in, PR-AUC holds up (0.529 → 0.517) but the
+operating point degrades sharply (TPR@0.1%FPR **11.9% → 1.2%**): the ranking
+transfers, the calibration does not. Point the adapter at UNSW-NB15 or the NetFlow
+`NF-*-v2` releases for real numbers. See
+[`docs/reports/cross_dataset.md`](docs/reports/cross_dataset.md).
 
 ## Limitations
 

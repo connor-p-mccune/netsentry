@@ -102,6 +102,11 @@ monitoring:
   serving_window: 500         # flows buffered before serving recomputes drift gauges
   reference_rows: 5000        # reference sample summarised into the serving bundle
 
+crossdata:
+  rows: 20000                 # synthetic 'foreign' NetFlow-schema dataset size
+  attack_fraction: 0.30
+  name: synthetic-netflow
+
 mlflow:
   enabled: true
   experiment_name: netsentry

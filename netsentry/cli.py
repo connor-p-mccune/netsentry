@@ -154,6 +154,19 @@ def drift(
     logger.info("Drift report ready", extra={"path": str(out)})
 
 
+@app.command("crosseval")
+def crosseval(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Score a foreign-schema dataset with the trained model (cross-dataset study)."""
+    from netsentry.evaluation.cross_dataset import run_cross_dataset_eval
+
+    settings = _load(config, override)
+    out = run_cross_dataset_eval(settings)
+    logger.info("Cross-dataset report ready", extra={"path": str(out)})
+
+
 @app.command()
 def serve(
     config: ConfigOpt = None,

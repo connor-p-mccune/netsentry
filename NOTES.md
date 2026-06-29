@@ -169,6 +169,24 @@ smaller dev-run numbers noted in earlier phases:
 - These are **synthetic** numbers (clearly labelled everywhere); the real
   CIC-IDS2017 run uses the identical commands.
 
+## Stretch S1 — cross-dataset generalization
+
+- Added `netsentry crosseval`: score the CIC-trained bundle, unchanged, on a
+  synthetic **NetFlow-schema** foreign dataset adapted into CIC features (most
+  features absent → imputed; detection transfers only through shared rate/volume
+  behaviour). In-domain vs cross is contrasted honestly.
+- **A self-audit caught a too-good result.** The first foreign generator made
+  attacks trivially separable (4-10x volume, very short flows) → cross PR-AUC ≈
+  0.96, *higher* than in-domain. That is exactly the "if it looks too good,
+  investigate" rule firing: the stand-in's attacks were a giveaway, not a
+  generalization win. Retuned to modest, overlapping signal (mirroring the main
+  synthetic generator) and made the report prose **sign-aware**, so it can never
+  contradict its own numbers and flags a too-good cross score as a stand-in artifact.
+- **The honest read now:** PR-AUC 0.529 → 0.517 (ranking transfers via the few
+  shared features) but TPR@0.1%FPR collapses 11.9% → 1.2% — the operating point
+  does *not* transfer across schemas. Precisely the nuance a real UNSW-NB15 study
+  would surface; the synthetic magnitude is illustrative, the method is the point.
+
 ## Stretch S2 — drift monitoring (PSI)
 
 - Added `netsentry/monitoring`: a Population Stability Index implementation

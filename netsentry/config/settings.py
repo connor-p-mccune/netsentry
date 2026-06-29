@@ -164,6 +164,14 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class CrossDatasetConfig(BaseModel):
+    """Synthetic 'foreign' (NetFlow-schema) dataset for cross-dataset generalization."""
+
+    rows: int = 20000
+    attack_fraction: float = 0.30
+    name: str = "synthetic-netflow"
+
+
 class MLflowConfig(BaseModel):
     """Experiment tracking. Falls back to local file logging if MLflow is absent."""
 
@@ -209,6 +217,7 @@ class Settings(BaseSettings):
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
+    crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
     serving: ServingConfig = Field(default_factory=ServingConfig)
 

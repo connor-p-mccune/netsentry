@@ -12,6 +12,10 @@ semantic versioning once released.
   reference (feature drift + model-score drift; default temporal test-vs-train),
   and an in-serving rolling-window monitor exporting `netsentry_feature_drift_psi_max`
   / `_mean` Prometheus gauges. The drift reference travels inside the serving bundle.
+- Cross-dataset generalization study (`netsentry crosseval`): a synthetic
+  NetFlow-schema foreign dataset, an adapter mapping it into the CIC feature space,
+  and an honest in-domain-vs-cross report (PR-AUC + TPR@FPR + the gap, with
+  sign-aware framing). Point the adapter at UNSW-NB15 / NF-*-v2 for real numbers.
 
 ### Changed
 - Serving request metrics are now labelled by the matched route template instead of
