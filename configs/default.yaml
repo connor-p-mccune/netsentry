@@ -107,6 +107,11 @@ crossdata:
   attack_fraction: 0.30
   name: synthetic-netflow
 
+triage:                       # vulnpipe finding re-ranking (risk = severity + traffic)
+  severity_weight: 0.5
+  model_weight: 0.35
+  anomaly_weight: 0.15
+
 mlflow:
   enabled: true
   experiment_name: netsentry

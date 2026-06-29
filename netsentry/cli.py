@@ -168,6 +168,39 @@ def crosseval(
 
 
 @app.command()
+def triage(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    findings: Annotated[Path, typer.Option(help="JSON file of vulnpipe findings.")] = Path(
+        "examples/vulnpipe_findings.json"
+    ),
+    out: Annotated[
+        Path | None, typer.Option(help="Where to write the triaged report (markdown).")
+    ] = None,
+) -> None:
+    """Re-rank vulnpipe findings by NetSentry traffic risk (severity + attack + anomaly)."""
+    from netsentry.integrations.vulnpipe import (
+        load_findings,
+        render_triage_markdown,
+        triage_findings,
+    )
+    from netsentry.models.registry import latest_bundle, load_bundle
+    from netsentry.serving.bundle import build_serving_bundle
+
+    settings = _load(config, override)
+    bundle_path = settings.serving.artifact_path or latest_bundle(settings)
+    if bundle_path is None:
+        logger.info("No model bundle found; building a serving bundle (requires `prep`).")
+        bundle_path = build_serving_bundle(settings)
+    triaged = triage_findings(load_findings(findings), load_bundle(Path(bundle_path)), settings)
+
+    out_path = out or (settings.paths.reports_dir / "triage.md")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(render_triage_markdown(triaged), encoding="utf-8")
+    logger.info("Triaged findings", extra={"count": len(triaged), "path": str(out_path)})
+
+
+@app.command()
 def serve(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

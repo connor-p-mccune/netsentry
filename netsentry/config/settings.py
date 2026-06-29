@@ -172,6 +172,14 @@ class CrossDatasetConfig(BaseModel):
     name: str = "synthetic-netflow"
 
 
+class TriageConfig(BaseModel):
+    """Weights for fusing CVE severity with NetSentry's live-traffic risk signals."""
+
+    severity_weight: float = 0.5
+    model_weight: float = 0.35
+    anomaly_weight: float = 0.15
+
+
 class MLflowConfig(BaseModel):
     """Experiment tracking. Falls back to local file logging if MLflow is absent."""
 
@@ -218,6 +226,7 @@ class Settings(BaseSettings):
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
+    triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
     serving: ServingConfig = Field(default_factory=ServingConfig)
 

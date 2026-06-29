@@ -34,7 +34,8 @@ pipeline runs end-to-end on the bundled synthetic data.
 | 10 | Docs, model card, README | ✅ Done |
 | S1 | Cross-dataset generalization study | ✅ Done |
 | S2 | Drift monitoring (PSI + Prometheus gauge) | ✅ Done |
-| S3–S5 | Stretch (Streamlit demo, ONNX export, vulnpipe) | ⬜ Not started |
+| S4 | vulnpipe finding triage | ✅ Done |
+| S3, S5 | Stretch (Streamlit demo, ONNX export) | ⬜ Not started |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -169,6 +170,17 @@ operating point degrades sharply (TPR@0.1%FPR **11.9% → 1.2%**): the ranking
 transfers, the calibration does not. Point the adapter at UNSW-NB15 or the NetFlow
 `NF-*-v2` releases for real numbers. See
 [`docs/reports/cross_dataset.md`](docs/reports/cross_dataset.md).
+
+## vulnpipe integration
+
+`netsentry triage` connects NetSentry to vulnerability findings (e.g. from
+vulnpipe): each finding's host traffic is scored and its severity is fused with
+the model's attack probability and anomaly flag into one priority. The effect — a
+**critical CVE on a quiet host is deprioritised below a high-severity CVE on a host
+whose traffic looks like an active attack** — triage by what's actually being
+exploited, not CVSS alone. Fusion weights are config (`triage.*`). See
+[`docs/reports/triage.md`](docs/reports/triage.md) and the contract in
+`netsentry/integrations/vulnpipe.py`.
 
 ## Limitations
 

@@ -1,0 +1,55 @@
+{
+  "findings": [
+    {
+      "id": "CVE-2024-0001",
+      "title": "Apache RCE",
+      "severity": "high",
+      "asset": "web01",
+      "flow": {
+        "Flow Packets/s": 6000.0, "Total Fwd Packets": 240.0, "Flow Bytes/s": 90000.0,
+        "Flow Duration": 40000.0, "Total Backward Packets": 180.0
+      }
+    },
+    {
+      "id": "CVE-2024-0002",
+      "title": "Postgres priv-esc",
+      "severity": "critical",
+      "asset": "db01",
+      "flow": {
+        "Flow Packets/s": 40.0, "Total Fwd Packets": 7.0, "Flow Bytes/s": 1100.0,
+        "Flow Duration": 1200000.0, "Total Backward Packets": 5.0
+      }
+    },
+    {
+      "id": "CVE-2024-0003",
+      "title": "OpenSSL info-leak",
+      "severity": "medium",
+      "asset": "web02",
+      "flow": {
+        "Flow Packets/s": 5200.0, "Total Fwd Packets": 210.0, "Flow Bytes/s": 81000.0,
+        "Flow Duration": 45000.0, "Total Backward Packets": 160.0
+      }
+    },
+    {
+      "id": "CVE-2024-0004",
+      "title": "Outdated jQuery XSS",
+      "severity": "low",
+      "asset": "cache01",
+      "flow": {
+        "Flow Packets/s": 30.0, "Total Fwd Packets": 5.0, "Flow Bytes/s": 800.0,
+        "Flow Duration": 900000.0, "Total Backward Packets": 4.0
+      }
+    },
+    {
+      "id": "CVE-2024-0005",
+      "title": "Tomcat path traversal",
+      "severity": "high",
+      "asset": "app01",
+      "cvss": 7.5,
+      "flow": {
+        "Flow Packets/s": 300.0, "Total Fwd Packets": 25.0, "Flow Bytes/s": 9000.0,
+        "Flow Duration": 200000.0, "Total Backward Packets": 18.0
+      }
+    }
+  ]
+}

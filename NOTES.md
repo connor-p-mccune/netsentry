@@ -169,6 +169,18 @@ smaller dev-run numbers noted in earlier phases:
 - These are **synthetic** numbers (clearly labelled everywhere); the real
   CIC-IDS2017 run uses the identical commands.
 
+## Stretch S4 — vulnpipe integration
+
+- `netsentry triage` re-ranks vulnerability findings by fused risk: base severity
+  (or CVSS) + NetSentry attack probability + anomaly flag. The point is to connect
+  the two projects — vulnpipe finds holes, NetSentry says which are being leaned on.
+- On the sample findings, a **critical** CVE on a quiet host (db01) drops below two
+  **high** CVEs on hosts with attack-like traffic, and a **medium** CVE on an
+  attacked host nearly ties the critical. That is the intended behaviour: triage by
+  what's being exploited, not CVSS alone. Weights live in config (`triage.*`).
+- `VulnFinding` is a documented contract; real vulnpipe output wires in by mapping
+  severity/CVSS + asset and attaching the host's network-flow features.
+
 ## Stretch S1 — cross-dataset generalization
 
 - Added `netsentry crosseval`: score the CIC-trained bundle, unchanged, on a

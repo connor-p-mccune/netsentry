@@ -16,6 +16,9 @@ semantic versioning once released.
   NetFlow-schema foreign dataset, an adapter mapping it into the CIC feature space,
   and an honest in-domain-vs-cross report (PR-AUC + TPR@FPR + the gap, with
   sign-aware framing). Point the adapter at UNSW-NB15 / NF-*-v2 for real numbers.
+- vulnpipe integration (`netsentry triage`): re-rank vulnerability findings by a
+  fused risk score (severity/CVSS + model attack probability + anomaly flag), so a
+  CVE on a host with attack-like traffic outranks the same severity on a quiet host.
 
 ### Changed
 - Serving request metrics are now labelled by the matched route template instead of
