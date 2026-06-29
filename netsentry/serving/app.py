@@ -47,16 +47,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
 
+    def _endpoint_label(request: Request) -> str:
+        """Bounded metric label: the matched route template, not the raw URL path.
+
+        Labelling by ``request.url.path`` would let an unauthenticated caller mint
+        a fresh Prometheus time series per arbitrary (e.g. 404) path — unbounded
+        label cardinality that grows server memory without limit. The matched
+        route template keeps the label space to the handful of declared endpoints.
+        """
+        route = request.scope.get("route")
+        path = getattr(route, "path", None)
+        return path if isinstance(path, str) else "unmatched"
+
     @app.middleware("http")
     async def record_metrics(request: Request, call_next):  # type: ignore[no-untyped-def]
-        endpoint = request.url.path
         start = time.perf_counter()
         try:
             response = await call_next(request)
         except Exception:
-            M.ERROR_COUNT.labels(endpoint).inc()
+            M.ERROR_COUNT.labels(_endpoint_label(request)).inc()
             raise
         elapsed = time.perf_counter() - start
+        endpoint = _endpoint_label(request)
         M.REQUEST_LATENCY.labels(endpoint).observe(elapsed)
         M.REQUEST_COUNT.labels(endpoint, request.method, response.status_code).inc()
         logger.info(
