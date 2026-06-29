@@ -41,5 +41,8 @@ def test_train_supervised_end_to_end(
     proba = bundle.predict_proba(clean_synth.head(5))
     assert proba.shape[0] == 5
 
-    # The run was logged locally (MLflow disabled in this test).
-    assert (settings.paths.mlruns_dir / "local").exists()
+    # The run was logged locally (MLflow disabled in this test), in a sibling dir —
+    # never inside mlruns/, which the MLflow file store scans and would flag.
+    mlruns = settings.paths.mlruns_dir
+    assert mlruns.with_name(f"{mlruns.name}_local").exists()
+    assert not (mlruns / "local").exists()

@@ -3,6 +3,7 @@
 /data/
 /models/
 /mlruns/
+/mlruns_local/
 *.parquet
 *.csv
 *.pkl

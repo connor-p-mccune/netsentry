@@ -70,7 +70,11 @@ class _LocalTracker:
 
     def __init__(self, settings: Settings, run_name: str) -> None:
         stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-        self.run_dir = settings.paths.mlruns_dir / "local" / f"{run_name}_{stamp}"
+        # Write local runs to a *sibling* dir, never inside mlruns/: MLflow's file
+        # store scans mlruns/ and would flag the local-run folders as malformed
+        # experiments (noisy warnings/tracebacks once both code paths are exercised).
+        mlruns = settings.paths.mlruns_dir
+        self.run_dir = mlruns.with_name(f"{mlruns.name}_local") / f"{run_name}_{stamp}"
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self._params: dict[str, Any] = {}
         self._metrics: dict[str, float] = {}
