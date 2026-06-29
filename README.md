@@ -11,6 +11,32 @@ with explainable predictions.**
 
 ---
 
+## Project status
+
+**Complete and released — `v0.1.0`.** The build plan in
+[`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are
+implemented, tested, and committed. `make check` is green (lint + type-check +
+**64 passing tests**), and the full `download → prep → train → eval → serve`
+pipeline runs end-to-end on the bundled synthetic data.
+
+| Phase | Scope | Status |
+|---|---|---|
+| 0 | Scaffolding, config, tooling, CI | ✅ Done |
+| 1 | Data ingestion + schema + data card | ✅ Done |
+| 2 | Cleaning & EDA | ✅ Done |
+| 3 | Honest splits + leakage-safe feature pipeline | ✅ Done |
+| 4 | Baseline + LightGBM supervised model | ✅ Done |
+| 5 | Operational evaluation framework | ✅ Done |
+| 6 | Anomaly detection (Isolation Forest + autoencoder) | ✅ Done |
+| 7 | SHAP explainability | ✅ Done |
+| 8 | FastAPI serving | ✅ Done |
+| 9 | Containerization & CI | ✅ Done |
+| 10 | Docs, model card, README | ✅ Done |
+| S1–S5 | Stretch (cross-dataset, drift, Streamlit demo, …) | ⬜ Not started |
+
+Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
+release notes in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## Why this project is different
 
 Most public CIC-IDS2017 projects report ~99.9% accuracy. That number is almost
