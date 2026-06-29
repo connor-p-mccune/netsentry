@@ -240,5 +240,18 @@ def benchmark(
     run_benchmark(settings, base_url=url, n_requests=requests)
 
 
+@app.command()
+def demo(
+    port: Annotated[int, typer.Option(help="Port for the Streamlit dashboard.")] = 8501,
+) -> None:
+    """Launch the Streamlit demo dashboard (needs the demo extra: pip install '.[demo]')."""
+    import subprocess
+    import sys
+
+    dashboard = Path(__file__).resolve().parent / "demo" / "dashboard.py"
+    cmd = [sys.executable, "-m", "streamlit", "run", str(dashboard), "--server.port", str(port)]
+    raise SystemExit(subprocess.run(cmd, check=False).returncode)
+
+
 if __name__ == "__main__":
     app()

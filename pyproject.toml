@@ -54,6 +54,7 @@ train = [
   "seaborn>=0.13",
 ]
 ae = ["torch>=2.2"]
+demo = ["streamlit>=1.30"]
 notebooks = ["jupyterlab>=4.0", "ipykernel>=6.29", "nbconvert>=7.0"]
 serve = [
   "fastapi>=0.110",
@@ -71,7 +72,7 @@ dev = [
   "pre-commit>=3.7",
   "types-PyYAML>=6.0",
 ]
-all = ["netsentry[train,ae,serve,dev]"]
+all = ["netsentry[train,ae,serve,dev,demo]"]
 
 [project.scripts]
 netsentry = "netsentry.cli:app"

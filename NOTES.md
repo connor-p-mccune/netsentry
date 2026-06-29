@@ -169,6 +169,16 @@ smaller dev-run numbers noted in earlier phases:
 - These are **synthetic** numbers (clearly labelled everywhere); the real
   CIC-IDS2017 run uses the identical commands.
 
+## Stretch S3 — Streamlit demo dashboard
+
+- `netsentry demo` (or `streamlit run netsentry/demo/dashboard.py`) serves a live
+  dashboard: pick/edit a flow → verdict, attack probability, anomaly score, and the
+  SHAP top features, reusing the exact `InferenceEngine` the API uses.
+- Structured for testability: the data layer (`demo/core.py`: sample flows +
+  `predict_flow`) is Streamlit-free and unit-tested; the UI (`dashboard.py`) is
+  verified headless with Streamlit's `AppTest` (builds a tmp bundle, asserts the
+  app renders without exception). `streamlit` is an optional `demo` extra.
+
 ## Stretch S4 — vulnpipe integration
 
 - `netsentry triage` re-ranks vulnerability findings by fused risk: base severity

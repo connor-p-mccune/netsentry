@@ -34,8 +34,9 @@ pipeline runs end-to-end on the bundled synthetic data.
 | 10 | Docs, model card, README | ✅ Done |
 | S1 | Cross-dataset generalization study | ✅ Done |
 | S2 | Drift monitoring (PSI + Prometheus gauge) | ✅ Done |
+| S3 | Streamlit demo dashboard | ✅ Done |
 | S4 | vulnpipe finding triage | ✅ Done |
-| S3, S5 | Stretch (Streamlit demo, ONNX export) | ⬜ Not started |
+| S5 | ONNX export + quantized inference | ⬜ Not started |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -119,6 +120,7 @@ netsentry train supervised          # train LightGBM, log to MLflow
 netsentry train anomaly             # benign-only anomaly detector + leave-one-attack-out
 netsentry eval                      # operational metrics report + figures
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
+netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
 docker compose -f docker/docker-compose.yml up --build
 ```
@@ -145,6 +147,13 @@ regenerates the report and figures; MLflow holds params, metrics, artifacts, and
 the environment for each run. Splits are persisted with content hashes so the
 same rows never drift between train and test. Engineering decisions and
 self-audits are logged in [`NOTES.md`](NOTES.md).
+
+## Demo dashboard
+
+`netsentry demo` launches a Streamlit app: pick or edit a flow and watch the
+verdict, attack probability, anomaly score, and SHAP explanation update live — the
+inference engine and explanations behind the API, made tangible for a non-curl
+audience. Install with `pip install '.[demo]'`.
 
 ## Monitoring & drift
 

@@ -19,6 +19,9 @@ semantic versioning once released.
 - vulnpipe integration (`netsentry triage`): re-rank vulnerability findings by a
   fused risk score (severity/CVSS + model attack probability + anomaly flag), so a
   CVE on a host with attack-like traffic outranks the same severity on a quiet host.
+- Streamlit demo dashboard (`netsentry demo`): pick/edit a flow and see the live
+  verdict, anomaly score, and SHAP explanation; verified headless via Streamlit
+  AppTest. Optional `demo` extra.
 
 ### Changed
 - Serving request metrics are now labelled by the matched route template instead of
