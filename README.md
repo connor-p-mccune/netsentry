@@ -13,11 +13,13 @@ with explainable predictions.**
 
 ## Project status
 
-**Complete and released — `v0.1.0`.** The build plan in
-[`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are
-implemented, tested, and committed. `make check` is green (lint + type-check +
-**64 passing tests**), and the full `download → prep → train → eval → serve`
-pipeline runs end-to-end on the bundled synthetic data.
+**Released `v0.1.0`, and extended since.** The build plan in
+[`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
+tested, and committed, and a set of post-release capabilities (calibration,
+adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
+and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
+type-check + **123 passing tests**), and the full `download → prep → train → eval →
+serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -37,6 +39,17 @@ pipeline runs end-to-end on the bundled synthetic data.
 | S3 | Streamlit demo dashboard | ✅ Done |
 | S4 | vulnpipe finding triage | ✅ Done |
 | S5 | ONNX export + quantized inference | ✅ Done |
+
+### Beyond v0.1.0 — advanced ML-engineering capabilities
+
+| Area | What it adds | Status |
+|---|---|---|
+| Probability calibration | isotonic/Platt calibrator + reliability/Brier/ECE diagnostics | ✅ Done |
+| Adversarial robustness | mimicry + adaptive query-search evasion, robustness curves | ✅ Done |
+| Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
+| Conformal prediction | distribution-free coverage + selective alerting | ✅ Done |
+| Hyperparameter search | leakage-safe Optuna HPO (`train tune`) | ✅ Done |
+| Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -99,10 +112,30 @@ ship as a headline. Reporting the temporal number is the point.
 
 ## Architecture
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). In short: `download → clean →
-honest split → leakage-safe feature pipeline → LightGBM (known) + Isolation
-Forest/autoencoder (novel) → SHAP → MLflow`, then a FastAPI service that loads one
-pipeline+model artifact and returns predictions with explanations.
+```mermaid
+flowchart LR
+    subgraph Data
+        DL[download] --> CL[clean] --> SP[honest split<br/>temporal · stratified · LOAO]
+    end
+    SP --> FP[leakage-safe<br/>feature pipeline]
+    FP --> SUP[LightGBM<br/>known attacks]
+    FP --> ANO[IsolationForest +<br/>autoencoder · novel]
+    SUP --> CAL[probability<br/>calibration]
+    CAL --> BUNDLE[(pipeline + model +<br/>calibrator + thresholds<br/>+ drift ref · one artifact)]
+    ANO --> BUNDLE
+    SUP --> SHAP[SHAP<br/>explanations] --> BUNDLE
+    BUNDLE --> API[FastAPI<br/>/predict · /metrics]
+    API --> PROM[Prometheus] --> GRAF[Grafana]
+    BUNDLE --> EVAL[eval · cost · conformal<br/>robustness · drift · crosseval]
+    SUP -.MLflow.-> TRACK[(experiment<br/>tracking)]
+```
+
+In short: `download → clean → honest split → leakage-safe feature pipeline →
+LightGBM (known) + Isolation Forest/autoencoder (novel) → calibration → SHAP →
+MLflow`, bundled into one pipeline+model artifact that a FastAPI service loads to
+return calibrated, explained predictions — with an analysis suite (operational
+eval, cost, conformal, robustness, drift) and a Prometheus/Grafana console on top.
+Full write-up in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Tech stack
 
