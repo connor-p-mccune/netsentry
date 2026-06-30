@@ -70,6 +70,12 @@ semantic versioning once released.
   Optional `onnx` extra.
 
 ### Changed
+- The serving API now returns the conformal `prediction_set` and a
+  `recommended_action` (`auto_alert` / `auto_clear` / `review`) on every prediction,
+  and exposes a decision-theoretic `cost_optimal` threshold profile alongside the
+  fixed-FPR ones — so the calibration, cost, and conformal work is live in the
+  product surface, not only in the offline reports. Both are computed on the
+  exchangeable stratified validation split when the serving bundle is built.
 - Serving request metrics are now labelled by the matched route template instead of
   the raw URL path, bounding Prometheus label cardinality (unauthenticated callers
   could otherwise mint unbounded time series via arbitrary paths).

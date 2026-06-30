@@ -62,6 +62,18 @@ def test_predict_returns_full_contract(client) -> None:  # type: ignore[no-untyp
     assert isinstance(body["top_features"], list) and body["top_features"]
     assert set(body["top_features"][0]) == {"feature", "contribution"}
     assert 0.0 <= body["attack_probability"] <= 1.0
+    # Conformal selective-prediction outputs are part of the contract.
+    assert body["recommended_action"] in {"auto_alert", "auto_clear", "review"}
+    assert isinstance(body["prediction_set"], list)
+    assert set(body["prediction_set"]) <= {"BENIGN", "attack"}
+
+
+@pytest.mark.slow
+def test_cost_optimal_profile_is_selectable(client) -> None:  # type: ignore[no-untyped-def]
+    # The serving bundle carries a cost-optimal threshold profile alongside the FPR ones.
+    response = client.post("/predict?profile=cost_optimal", json={"flow": SAMPLE_FLOW})
+    assert response.status_code == 200
+    assert response.json()["threshold_profile"] == "cost_optimal"
 
 
 @pytest.mark.slow

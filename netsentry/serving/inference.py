@@ -51,6 +51,8 @@ class InferenceEngine:
         self.default_profile = str(
             meta.get("default_threshold_profile", settings.serving.default_threshold_profile)
         )
+        conformal = meta.get("conformal")
+        self.conformal: dict[str, float] | None = conformal if isinstance(conformal, dict) else None
         self.drift = self._build_monitor(settings)
         self.loaded_at = datetime.now(UTC).isoformat()
         logger.info(
@@ -141,6 +143,7 @@ class InferenceEngine:
             flagged_anomaly = bool(is_anomaly[i]) if is_anomaly is not None else None
             self._record_metrics(attack_prob, attacking, flagged_anomaly)
             predicted = self._predicted_class(str(argmax[i]), proba[i], classes, attacking)
+            pred_set, action = self._conformal_set(attack_prob)
             top = [
                 FeatureContribution(feature=name, contribution=value)
                 for name, value in self.explainer.explain_row(frame.iloc[[i]], top_k)
@@ -155,9 +158,32 @@ class InferenceEngine:
                     top_features=top,
                     model_version=self.version,
                     threshold_profile=profile,
+                    prediction_set=pred_set,
+                    recommended_action=action,
                 )
             )
         return responses
+
+    def _conformal_set(self, attack_prob: float) -> tuple[list[str] | None, str | None]:
+        """Conformal prediction set + recommended SOC action for one calibrated score.
+
+        Sets map to actions: a single label is auto-decided; an ambiguous (both) or
+        empty (neither, i.e. novel) set is routed to a human.
+        """
+        if self.conformal is None:
+            return None, None
+        in_benign = attack_prob <= self.conformal["tau_benign"]
+        in_attack = (1.0 - attack_prob) <= self.conformal["tau_attack"]
+        members = [
+            label for label, present in ((self.benign, in_benign), ("attack", in_attack)) if present
+        ]
+        if in_attack and not in_benign:
+            action = "auto_alert"
+        elif in_benign and not in_attack:
+            action = "auto_clear"
+        else:  # ambiguous (both) or novel (empty) -> escalate
+            action = "review"
+        return members, action
 
     def _predicted_class(
         self, argmax_label: str, proba_row: np.ndarray, classes: np.ndarray, attacking: bool

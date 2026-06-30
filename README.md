@@ -171,12 +171,16 @@ curl -X POST localhost:8000/predict -H 'content-type: application/json' \
 # → {"predicted_class":"DDoS","is_attack":true,"attack_probability":0.95,
 #    "anomaly_score":0.37,"is_anomaly":false,
 #    "top_features":[{"feature":"...","contribution":0.21}, ...],
-#    "model_version":"0.1.0","threshold_profile":"fpr_0.1pct"}
+#    "model_version":"0.1.0","threshold_profile":"fpr_0.1pct",
+#    "prediction_set":["attack"],"recommended_action":"auto_alert"}
 ```
 
 `is_attack` is the thresholded decision at the selected `threshold_profile`
-(operator-selectable via `?profile=fpr_1pct`); `attack_probability` is the raw
-score for transparency.
+(operator-selectable via `?profile=fpr_1pct` or the decision-theoretic
+`?profile=cost_optimal`); `attack_probability` is the calibrated score for
+transparency. `prediction_set` / `recommended_action` are the conformal
+selective-prediction outputs — `auto_alert`, `auto_clear`, or `review` (ambiguous or
+novel) — so the API tells a SOC not just *what* but *whether to trust it*.
 
 ## Reproducibility
 

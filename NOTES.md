@@ -261,6 +261,20 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## Serving integration of the new ML rigor
+
+- The calibration / cost / conformal work was at risk of being "report-only". Wired
+  it into the live API so it's product, not paperwork: the serving bundle now carries
+  a `cost_optimal` threshold profile and class-conditional conformal thresholds (both
+  fit on the *stratified* val split, where exchangeability makes the conformal
+  guarantee valid), and `/predict` returns a `prediction_set` + `recommended_action`
+  (auto_alert / auto_clear / review). `?profile=cost_optimal` is selectable next to
+  the FPR profiles. The conformal set uses the calibrated attack probability, so the
+  whole chain (calibrate → threshold/cost → conformal action) is consistent end to end.
+- Kept it additive and safe: new response fields are optional (old clients unaffected),
+  and the profile/conformal computation in the bundle build is wrapped so an extra
+  operating point can never break the core artifact.
+
 ## Observability stack (Prometheus + Grafana)
 
 - The API already exposed `/metrics`; this completes the loop with a Prometheus +

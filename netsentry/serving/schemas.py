@@ -61,6 +61,10 @@ class PredictionResponse(BaseModel):
     top_features: list[FeatureContribution]
     model_version: str
     threshold_profile: str
+    # Conformal selective-prediction outputs (present when the bundle carries a
+    # calibrated conformal set): the prediction set and the recommended SOC action.
+    prediction_set: list[str] | None = None
+    recommended_action: str | None = None
 
 
 class BatchResponse(BaseModel):
