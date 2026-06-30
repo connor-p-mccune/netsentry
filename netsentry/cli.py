@@ -154,6 +154,19 @@ def drift(
     logger.info("Drift report ready", extra={"path": str(out)})
 
 
+@app.command()
+def robustness(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Evaluate adversarial-evasion robustness (mimicry + adaptive query search)."""
+    from netsentry.robustness.report import run_robustness_report
+
+    settings = _load(config, override)
+    out = run_robustness_report(settings)
+    logger.info("Robustness report ready", extra={"path": str(out)})
+
+
 @app.command("crosseval")
 def crosseval(
     config: ConfigOpt = None,

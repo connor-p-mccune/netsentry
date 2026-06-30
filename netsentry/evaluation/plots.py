@@ -40,6 +40,28 @@ def _save(fig: Any, out_path: Path) -> Path:
     return out_path
 
 
+def plot_lines(
+    series: dict[str, tuple[np.ndarray, np.ndarray]],
+    *,
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    out_path: Path,
+    vlines: dict[str, float] | None = None,
+) -> Path:
+    """Generic ``name -> (x, y)`` line chart (robustness/cost/conformal curves)."""
+    plt = _plt()
+    fig, ax = plt.subplots(figsize=(6.5, 5))
+    for name, (x, y) in series.items():
+        ax.plot(np.asarray(x), np.asarray(y), marker="o", label=name)
+    for label, xpos in (vlines or {}).items():
+        ax.axvline(xpos, color="gray", linestyle=":", alpha=0.8, label=label)
+    ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
+    ax.legend()
+    ax.grid(alpha=0.3)
+    return _save(fig, out_path)
+
+
 def plot_pr_curves(curves: ScoreCurves, out_path: Path) -> Path:
     """Precision-recall curves (one line per split) — the headline comparison."""
     plt = _plt()

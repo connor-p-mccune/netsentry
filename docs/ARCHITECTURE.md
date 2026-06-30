@@ -106,6 +106,7 @@ response {class, prob, anomaly_score, is_anomaly, top_features, version}`.
 ## Out of scope (and honestly stated as such in the model card)
 
 Live packet capture / NetFlow extraction (the model consumes pre-computed flow
-features); production-grade retraining/serving infra; adversarial-evasion
-robustness. NetSentry is a rigorous reference implementation and demo, not a
-drop-in enterprise NIDS — and the model card says so.
+features); production-grade retraining/serving infra; *adversarial-evasion
+hardening* (evasion is now measured — see `docs/reports/robustness.md` — but the
+model is not yet hardened against it). NetSentry is a rigorous reference
+implementation and demo, not a drop-in enterprise NIDS — and the model card says so.

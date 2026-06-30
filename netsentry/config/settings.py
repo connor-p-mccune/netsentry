@@ -164,6 +164,65 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class RobustnessConfig(BaseModel):
+    """Adversarial-evasion evaluation: how detection degrades under an attacker.
+
+    The threat model is an attacker who shapes the *controllable* parts of a flow
+    (volume, timing, sizes — by padding, dummy packets, delays) to look benign,
+    while the protocol-structural fields stay fixed. Budgets are in standardized
+    feature-space units (the model's own scale)."""
+
+    # CIC features an attacker can plausibly manipulate without breaking the attack.
+    controllable_features: list[str] = Field(
+        default_factory=lambda: [
+            "Flow Duration",
+            "Total Fwd Packets",
+            "Total Backward Packets",
+            "Total Length of Fwd Packets",
+            "Total Length of Bwd Packets",
+            "Fwd Packet Length Max",
+            "Fwd Packet Length Min",
+            "Fwd Packet Length Mean",
+            "Fwd Packet Length Std",
+            "Bwd Packet Length Max",
+            "Bwd Packet Length Min",
+            "Bwd Packet Length Mean",
+            "Bwd Packet Length Std",
+            "Flow Bytes/s",
+            "Flow Packets/s",
+            "Flow IAT Mean",
+            "Flow IAT Std",
+            "Flow IAT Max",
+            "Flow IAT Min",
+            "Fwd IAT Total",
+            "Fwd IAT Mean",
+            "Bwd IAT Total",
+            "Bwd IAT Mean",
+            "Fwd Packets/s",
+            "Bwd Packets/s",
+            "Min Packet Length",
+            "Max Packet Length",
+            "Packet Length Mean",
+            "Packet Length Std",
+            "Down/Up Ratio",
+            "Average Packet Size",
+            "Avg Fwd Segment Size",
+            "Avg Bwd Segment Size",
+            "Subflow Fwd Packets",
+            "Subflow Fwd Bytes",
+            "Subflow Bwd Packets",
+            "Subflow Bwd Bytes",
+            "Idle Mean",
+            "Active Mean",
+        ]
+    )
+    mimicry_fractions: list[float] = Field(default_factory=lambda: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    search_budgets: list[float] = Field(default_factory=lambda: [0.0, 0.5, 1.0, 2.0, 3.0])
+    search_iterations: int = 150
+    max_attack_samples: int = 3000  # cap evaluated attack flows so the study stays fast
+    profile: str = "fpr_1pct"  # operating point the attacker tries to slip under
+
+
 class CrossDatasetConfig(BaseModel):
     """Synthetic 'foreign' (NetFlow-schema) dataset for cross-dataset generalization."""
 
@@ -225,6 +284,7 @@ class Settings(BaseSettings):
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
+    robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)

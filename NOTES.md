@@ -261,6 +261,28 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## Adversarial evasion robustness
+
+- The model card listed "not adversarially robust — not evaluated against adaptive
+  attackers" as a limitation. Turned that into a measurement: `netsentry
+  robustness` runs a **mimicry** attack (interpolate the attacker-controllable
+  features toward the benign centroid) and an **adaptive query search** (random-
+  restart, L2-bounded, on controllable features only — the right tool since trees
+  aren't differentiable), then plots detection vs effort.
+- **The result is sobering and honest.** On the synthetic temporal model, mimicry
+  drops detection 82.6% → 0% as the controllable features are moved fully toward
+  benign; the adaptive search reaches ~10% detection at an L2 budget of 3. The
+  most-exploitable single features are Flow Duration, packet counts, and flow
+  rates — exactly the SHAP top features, which is the point: the model leans on
+  spoofable volume/timing signal. This is the concrete case for the benign-only
+  anomaly detector, not a footnote.
+- **Self-audit that fired.** The first run produced perfectly flat curves
+  (detection never moved). Treated "too clean to be true" as a bug and found it:
+  `ColumnTransformer.get_feature_names_out()` prefixes names (`numeric__Flow
+  Duration`), so the controllable-feature match found nothing and every attack was
+  a silent no-op. A test (`mimicry at fraction 0 == baseline`, curves monotone)
+  caught it; fixed with a prefix-stripping `base_feature_name`.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

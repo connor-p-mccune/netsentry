@@ -195,6 +195,20 @@ exploited, not CVSS alone. Fusion weights are config (`triage.*`). See
 [`docs/reports/triage.md`](docs/reports/triage.md) and the contract in
 `netsentry/integrations/vulnpipe.py`.
 
+## Adversarial robustness
+
+A NIDS faces *adaptive* attackers, so "not adversarially robust" should be a
+measured curve, not a hand-wave. `netsentry robustness` runs two feature-space
+evasion attacks against the deployed model — a **mimicry** attack (shape the
+attacker-controllable volume/timing features toward benign) and an **adaptive
+query search** (the L2-bounded perturbation that minimizes the model's score) —
+and plots detection rate vs attacker effort. On the synthetic stand-in, full
+mimicry collapses supervised detection from **~83% to ~0%** at the 1%-FPR
+operating point, and the most-exploitable features (Flow Duration, packet counts,
+flow rates) line up with the SHAP global importances. That fragility is the
+concrete argument for pairing the classifier with the benign-only anomaly
+detector. See [`docs/reports/robustness.md`](docs/reports/robustness.md).
+
 ## ONNX export
 
 `netsentry onnx` exports the trained classifier to ONNX and benchmarks ONNX

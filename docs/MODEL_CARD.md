@@ -65,8 +65,13 @@
 - **False positives cause alert fatigue.** The binding constraint in a SOC is
   analyst time. Thresholds are tunable and the operating point (and its
   alerts/day implication) is reported explicitly rather than hidden behind an AUC.
-- **Not adversarially robust.** It is not evaluated against adaptive attackers
-  who craft flows to evade detection; do not rely on it as a sole control.
+- **Evadable by an adaptive attacker.** This *is* now evaluated (see
+  [`docs/reports/robustness.md`](reports/robustness.md)): an attacker who shapes a
+  flow's controllable volume/timing features toward benign drops the supervised
+  detection rate sharply (on the synthetic stand-in, full mimicry takes it from
+  ~83% to ~0% at the 1%-FPR operating point). This is expected for a tabular tree
+  model and is the explicit case for pairing it with the benign-only anomaly
+  detector and not relying on it as a sole control.
 - **Flow features, not packets.** It consumes pre-computed flow statistics, so it
   inherits any bias or error in the flow-extraction step.
 - **Explanations are local approximations.** SHAP values explain the model, not

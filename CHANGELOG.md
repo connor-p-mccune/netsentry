@@ -7,6 +7,14 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Adversarial-evasion robustness study (`netsentry/robustness`, `netsentry
+  robustness`): two feature-space attacks against the deployed model — a mimicry
+  attack (shape attacker-controllable volume/timing features toward benign) and an
+  adaptive L2-bounded query search — with robustness curves, a most-exploitable-
+  feature ranking, and a report. Converts the model card's "not adversarially
+  robust" caveat from an assertion into a measured curve (full mimicry takes
+  supervised detection from ~83% to ~0% on the synthetic stand-in), motivating the
+  pairing with the benign-only anomaly detector.
 - Probability calibration (`netsentry/models/calibration.py` +
   `netsentry/evaluation/calibration.py`): a monotonic isotonic/Platt calibrator
   fit on the validation split, applied to both the served `attack_probability` and
