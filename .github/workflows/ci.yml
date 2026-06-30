@@ -56,9 +56,15 @@ jobs:
         run: |
           python -m netsentry.cli download -o configs/ci.yaml
           python -m netsentry.cli prep -o configs/ci.yaml
+          python -m netsentry.cli train tune -o configs/ci.yaml --trials 3
           python -m netsentry.cli train supervised -o configs/ci.yaml
           python -m netsentry.cli eval -o configs/ci.yaml
           python -m netsentry.cli train anomaly -o configs/ci.yaml
+      - name: Analysis suite (cost · conformal · robustness)
+        run: |
+          python -m netsentry.cli cost -o configs/ci.yaml
+          python -m netsentry.cli conformal -o configs/ci.yaml
+          python -m netsentry.cli robustness -o configs/ci.yaml
       - name: Slow integration tests
         run: python -m pytest -m slow
 
