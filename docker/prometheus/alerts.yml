@@ -1,0 +1,54 @@
+# NetSentry alerting rules. These encode the operational concerns the project
+# cares about: model decay (drift), serving health, and alert-volume blowouts.
+groups:
+  - name: netsentry-model
+    rules:
+      - alert: FeatureDriftMajor
+        expr: netsentry_feature_drift_psi_max > 0.25
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Major input drift (PSI > 0.25)"
+          description: >
+            Max per-feature PSI of recent traffic vs the training reference exceeded
+            0.25 for 5m. Served traffic has drifted from training — investigate before
+            detection quality decays, and consider retraining/recalibration.
+
+      - alert: AttackRateSpike
+        expr: >
+          sum(rate(netsentry_predictions_total{decision="attack"}[5m]))
+          / clamp_min(sum(rate(netsentry_predictions_total[5m])), 1e-9) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Over half of scored flows flagged as attacks"
+          description: >
+            The attack-flag rate exceeded 50% for 10m. Either a real incident or a
+            broken/over-firing model — check the drift gauge and recent deploys.
+
+  - name: netsentry-serving
+    rules:
+      - alert: HighErrorRate
+        expr: >
+          sum(rate(netsentry_errors_total[5m]))
+          / clamp_min(sum(rate(netsentry_requests_total[5m])), 1e-9) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Serving error rate > 5%"
+          description: "More than 5% of requests errored over the last 5m."
+
+      - alert: HighLatencyP99
+        expr: >
+          histogram_quantile(
+            0.99, sum(rate(netsentry_request_latency_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p99 request latency > 500ms"
+          description: "p99 latency exceeded the 500ms SLO for 10m (SHAP is the usual cost)."

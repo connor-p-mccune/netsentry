@@ -3,7 +3,7 @@
 PY ?= python
 
 .PHONY: help install install-all lint format typecheck test test-fast check clean \
-	smoke docker-serve docker-train docker-up docker-down
+	smoke docker-serve docker-train docker-up docker-monitor docker-down
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -52,8 +52,11 @@ docker-train: ## Build the training image
 docker-up: ## Run the API via docker compose (builds a synthetic model on first run)
 	docker compose -f docker/docker-compose.yml up --build
 
-docker-down: ## Stop the compose stack
-	docker compose -f docker/docker-compose.yml down
+docker-monitor: ## Run the API + Prometheus + Grafana (dashboard at :3000, admin/admin)
+	docker compose -f docker/docker-compose.yml --profile monitoring up --build
+
+docker-down: ## Stop the compose stack (all profiles)
+	docker compose -f docker/docker-compose.yml --profile monitoring --profile tracking down
 
 clean: ## Remove caches and build artifacts
 	rm -rf .mypy_cache .ruff_cache .pytest_cache htmlcov .coverage build dist ./*.egg-info

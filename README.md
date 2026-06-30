@@ -173,6 +173,18 @@ shuffled one. In serving the same check runs continuously: `/metrics` exposes
 the drift reference travels inside the model bundle so a deployed model
 self-monitors. See [`docs/reports/drift.md`](docs/reports/drift.md).
 
+## Observability (Prometheus + Grafana)
+
+The API already exports Prometheus metrics; the stack ships a one-command
+observability story on top. `make docker-monitor` (or `docker compose --profile
+monitoring up`) brings up the API, Prometheus, and a Grafana with an
+auto-provisioned **NetSentry dashboard** — request rate, error rate, latency
+p50/p95/p99, scored-flows-by-decision, anomaly-flag rate, the **feature-drift PSI
+gauges**, and the attack-probability distribution. Prometheus
+[alert rules](docker/prometheus/alerts.yml) cover the operational risks that matter
+here: major input drift (PSI > 0.25), an attack-flag spike, error-rate, and a p99
+latency SLO. Grafana at `:3000` (admin/admin), Prometheus at `:9090`.
+
 ## Cross-dataset generalization
 
 The strongest honesty test is whether the model transfers to a *different*

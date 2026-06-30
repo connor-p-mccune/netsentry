@@ -83,3 +83,13 @@ def test_batch_and_metrics(client) -> None:  # type: ignore[no-untyped-def]
     metrics = client.get("/metrics")
     assert metrics.status_code == 200
     assert "netsentry_request_latency_seconds" in metrics.text
+
+
+@pytest.mark.slow
+def test_model_behaviour_metrics_emitted(client) -> None:  # type: ignore[no-untyped-def]
+    # Scoring a flow should populate the model-behaviour collectors the Grafana
+    # dashboard reads (predictions by decision + attack-probability histogram).
+    client.post("/predict", json={"flow": SAMPLE_FLOW})
+    text = client.get("/metrics").text
+    assert "netsentry_predictions_total" in text
+    assert "netsentry_attack_probability" in text

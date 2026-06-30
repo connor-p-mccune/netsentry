@@ -17,6 +17,40 @@ services:
       - ../data:/app/data
     restart: unless-stopped
 
+  # Observability stack (Prometheus + Grafana). Bring it up with:
+  #   docker compose -f docker/docker-compose.yml --profile monitoring up --build
+  # Grafana: http://localhost:3000 (admin/admin) with the NetSentry dashboard
+  # auto-provisioned; Prometheus: http://localhost:9090.
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+    depends_on:
+      - serve
+    profiles: ["monitoring"]
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    profiles: ["monitoring"]
+    restart: unless-stopped
+
   # Optional MLflow tracking UI. Point training at it with
   # NETSENTRY_MLFLOW__TRACKING_URI=http://mlflow:5000
   mlflow:

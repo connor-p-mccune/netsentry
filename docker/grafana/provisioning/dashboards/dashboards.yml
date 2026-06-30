@@ -1,0 +1,11 @@
+# Auto-load dashboards from the mounted dashboards directory.
+apiVersion: 1
+providers:
+  - name: NetSentry
+    orgId: 1
+    folder: NetSentry
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

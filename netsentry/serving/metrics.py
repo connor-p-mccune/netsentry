@@ -16,6 +16,18 @@ REQUEST_LATENCY = Histogram(
     "netsentry_request_latency_seconds", "Request latency in seconds", ["endpoint"]
 )
 
+# Model-behaviour metrics, so the dashboard shows what the model is *doing*, not
+# just HTTP health. Bounded cardinality (a fixed handful of series).
+PREDICTIONS = Counter(
+    "netsentry_predictions_total", "Scored flows by thresholded decision", ["decision"]
+)
+ANOMALIES = Counter("netsentry_anomalies_total", "Flows flagged anomalous by the detector")
+ATTACK_PROBABILITY = Histogram(
+    "netsentry_attack_probability",
+    "Distribution of the (calibrated) attack probability of scored flows",
+    buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0),
+)
+
 # Feature-drift gauges, refreshed once per rolling window of served flows (see
 # netsentry.monitoring). Bounded cardinality: two series, no per-feature labels.
 FEATURE_DRIFT_PSI_MAX = Gauge(

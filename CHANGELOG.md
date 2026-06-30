@@ -7,6 +7,13 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Observability stack (`docker/prometheus`, `docker/grafana`, compose `monitoring`
+  profile): Prometheus scraping the API, a pre-provisioned Grafana dashboard
+  (request/error/latency, scored-flows-by-decision, anomaly rate, feature-drift PSI
+  gauges, attack-probability distribution), and alert rules for drift, attack-rate
+  spikes, error rate, and a p99 latency SLO. New serving metrics expose model
+  behaviour (`netsentry_predictions_total`, `netsentry_anomalies_total`,
+  `netsentry_attack_probability`). One command: `make docker-monitor`.
 - Hyperparameter optimization (`netsentry/training/tune.py`, `netsentry train tune`):
   an Optuna (TPE) search over the gradient-boosted classifier, leakage-safe by
   construction (pipeline fit on train, every trial scored by validation PR-AUC, test

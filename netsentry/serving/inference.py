@@ -88,6 +88,20 @@ class InferenceEngine:
         except Exception as exc:  # drift monitoring must never break a prediction
             logger.warning("Drift observation skipped (%s)", exc)
 
+    def _record_metrics(
+        self, attack_prob: float, attacking: bool, flagged_anomaly: bool | None
+    ) -> None:
+        """Emit per-flow model-behaviour metrics (best-effort, never fatal)."""
+        try:
+            from netsentry.serving import metrics as M
+
+            M.ATTACK_PROBABILITY.observe(attack_prob)
+            M.PREDICTIONS.labels("attack" if attacking else "benign").inc()
+            if flagged_anomaly:
+                M.ANOMALIES.inc()
+        except Exception as exc:  # metrics must never break a prediction
+            logger.warning("Metric emission skipped (%s)", exc)
+
     def _frame(self, flows: list[dict[str, float]]) -> pd.DataFrame:
         """Build a feature frame with every expected column (missing -> NaN)."""
         rows = [{col: flow.get(col, np.nan) for col in self.input_columns} for flow in flows]
@@ -124,6 +138,8 @@ class InferenceEngine:
         for i in range(len(flows)):
             attack_prob = float(probs[i])
             attacking = attack_prob >= threshold
+            flagged_anomaly = bool(is_anomaly[i]) if is_anomaly is not None else None
+            self._record_metrics(attack_prob, attacking, flagged_anomaly)
             predicted = self._predicted_class(str(argmax[i]), proba[i], classes, attacking)
             top = [
                 FeatureContribution(feature=name, contribution=value)
@@ -135,7 +151,7 @@ class InferenceEngine:
                     is_attack=attacking,
                     attack_probability=attack_prob,
                     anomaly_score=float(anomaly_scores[i]) if anomaly_scores is not None else None,
-                    is_anomaly=bool(is_anomaly[i]) if is_anomaly is not None else None,
+                    is_anomaly=flagged_anomaly,
                     top_features=top,
                     model_version=self.version,
                     threshold_profile=profile,

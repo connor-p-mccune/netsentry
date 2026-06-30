@@ -261,6 +261,22 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## Observability stack (Prometheus + Grafana)
+
+- The API already exposed `/metrics`; this completes the loop with a Prometheus +
+  Grafana compose profile and a pre-provisioned dashboard, so "it has metrics"
+  becomes "here's the operations console". Added model-behaviour collectors
+  (predictions-by-decision, anomaly count, attack-probability histogram) alongside
+  the existing request/latency/drift metrics, all emitted best-effort so metrics can
+  never break a prediction and all bounded-cardinality.
+- Alert rules encode the concerns this project actually argues about: major input
+  drift (PSI > 0.25) ties straight to the drift-monitoring work; an attack-flag-rate
+  spike catches a broken/over-firing model; error-rate and a p99 latency SLO cover
+  serving health. The drift alert closes the loop from the PSI gauges to an action.
+- Couldn't run Docker in this environment, so the compose/Prometheus/Grafana YAML and
+  the dashboard JSON are validated as parseable and the metric names are covered by a
+  serving test that asserts they appear in `/metrics` after a prediction.
+
 ## Hyperparameter optimization (Optuna)
 
 - The config carried `supervised.tune` / `tune_trials` and `optuna` was a declared
