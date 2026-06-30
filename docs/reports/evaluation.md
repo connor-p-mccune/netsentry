@@ -1,6 +1,6 @@
 # NetSentry — Evaluation Report
 
-_Generated 2026-06-30 05:34 UTC. Numbers below are on
+_Generated 2026-06-30 21:55 UTC. Numbers below are on
 the **synthetic** CIC-IDS2017 stand-in unless you have run on the real dataset;
 the methodology and framing are identical either way._
 
@@ -41,6 +41,20 @@ Reporting the temporal number — and this gap — is the whole point.
 
 ![ROC curves](../figures/roc_curve.png)
 ![Threshold trade-off](../figures/threshold_curve.png)
+
+## Statistical significance (bootstrap, 95% CIs, 1,000 resamples)
+
+A point estimate invites over-reading; the headline numbers come with percentile-bootstrap intervals so the comparison can be judged, not assumed.
+
+| metric | estimate | 95% CI |
+|---|---|---|
+| PR-AUC — temporal (honest) | 0.529 | [0.518, 0.541] |
+| PR-AUC — stratified (optimistic) | 0.786 | [0.773, 0.800] |
+| detection @ 0.1% FPR (temporal) | 9.1% | [8.4%, 9.8%] |
+| detection @ 1% FPR (temporal) | 21.0% | [20.0%, 22.0%] |
+
+The over-optimism gap (stratified minus temporal) is **+0.257** (95% CI [+0.239, +0.276], bootstrap p = < 0.001) — the gap is **statistically significant**. The temporal PR-AUC interval excludes the majority baseline (0.250), so the model **beats** chance at the 95% level. This is the honest-vs-optimistic finding restated with uncertainty attached.
+
 
 ## Per-class — stratified multiclass ("name the attack")
 

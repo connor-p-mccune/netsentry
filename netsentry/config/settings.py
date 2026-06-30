@@ -172,6 +172,13 @@ class CostConfig(BaseModel):
     grid_points: int = 300  # threshold grid resolution for the cost sweep
 
 
+class EvaluationConfig(BaseModel):
+    """Uncertainty quantification for the reported metrics."""
+
+    bootstrap_samples: int = 1000  # resamples for metric confidence intervals
+    bootstrap_alpha: float = 0.05  # 1 - alpha is the CI level (0.05 -> 95%)
+
+
 class ConformalConfig(BaseModel):
     """Split-conformal prediction: distribution-free coverage + selective alerting.
 
@@ -314,6 +321,7 @@ class Settings(BaseSettings):
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     cost: CostConfig = Field(default_factory=CostConfig)
+    evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)

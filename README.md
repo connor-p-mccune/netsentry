@@ -108,7 +108,11 @@ NetSentry is built to be the project that does it right:
 
 The optimistic shuffled split scores markedly higher than the honest temporal
 split. **That gap is the finding** — it is the over-optimism most CIC-IDS write-ups
-ship as a headline. Reporting the temporal number is the point.
+ship as a headline. Reporting the temporal number is the point. The gap is
+**statistically significant** (bootstrap 95% CI [+0.239, +0.276], p < 0.001), and
+the temporal PR-AUC interval excludes the majority baseline — the report carries
+percentile-bootstrap CIs for every headline metric so the comparison is judged, not
+assumed.
 
 ## Architecture
 

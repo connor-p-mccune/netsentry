@@ -261,6 +261,24 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## Statistical significance (bootstrap CIs)
+
+- The project's whole claim is the *gap* between the honest temporal split and the
+  optimistic stratified one. A single number invites over-reading, so the gap now
+  carries a percentile-bootstrap CI and a p-value, and PR-AUC / TPR@FPR carry CIs.
+- Got the comparison *shape* right: model-vs-baseline on one test set is **paired**
+  (resample indices once, score both), but temporal-vs-stratified is across **two
+  different test sets**, so it's an **independent** bootstrap (resample each, take the
+  difference). Conflating the two is a common stats slip.
+- Synthetic result: gap +0.257, 95% CI [+0.239, +0.276], p < 0.001, and the temporal
+  PR-AUC CI [0.518, 0.541] excludes the majority baseline (0.250). The headline now
+  reads as "significantly better than chance, and significantly worse than the
+  optimistic split" — both halves of the honesty story, with uncertainty attached.
+- A test caught an over-strict assertion: two independent draws from the *same*
+  distribution still have a fixed finite-sample gap, so "no gap" isn't guaranteed for
+  arbitrary seeds; the regression test compares a set against itself (symmetric about
+  zero) instead.
+
 ## Serving integration of the new ML rigor
 
 - The calibration / cost / conformal work was at risk of being "report-only". Wired

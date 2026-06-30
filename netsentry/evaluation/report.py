@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 from netsentry.data.split import load_split
+from netsentry.evaluation import confidence as C
 from netsentry.evaluation import metrics as M
 from netsentry.evaluation import plots
 from netsentry.evaluation.calibration import calibration_summary
@@ -112,6 +113,7 @@ def run_evaluation(settings: Settings) -> Path:
 
     operating_md, operating_metrics = _operating_table(headline, settings)
     per_class_md = _per_class_table(multiclass)
+    confidence_md, confidence_metrics = _confidence_section(settings, headline, reference)
     calibration_md, reliability_fig, calibration_metrics = _calibration_section(settings, headline)
     explain_md, shap_fig = _explain_section(settings, headline)
 
@@ -124,6 +126,7 @@ def run_evaluation(settings: Settings) -> Path:
         gap=gap,
         operating_md=operating_md,
         per_class_md=per_class_md,
+        confidence_md=confidence_md,
         calibration_md=calibration_md,
         explain_md=explain_md,
         figures=figures,
@@ -141,6 +144,7 @@ def run_evaluation(settings: Settings) -> Path:
                 "pr_auc_gap": gap,
                 **{f"headline_{k}": v for k, v in operating_metrics.items()},
                 **calibration_metrics,
+                **confidence_metrics,
             }
         )
         artifacts = [pr_fig, roc_fig, thr_fig, cm_fig, out_path]
@@ -152,6 +156,61 @@ def run_evaluation(settings: Settings) -> Path:
             run.log_artifact(fig)
 
     return out_path
+
+
+def _confidence_section(
+    settings: Settings, headline: FitResult, reference: FitResult
+) -> tuple[str, dict[str, float]]:
+    """Bootstrap CIs for PR-AUC and TPR@FPR, plus a significance test on the gap."""
+    cfg = settings.evaluation
+    n_boot, alpha, seed = cfg.bootstrap_samples, cfg.bootstrap_alpha, settings.seed
+    level = round((1 - alpha) * 100)
+
+    y_val, s_val, y_test, s_test = _binary_scores(headline)
+    _, _, r_y_test, r_s_test = _binary_scores(reference)
+
+    pr_h = C.bootstrap_ci(y_test, s_test, C.pr_auc, n_boot=n_boot, alpha=alpha, seed=seed)
+    pr_r = C.bootstrap_ci(r_y_test, r_s_test, C.pr_auc, n_boot=n_boot, alpha=alpha, seed=seed)
+    gap = C.independent_diff(
+        y_test, s_test, r_y_test, r_s_test, C.pr_auc, n_boot=n_boot, alpha=alpha, seed=seed
+    )
+
+    rows = [
+        f"| metric | estimate | {level}% CI |",
+        "|---|---|---|",
+        f"| PR-AUC — temporal (honest) | {pr_h.point:.3f} | [{pr_h.low:.3f}, {pr_h.high:.3f}] |",
+        f"| PR-AUC — stratified (optimistic) | {pr_r.point:.3f} | "
+        f"[{pr_r.low:.3f}, {pr_r.high:.3f}] |",
+    ]
+    logged = {"pr_auc_temporal_ci_low": pr_h.low, "pr_auc_gap_p_value": gap.p_value}
+    for fpr in settings.thresholds.fpr_targets:
+        thr = M.threshold_at_fpr(y_val, s_val, fpr)
+        ci = C.bootstrap_ci(
+            y_test, s_test, C.tpr_at_threshold(thr), n_boot=n_boot, alpha=alpha, seed=seed
+        )
+        rows.append(
+            f"| detection @ {fpr * 100:g}% FPR (temporal) | {ci.point * 100:.1f}% | "
+            f"[{ci.low * 100:.1f}%, {ci.high * 100:.1f}%] |"
+        )
+        logged[f"tpr_at_fpr_{fpr}_ci_low"] = ci.low
+
+    maj = headline.baselines["majority"]["pr_auc"]
+    p_str = f"{gap.p_value:.3f}" if gap.p_value > 0 else f"< {1 / n_boot:.3f}"
+    sig = "statistically significant" if gap.low > 0 else "not statistically significant"
+    beats = "excludes" if pr_h.low > maj else "includes"
+    verdict = "beats" if pr_h.low > maj else "does not clearly beat"
+    md = (
+        f"## Statistical significance (bootstrap, {level}% CIs, {n_boot:,} resamples)\n\n"
+        "A point estimate invites over-reading; the headline numbers come with "
+        "percentile-bootstrap intervals so the comparison can be judged, not assumed.\n\n"
+        f"{chr(10).join(rows)}\n\n"
+        f"The over-optimism gap (stratified minus temporal) is **{gap.diff:+.3f}** "
+        f"({level}% CI [{gap.low:+.3f}, {gap.high:+.3f}], bootstrap p = {p_str}) — the gap "
+        f"is **{sig}**. The temporal PR-AUC interval {beats} the majority baseline "
+        f"({maj:.3f}), so the model **{verdict}** chance at the {level}% level. This is the "
+        "honest-vs-optimistic finding restated with uncertainty attached.\n"
+    )
+    return md, logged
 
 
 def _calibration_section(
@@ -243,6 +302,7 @@ def _render_markdown(
     gap: float,
     operating_md: str,
     per_class_md: str,
+    confidence_md: str,
     calibration_md: str,
     explain_md: str,
     figures: dict[str, Path],
@@ -289,6 +349,8 @@ Reporting the temporal number — and this gap — is the whole point.
 
 ![ROC curves]({fig_rel['roc'].as_posix()})
 ![Threshold trade-off]({fig_rel['threshold'].as_posix()})
+
+{confidence_md}
 
 ## Per-class — stratified multiclass ("name the attack")
 

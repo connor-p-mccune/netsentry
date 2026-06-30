@@ -7,6 +7,12 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Bootstrap confidence intervals + significance tests (`netsentry/evaluation/
+  confidence.py`): the evaluation report now gives PR-AUC and TPR@FPR percentile-
+  bootstrap CIs, and the temporal-vs-stratified over-optimism gap comes with a CI and
+  a bootstrap p-value — so the project's headline finding is backed by statistics,
+  not a point estimate (on the synthetic stand-in: gap +0.257, 95% CI
+  [+0.239, +0.276], p < 0.001).
 - One-command analysis suite (`netsentry analyze`, `make analysis`,
   `netsentry/evaluation/analyze.py`): regenerates every model-analysis report
   (operational eval + calibration, cost, conformal, robustness, drift) and writes a
