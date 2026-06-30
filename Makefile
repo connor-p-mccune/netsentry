@@ -3,7 +3,7 @@
 PY ?= python
 
 .PHONY: help install install-all lint format typecheck test test-fast check clean \
-	smoke docker-serve docker-train docker-up docker-monitor docker-down
+	smoke analysis docker-serve docker-train docker-up docker-monitor docker-down
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -42,6 +42,9 @@ smoke: ## Run the full pipeline on a tiny synthetic dataset
 	$(PY) -m netsentry.cli prep -o configs/ci.yaml
 	$(PY) -m netsentry.cli train supervised -o configs/ci.yaml
 	$(PY) -m netsentry.cli eval -o configs/ci.yaml
+
+analysis: ## Regenerate every analysis report + the index (needs prep first)
+	$(PY) -m netsentry.cli analyze
 
 docker-serve: ## Build the serving image
 	docker build -f docker/Dockerfile.serve -t netsentry-serve .

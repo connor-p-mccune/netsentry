@@ -218,6 +218,19 @@ def conformal(
     logger.info("Conformal report ready", extra={"path": str(out)})
 
 
+@app.command()
+def analyze(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Run the full analysis suite (eval, cost, conformal, robustness, drift) + index."""
+    from netsentry.evaluation.analyze import run_full_analysis
+
+    settings = _load(config, override)
+    out = run_full_analysis(settings)
+    logger.info("Analysis index ready", extra={"path": str(out)})
+
+
 @app.command("crosseval")
 def crosseval(
     config: ConfigOpt = None,

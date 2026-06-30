@@ -184,11 +184,14 @@ novel) — so the API tells a SOC not just *what* but *whether to trust it*.
 
 ## Reproducibility
 
-Every result is reproducible from a logged config + seed. `netsentry eval`
-regenerates the report and figures; MLflow holds params, metrics, artifacts, and
-the environment for each run. Splits are persisted with content hashes so the
-same rows never drift between train and test. Engineering decisions and
-self-audits are logged in [`NOTES.md`](NOTES.md).
+Every result is reproducible from a logged config + seed. `netsentry analyze`
+regenerates the **entire analysis suite** in one command — operational evaluation,
+calibration, cost, conformal, robustness, and drift — with a linked
+[`docs/reports/INDEX.md`](docs/reports); `netsentry eval` regenerates just the
+headline report and figures. MLflow holds params, metrics, artifacts, and the
+environment for each run. Splits are persisted with content hashes so the same rows
+never drift between train and test. Engineering decisions and self-audits are logged
+in [`NOTES.md`](NOTES.md).
 
 ## Demo dashboard
 

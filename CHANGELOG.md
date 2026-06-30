@@ -7,6 +7,11 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- One-command analysis suite (`netsentry analyze`, `make analysis`,
+  `netsentry/evaluation/analyze.py`): regenerates every model-analysis report
+  (operational eval + calibration, cost, conformal, robustness, drift) and writes a
+  linked `docs/reports/INDEX.md` with per-report status, each run defensively so one
+  failure does not abort the rest.
 - Observability stack (`docker/prometheus`, `docker/grafana`, compose `monitoring`
   profile): Prometheus scraping the API, a pre-provisioned Grafana dashboard
   (request/error/latency, scored-flows-by-decision, anomaly rate, feature-drift PSI

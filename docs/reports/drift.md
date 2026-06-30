@@ -1,6 +1,6 @@
 # NetSentry — Drift Report
 
-_Generated 2026-06-29 22:36 UTC. Reference: `train.parquet` vs current: `test.parquet`._
+_Generated 2026-06-30 05:38 UTC. Reference: `train.parquet` vs current: `test.parquet`._
 
 Population Stability Index (PSI) per feature. Reading: **< 0.1** no
 meaningful shift, **0.1-0.25** moderate, **>= 0.25**
@@ -11,7 +11,7 @@ major drift worth investigating.
 - **Max feature PSI: 0.1133** (moderate)
 - Mean feature PSI: 0.0038
 - Features with at least moderate drift: 1 / 76
-- **Score drift (model output PSI): 0.1600** (moderate)
+- **Score drift (model output PSI): 0.0168** (none)
 
 ## Per-feature PSI (top 20)
 
