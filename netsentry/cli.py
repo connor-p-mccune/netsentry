@@ -108,6 +108,31 @@ def train_supervised_cmd(
     train_supervised(settings)
 
 
+@train_app.command("tune")
+def tune_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    trials: Annotated[
+        int | None, typer.Option(help="Number of search trials (overrides config).")
+    ] = None,
+    out: Annotated[
+        Path, typer.Option(help="Where to write the tuned-params YAML override.")
+    ] = Path("configs/tuned.yaml"),
+) -> None:
+    """Search supervised hyperparameters on validation (Optuna; test untouched)."""
+    from netsentry.training.tune import tune_supervised, write_tuned_config
+
+    settings = _load(config, override)
+    if trials is not None:
+        settings.supervised.tune_trials = trials
+    result = tune_supervised(settings)
+    write_tuned_config(result, out)
+    logger.info(
+        "Tuning done",
+        extra={"best_val_pr_auc": round(result.best_value, 4), "out": str(out)},
+    )
+
+
 @train_app.command("anomaly")
 def train_anomaly_cmd(
     config: ConfigOpt = None,

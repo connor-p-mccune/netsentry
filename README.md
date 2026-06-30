@@ -120,6 +120,7 @@ anywhere and the pipeline degrades rather than breaks.
 make install                        # editable install + dev/train extras + hooks
 netsentry download                  # fetch CIC-IDS2017 (or generate synthetic data)
 netsentry prep                      # clean + honest splits + persisted features
+netsentry train tune                # Optuna HPO on validation (writes configs/tuned.yaml)
 netsentry train supervised          # train LightGBM, log to MLflow
 netsentry train anomaly             # benign-only anomaly detector + leave-one-attack-out
 netsentry eval                      # operational metrics report + figures

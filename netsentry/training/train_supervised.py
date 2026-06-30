@@ -184,6 +184,15 @@ def fit_supervised(settings: Settings) -> FitResult:
 
 def train_supervised(settings: Settings) -> dict[str, Any]:
     """Run supervised training end-to-end; persist the bundle and log the run."""
+    if settings.supervised.tune:
+        from netsentry.training.tune import apply_params, tune_supervised
+
+        tuned = tune_supervised(settings)
+        logger.info(
+            "Applying tuned hyperparameters",
+            extra={"best_val_pr_auc": round(tuned.best_value, 4), "method": tuned.method},
+        )
+        settings = apply_params(settings, tuned.best_params)
     result = fit_supervised(settings)
     bundle = result.bundle
     task, strategy = result.task, result.strategy

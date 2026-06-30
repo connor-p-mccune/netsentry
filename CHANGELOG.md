@@ -7,6 +7,12 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Hyperparameter optimization (`netsentry/training/tune.py`, `netsentry train tune`):
+  an Optuna (TPE) search over the gradient-boosted classifier, leakage-safe by
+  construction (pipeline fit on train, every trial scored by validation PR-AUC, test
+  never touched), with a seeded random-search fallback when Optuna is absent. Wires
+  the previously-unused `supervised.tune` / `tune_trials` config and writes the best
+  params to a YAML override (`configs/tuned.yaml`) for a reproducible retrain.
 - Conformal prediction & selective alerting (`netsentry/evaluation/conformal.py`,
   `netsentry conformal`): class-conditional split-conformal prediction sets with a
   finite-sample, distribution-free coverage guarantee, mapped to SOC actions

@@ -261,6 +261,19 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## Hyperparameter optimization (Optuna)
+
+- The config carried `supervised.tune` / `tune_trials` and `optuna` was a declared
+  dependency, but nothing used them. Wired it: `netsentry train tune` runs a TPE
+  study and `train supervised` honours the flag.
+- **Leakage discipline is the whole point here.** The pipeline is fit on train, each
+  trial trains on train with early stopping on validation and is scored by validation
+  PR-AUC, and the test split is never read during the search — tuning against test is
+  the most common silent leak in "I got 0.99" write-ups. The search is also seeded
+  (TPE sampler seed + a seeded random-search fallback) so a study reproduces.
+- Output is a `configs/tuned.yaml` override (with `tune: false` baked in so reusing
+  it doesn't recurse), keeping the workflow config-driven rather than mutating code.
+
 ## Conformal prediction & selective alerting
 
 - Added class-conditional (Mondrian) split-conformal: a per-flow prediction set with
