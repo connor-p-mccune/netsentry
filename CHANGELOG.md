@@ -7,6 +7,12 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Cost-sensitive threshold selection (`netsentry/evaluation/cost.py`, `netsentry
+  cost`): a decision-theoretic operating point that minimises expected cost
+  (analyst time per alert vs expected loss per missed attack), the closed-form
+  Bayes threshold for a calibrated probability, a production-base-rate daily-cost
+  extrapolation, and a comparison against the fixed-FPR profiles. Builds directly
+  on the calibrated score; surfaces the val→test temporal drift in threshold choice.
 - Adversarial-evasion robustness study (`netsentry/robustness`, `netsentry
   robustness`): two feature-space attacks against the deployed model — a mimicry
   attack (shape attacker-controllable volume/timing features toward benign) and an

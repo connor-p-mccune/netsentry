@@ -261,6 +261,27 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## Cost-sensitive thresholds (SOC economics)
+
+- A fixed-FPR threshold is honest but arbitrary. Attaching a cost to each outcome
+  (analyst time per alert, expected loss per miss) makes the operating point a
+  decision-theoretic optimum. The closed form for a *calibrated* probability —
+  alert iff `p >= cost_per_alert/cost_per_miss` — is the clean tie-in to the
+  calibration work: the threshold only means something if the score is a probability.
+- **Two subtleties I had to get right rather than hand-wave:**
+  1. The synthetic test split is ~22% attack, absurdly higher than production. Using
+     that base rate makes "alert almost everything" optimal (degenerate). Fixed by
+     costing at a configurable production prior (default 1%) via base-rate-reweighted
+     conditional TPR/FPR — the correct way to extrapolate a test set to deployment.
+     Under reweighting the optimal *single* threshold is no longer the closed form
+     (the benign pool dominates the FP cost), so I scoped that claim instead of
+     overstating it.
+  2. The val-chosen cost-optimal threshold does **not** always win on test — on the
+     synthetic run the fixed-1%-FPR point edges it, because validation (earlier days)
+     and test (later days) differ. Rather than paper over the contradiction, the
+     report states it: operating points drift on later-day traffic, the very effect
+     the temporal split is built to expose. Re-tune on recent data in prod.
+
 ## Adversarial evasion robustness
 
 - The model card listed "not adversarially robust — not evaluated against adaptive

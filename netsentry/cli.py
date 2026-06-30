@@ -167,6 +167,19 @@ def robustness(
     logger.info("Robustness report ready", extra={"path": str(out)})
 
 
+@app.command()
+def cost(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Find the cost-optimal decision threshold (SOC economics) and write the report."""
+    from netsentry.evaluation.cost import run_cost_report
+
+    settings = _load(config, override)
+    out = run_cost_report(settings)
+    logger.info("Cost report ready", extra={"path": str(out)})
+
+
 @app.command("crosseval")
 def crosseval(
     config: ConfigOpt = None,

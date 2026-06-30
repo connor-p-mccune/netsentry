@@ -195,6 +195,19 @@ exploited, not CVSS alone. Fusion weights are config (`triage.*`). See
 [`docs/reports/triage.md`](docs/reports/triage.md) and the contract in
 `netsentry/integrations/vulnpipe.py`.
 
+## Cost-sensitive thresholds
+
+A 0.1%-FPR budget is honest but arbitrary. `netsentry cost` attaches a cost to each
+outcome — analyst time per alert, expected loss per missed attack — and picks the
+threshold that minimises **expected cost**, the decision a SOC actually faces. For a
+calibrated probability the per-flow optimum has a closed form (`p ≥
+cost_per_alert/cost_per_miss`), the daily figures are extrapolated at a realistic
+production base rate (not the synthetic 22%), and the cost-optimal point is compared
+against the fixed-FPR profiles. The run also surfaces an honest wrinkle — a threshold
+tuned on validation (earlier days) can drift on the later-day test set, the same
+temporal effect the headline split exposes. See
+[`docs/reports/cost.md`](docs/reports/cost.md).
+
 ## Adversarial robustness
 
 A NIDS faces *adaptive* attackers, so "not adversarially robust" should be a

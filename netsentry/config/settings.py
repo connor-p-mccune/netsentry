@@ -154,6 +154,24 @@ class ThresholdConfig(BaseModel):
     calibration_method: Literal["isotonic", "sigmoid"] = "isotonic"
 
 
+class CostConfig(BaseModel):
+    """Cost model for decision-theoretic threshold selection (the SOC economics).
+
+    Every raised alert costs analyst time; every missed attack costs an expected
+    loss. The cost-optimal threshold minimises total expected cost — a more
+    defensible operating point than a round-number FPR. Values are illustrative
+    and meant to be overridden per deployment."""
+
+    cost_per_alert: float = 25.0  # triage cost of any raised alert (analyst time)
+    cost_per_miss: float = 500.0  # expected loss from a missed attack flow
+    # Production attack base rate for the daily extrapolation. The synthetic test
+    # split is ~22% attack, which is wildly higher than real traffic; using a
+    # realistic prior keeps alerts/day and $/day from being degenerate.
+    production_attack_rate: float = 0.01
+    currency: str = "$"
+    grid_points: int = 300  # threshold grid resolution for the cost sweep
+
+
 class MonitoringConfig(BaseModel):
     """Data-drift monitoring (PSI) — the production-decay early-warning system."""
 
@@ -283,6 +301,7 @@ class Settings(BaseSettings):
     supervised: SupervisedConfig = Field(default_factory=SupervisedConfig)
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
+    cost: CostConfig = Field(default_factory=CostConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
