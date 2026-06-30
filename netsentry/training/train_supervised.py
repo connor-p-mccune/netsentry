@@ -23,6 +23,7 @@ from netsentry.evaluation.metrics import attack_probability, threshold_at_fpr
 from netsentry.features.feature_sets import model_features
 from netsentry.features.pipeline import build_pipeline
 from netsentry.log import get_logger
+from netsentry.models.calibration import ProbabilityCalibrator, fit_calibrator
 from netsentry.models.registry import ModelBundle, save_bundle
 from netsentry.models.supervised import SupervisedClassifier, build_baselines
 from netsentry.seed import seed_everything
@@ -58,17 +59,31 @@ def _profile_name(fpr: float) -> str:
     return f"fpr_{fpr * 100:g}pct"
 
 
-def _threshold_profiles(
-    settings: Settings, task: str, y_val: np.ndarray, proba_val: np.ndarray, classes: np.ndarray
-) -> dict[str, float]:
-    """Attack-probability thresholds calibrated on validation at each target FPR."""
+def _binary_val_target(settings: Settings, task: str, y_val: np.ndarray) -> np.ndarray:
+    """Attack/benign indicator for the validation rows, for either task."""
     benign = settings.labels.benign_label
-    probs = attack_probability(proba_val, classes, benign)
-    y_bin = y_val.astype(int) if task == "binary" else (y_val.astype(str) != benign).astype(int)
-    return {
-        _profile_name(fpr): threshold_at_fpr(y_bin, probs, fpr)
+    return y_val.astype(int) if task == "binary" else (y_val.astype(str) != benign).astype(int)
+
+
+def _calibrate_and_threshold(
+    settings: Settings, task: str, y_val: np.ndarray, proba_val: np.ndarray, classes: np.ndarray
+) -> tuple[dict[str, float], ProbabilityCalibrator | None]:
+    """Fit the probability calibrator (if enabled) and pick FPR thresholds on it.
+
+    Thresholds are chosen on the **calibrated** validation scores, so serving can
+    apply the same calibrator and compare like-for-like. Because calibration is
+    monotonic the chosen operating points are identical in TPR/FPR to the raw ones
+    — only the numeric threshold (and the reported probability) becomes meaningful.
+    """
+    raw = attack_probability(proba_val, classes, settings.labels.benign_label)
+    y_bin = _binary_val_target(settings, task, y_val)
+    calibrator = fit_calibrator(settings, raw, y_bin)
+    scores = calibrator.transform(raw) if calibrator is not None else raw
+    thresholds = {
+        _profile_name(fpr): threshold_at_fpr(y_bin, scores, fpr)
         for fpr in settings.thresholds.fpr_targets
     }
+    return thresholds, calibrator
 
 
 def quick_metrics(
@@ -126,7 +141,9 @@ def fit_supervised(settings: Settings) -> FitResult:
     proba_val = model.predict_proba(x_val)
     proba_test = model.predict_proba(x_test)
     metrics = quick_metrics(y_test, proba_test, model.classes_, task)
-    thresholds = _threshold_profiles(settings, task, y_val, proba_val, model.classes_)
+    thresholds, calibrator = _calibrate_and_threshold(
+        settings, task, y_val, proba_val, model.classes_
+    )
 
     bundle = ModelBundle(
         pipeline=pipeline,
@@ -144,8 +161,13 @@ def fit_supervised(settings: Settings) -> FitResult:
             "n_train": len(y_train),
             "created_at": datetime.now(UTC).isoformat(),
             "metrics": metrics,
+            "calibration": {
+                "enabled": calibrator is not None,
+                "method": calibrator.method if calibrator is not None else None,
+            },
         },
         thresholds=thresholds,
+        calibrator=calibrator,
     )
     return FitResult(
         bundle=bundle,

@@ -7,6 +7,14 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Probability calibration (`netsentry/models/calibration.py` +
+  `netsentry/evaluation/calibration.py`): a monotonic isotonic/Platt calibrator
+  fit on the validation split, applied to both the served `attack_probability` and
+  the FPR decision thresholds, plus reliability-diagram / Brier / ECE / MCE
+  diagnostics in the evaluation report. Closes the `ml.md` §4 requirement that
+  threshold claims be backed by calibrated probabilities (the `thresholds.calibrate`
+  config flag is now wired). Because the map is monotonic it preserves ranking, so
+  PR-AUC/TPR@FPR are unaffected — only the meaning of the probability improves.
 - Drift monitoring (`netsentry/monitoring`): a Population Stability Index (PSI)
   implementation, a `netsentry drift` report contrasting a current dataset with a
   reference (feature drift + model-score drift; default temporal test-vs-train),

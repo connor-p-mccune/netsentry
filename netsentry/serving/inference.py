@@ -108,6 +108,9 @@ class InferenceEngine:
         proba = self.bundle.predict_proba(frame)
         classes = self.bundle.classes
         probs = attack_probability(proba, classes, self.benign)
+        if self.bundle.calibrator is not None:
+            # Thresholds live on the calibrated scale; calibrate before comparing.
+            probs = self.bundle.calibrator.transform(probs)
         threshold = self.bundle.thresholds.get(profile, 0.5)
         argmax = classes[proba.argmax(axis=1)]
 

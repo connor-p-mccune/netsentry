@@ -90,6 +90,32 @@ def plot_threshold_curve(y_true: np.ndarray, scores: np.ndarray, out_path: Path)
     return _save(fig, out_path)
 
 
+def plot_reliability_curve(curves: ScoreCurves, out_path: Path, n_bins: int = 10) -> Path:
+    """Reliability diagram: mean predicted probability vs observed frequency.
+
+    A perfectly calibrated score lies on the diagonal; bowing below it means the
+    score is over-confident. One line per series (e.g. raw vs calibrated).
+    """
+    from netsentry.evaluation.calibration import reliability_curve
+
+    plt = _plt()
+    fig, ax = plt.subplots(figsize=(6, 5))
+    ax.plot([0, 1], [0, 1], "k--", alpha=0.4, label="perfectly calibrated")
+    for name, (y_true, scores) in curves.items():
+        mean_pred, observed, _ = reliability_curve(y_true, scores, n_bins)
+        ax.plot(mean_pred, observed, marker="o", label=name)
+    ax.set(
+        xlabel="Mean predicted probability",
+        ylabel="Observed attack frequency",
+        title="Reliability diagram",
+    )
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.legend(loc="upper left")
+    ax.grid(alpha=0.3)
+    return _save(fig, out_path)
+
+
 def plot_confusion_matrix(cm: np.ndarray, labels: list[str], out_path: Path) -> Path:
     """Row-normalised confusion matrix heatmap."""
     plt = _plt()

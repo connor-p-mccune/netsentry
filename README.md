@@ -60,6 +60,10 @@ NetSentry is built to be the project that does it right:
 - **Detects the unknown** — a benign-only anomaly detector flags attack classes
   the supervised model never trained on (leave-one-attack-out).
 - **Explainable** — every prediction returns the top contributing features (SHAP).
+- **Calibrated** — tree scores are not probabilities, so the attack probability is
+  passed through a monotonic isotonic/Platt calibrator (fit on validation); the
+  report shows the reliability diagram and the Brier/ECE/MCE drop. A reported
+  probability and an FP budget only mean something once the score is calibrated.
 
 > ### ⚠️ A note on the numbers below
 > The CIC-IDS2017 dataset requires registration with the CIC and is not shipped

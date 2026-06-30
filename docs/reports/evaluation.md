@@ -1,6 +1,6 @@
 # NetSentry — Evaluation Report
 
-_Generated 2026-06-25 16:14 UTC. Numbers below are on
+_Generated 2026-06-30 04:02 UTC. Numbers below are on
 the **synthetic** CIC-IDS2017 stand-in unless you have run on the real dataset;
 the methodology and framing are identical either way._
 
@@ -67,6 +67,19 @@ disjoint across the day boundary.
 | **weighted avg** | 0.83 | 0.86 | 0.84 | |
 
 ![Confusion matrix](../figures/confusion_matrix.png)
+
+## Probability calibration
+
+Gradient-boosted scores rank well but are **not probabilities** — a raw score of 0.9 need not mean a 90% attack rate. We fit **isotonic** calibration on the validation split and apply it to the served probability and the decision thresholds. Test-set diagnostics (lower is better):
+
+| score | Brier ↓ | ECE ↓ | MCE ↓ |
+|---|---|---|---|
+| raw tree output | 0.1746 | 0.1206 | 0.3149 |
+| **calibrated (isotonic)** | **0.1708** | **0.1057** | **0.1377** |
+
+The map is monotonic, so it preserves the ranking of flows — the PR-AUC above is the model's discriminative power either way. Calibration changes only how that score maps to a probability, which is what makes a stated FP budget or a reported `attack_probability` trustworthy.
+
+![Reliability diagram](../figures/reliability_curve.png)
 
 ## Explainability — SHAP global importance
 

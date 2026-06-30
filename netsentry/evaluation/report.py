@@ -16,6 +16,7 @@ import numpy as np
 from netsentry.data.split import load_split
 from netsentry.evaluation import metrics as M
 from netsentry.evaluation import plots
+from netsentry.evaluation.calibration import calibration_summary
 from netsentry.explain.shap_explainer import ShapExplainer
 from netsentry.log import get_logger
 from netsentry.training.tracking import track_run
@@ -111,6 +112,7 @@ def run_evaluation(settings: Settings) -> Path:
 
     operating_md, operating_metrics = _operating_table(headline, settings)
     per_class_md = _per_class_table(multiclass)
+    calibration_md, reliability_fig, calibration_metrics = _calibration_section(settings, headline)
     explain_md, shap_fig = _explain_section(settings, headline)
 
     figures = {"pr": pr_fig, "roc": roc_fig, "threshold": thr_fig, "confusion": cm_fig}
@@ -122,6 +124,7 @@ def run_evaluation(settings: Settings) -> Path:
         gap=gap,
         operating_md=operating_md,
         per_class_md=per_class_md,
+        calibration_md=calibration_md,
         explain_md=explain_md,
         figures=figures,
     )
@@ -137,15 +140,74 @@ def run_evaluation(settings: Settings) -> Path:
                 "reference_pr_auc": reference_pr["pr_auc"],
                 "pr_auc_gap": gap,
                 **{f"headline_{k}": v for k, v in operating_metrics.items()},
+                **calibration_metrics,
             }
         )
         artifacts = [pr_fig, roc_fig, thr_fig, cm_fig, out_path]
+        if reliability_fig is not None:
+            artifacts.append(reliability_fig)
         if shap_fig is not None:
             artifacts.append(shap_fig)
         for fig in artifacts:
             run.log_artifact(fig)
 
     return out_path
+
+
+def _calibration_section(
+    settings: Settings, headline: FitResult
+) -> tuple[str, Path | None, dict[str, float]]:
+    """Calibration diagnostics (Brier/ECE/MCE) on the headline test scores.
+
+    Reports raw vs calibrated because tree scores are not probabilities; the
+    calibrator is monotonic, so this changes the *meaning* of the score, not the
+    ranking (PR-AUC/TPR@FPR above are unaffected).
+    """
+    y_test, raw = headline.y_test.astype(int), M.positive_scores(
+        headline.proba_test, headline.classes
+    )
+    calibrator = headline.bundle.calibrator
+    if calibrator is None:
+        return ("", None, {})
+    calibrated = calibrator.transform(raw)
+    raw_m = calibration_summary(y_test, raw, settings.monitoring.psi_bins)
+    cal_m = calibration_summary(y_test, calibrated, settings.monitoring.psi_bins)
+
+    fig = plots.plot_reliability_curve(
+        {
+            "raw tree score": (y_test, raw),
+            f"calibrated ({calibrator.method})": (y_test, calibrated),
+        },
+        settings.paths.figures_dir / "reliability_curve.png",
+        n_bins=settings.monitoring.psi_bins,
+    )
+    rows = [
+        "| score | Brier ↓ | ECE ↓ | MCE ↓ |",
+        "|---|---|---|---|",
+        f"| raw tree output | {raw_m['brier']:.4f} | {raw_m['ece']:.4f} | {raw_m['mce']:.4f} |",
+        f"| **calibrated ({calibrator.method})** | **{cal_m['brier']:.4f}** | "
+        f"**{cal_m['ece']:.4f}** | **{cal_m['mce']:.4f}** |",
+    ]
+    md = (
+        "## Probability calibration\n\n"
+        "Gradient-boosted scores rank well but are **not probabilities** — a raw "
+        f"score of 0.9 need not mean a 90% attack rate. We fit **{calibrator.method}** "
+        "calibration on the validation split and apply it to the served probability "
+        "and the decision thresholds. Test-set diagnostics (lower is better):\n\n"
+        f"{chr(10).join(rows)}\n\n"
+        "The map is monotonic, so it preserves the ranking of flows — the PR-AUC "
+        "above is the model's discriminative power either way. Calibration changes "
+        "only how that score maps to a probability, which is what makes a stated FP "
+        "budget or a reported `attack_probability` trustworthy.\n\n"
+        f"![Reliability diagram](../figures/{fig.name})\n"
+    )
+    logged = {
+        "calib_brier_raw": raw_m["brier"],
+        "calib_brier_calibrated": cal_m["brier"],
+        "calib_ece_raw": raw_m["ece"],
+        "calib_ece_calibrated": cal_m["ece"],
+    }
+    return md, fig, logged
 
 
 def _explain_section(settings: Settings, headline: FitResult) -> tuple[str, Path | None]:
@@ -181,6 +243,7 @@ def _render_markdown(
     gap: float,
     operating_md: str,
     per_class_md: str,
+    calibration_md: str,
     explain_md: str,
     figures: dict[str, Path],
 ) -> str:
@@ -237,6 +300,7 @@ disjoint across the day boundary.
 
 ![Confusion matrix]({fig_rel['confusion'].as_posix()})
 
+{calibration_md}
 {explain_md}
 ## Notes
 

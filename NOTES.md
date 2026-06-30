@@ -239,6 +239,28 @@ smaller dev-run numbers noted in earlier phases:
   can never break a prediction. The reference travels inside the bundle, so a
   deployed model self-monitors without the processed dataset.
 
+## Probability calibration
+
+- `ml.md` §4 requires that any threshold/probability claim be backed by
+  *calibrated* probabilities, and the config carried `thresholds.calibrate` /
+  `calibration_method` — but nothing fit a calibrator. That was a real gap: the
+  served `attack_probability` and the FPR thresholds were raw LightGBM scores,
+  which rank well but are not probabilities. Closed it.
+- The calibrator is a monotonic 1-D map (isotonic by default, Platt/sigmoid
+  optional) fit on the **validation** attack scores and applied to both the served
+  probability and the decision thresholds (which now live on the calibrated scale,
+  so serving calibrates before comparing).
+- **The subtlety worth stating:** I claimed "calibration is monotonic so ranking
+  metrics are unchanged" — then a test caught that *isotonic* introduces ties, so
+  PR-AUC can move by a hair (Platt is strictly monotone and is exactly invariant).
+  Fixed the claim to be precise rather than convenient: calibration preserves the
+  *ordering* of flows, so the model's discriminative power is untouched; only the
+  score→probability map changes. The headline PR-AUC is computed on the raw score
+  and is unaffected regardless.
+- Synthetic temporal-split result: isotonic calibration improves every diagnostic
+  (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
+  the point — the worst-case over-confident bin is roughly halved.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

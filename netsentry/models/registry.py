@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from netsentry.config import Settings
     from netsentry.models.anomaly import AnomalyDetector
     from netsentry.models.base import BaseModel
+    from netsentry.models.calibration import ProbabilityCalibrator
 
 logger = get_logger(__name__)
 
@@ -42,10 +43,22 @@ class ModelBundle:
     thresholds: dict[str, float] = field(default_factory=dict)
     anomaly_detector: AnomalyDetector | None = None
     anomaly_threshold: float | None = None
+    #: Optional monotonic calibrator for the attack score. When present, the
+    #: decision thresholds above live on the *calibrated* scale, so callers must
+    #: calibrate the raw attack probability before comparing against them.
+    calibrator: ProbabilityCalibrator | None = None
 
     def predict_proba(self, df: pd.DataFrame) -> np.ndarray:
         """Preprocess a raw flow frame and return class probabilities."""
         return np.asarray(self.model.predict_proba(self.pipeline.transform(df)))
+
+    def attack_scores(self, df: pd.DataFrame) -> np.ndarray:
+        """Calibrated attack probability per flow (raw score if uncalibrated)."""
+        from netsentry.evaluation.metrics import attack_probability
+
+        benign = str(self.metadata.get("benign_label", "BENIGN"))
+        raw = attack_probability(self.predict_proba(df), self.classes, benign)
+        return self.calibrator.transform(raw) if self.calibrator is not None else raw
 
     def predict(self, df: pd.DataFrame) -> np.ndarray:
         """Preprocess a raw flow frame and return hard predictions."""
