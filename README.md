@@ -195,6 +195,19 @@ exploited, not CVSS alone. Fusion weights are config (`triage.*`). See
 [`docs/reports/triage.md`](docs/reports/triage.md) and the contract in
 `netsentry/integrations/vulnpipe.py`.
 
+## Conformal prediction & selective alerting
+
+`netsentry conformal` adds class-conditional **split-conformal** prediction: each
+flow gets a prediction set with a finite-sample, distribution-free guarantee that
+the true label is inside with probability ≥ 1−α. The set shapes map to SOC actions —
+`{benign}` auto-clear, `{attack}` auto-alert, `{benign,attack}` and `{}` (novel)
+routed to a human — so abstention *is* the human-review budget. The honest twist:
+the guarantee holds on the exchangeable stratified split (≈92% attack coverage at a
+90% target) but the attack class falls short on the temporal split (≈64%), because
+exchangeability is broken by later-day novel attacks. That shortfall is conformal
+*detecting* drift, a second signal alongside PSI. See
+[`docs/reports/conformal.md`](docs/reports/conformal.md).
+
 ## Cost-sensitive thresholds
 
 A 0.1%-FPR budget is honest but arbitrary. `netsentry cost` attaches a cost to each

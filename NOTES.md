@@ -261,6 +261,23 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## Conformal prediction & selective alerting
+
+- Added class-conditional (Mondrian) split-conformal: a per-flow prediction set with
+  a finite-sample, distribution-free coverage guarantee, with the four set shapes
+  ({benign}/{attack}/both/empty) mapped to SOC actions (auto-clear, auto-alert,
+  human-review, human-review-because-novel). The empty set is the conformal echo of
+  the anomaly detector's "looks like nothing I trained on".
+- **The result is the best kind of honest.** On the *exchangeable* stratified split
+  the guarantee holds for both classes (benign 93.5%, attack 92.0% vs a 90% target).
+  On the *temporal* split benign coverage holds (93.1%) but attack coverage collapses
+  to 64.4% — because conformal assumes exchangeability and the temporal split breaks
+  it on purpose (later-day attacks are novel). I almost shipped prose claiming
+  "coverage meets the target"; caught that it didn't for attacks and reframed it: the
+  shortfall is conformal correctly *detecting* the shift, so conformal coverage on a
+  recent window is a drift signal that complements PSI. The unit test confirms the
+  guarantee under exchangeability so the breakage is clearly attributable to drift.
+
 ## Cost-sensitive thresholds (SOC economics)
 
 - A fixed-FPR threshold is honest but arbitrary. Attaching a cost to each outcome

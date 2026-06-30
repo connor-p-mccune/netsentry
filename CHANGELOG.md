@@ -7,6 +7,13 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Conformal prediction & selective alerting (`netsentry/evaluation/conformal.py`,
+  `netsentry conformal`): class-conditional split-conformal prediction sets with a
+  finite-sample, distribution-free coverage guarantee, mapped to SOC actions
+  (auto-clear / auto-alert / route-to-human for ambiguous or novel-empty sets). The
+  report contrasts the exchangeable stratified split (guarantee met) with the
+  temporal split (attack-class coverage falls short) — surfacing that the conformal
+  shortfall is itself a distribution-shift signal, complementing the PSI monitor.
 - Cost-sensitive threshold selection (`netsentry/evaluation/cost.py`, `netsentry
   cost`): a decision-theoretic operating point that minimises expected cost
   (analyst time per alert vs expected loss per missed attack), the closed-form

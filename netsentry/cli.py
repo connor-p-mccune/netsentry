@@ -180,6 +180,19 @@ def cost(
     logger.info("Cost report ready", extra={"path": str(out)})
 
 
+@app.command()
+def conformal(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Build conformal prediction sets with a coverage guarantee and selective alerting."""
+    from netsentry.evaluation.conformal import run_conformal_report
+
+    settings = _load(config, override)
+    out = run_conformal_report(settings)
+    logger.info("Conformal report ready", extra={"path": str(out)})
+
+
 @app.command("crosseval")
 def crosseval(
     config: ConfigOpt = None,

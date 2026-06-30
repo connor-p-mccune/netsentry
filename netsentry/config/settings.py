@@ -172,6 +172,18 @@ class CostConfig(BaseModel):
     grid_points: int = 300  # threshold grid resolution for the cost sweep
 
 
+class ConformalConfig(BaseModel):
+    """Split-conformal prediction: distribution-free coverage + selective alerting.
+
+    The model emits a *set* per flow with a finite-sample guarantee that the true
+    label is inside with probability >= 1 - alpha. Ambiguous (both-label) and empty
+    (neither-label, i.e. novel) sets are routed to a human, so the analyst only sees
+    the flows the model is genuinely unsure about."""
+
+    alpha: float = 0.1  # target error rate; coverage target is 1 - alpha
+    alphas_grid: list[float] = Field(default_factory=lambda: [0.01, 0.05, 0.1, 0.2])
+
+
 class MonitoringConfig(BaseModel):
     """Data-drift monitoring (PSI) — the production-decay early-warning system."""
 
@@ -302,6 +314,7 @@ class Settings(BaseSettings):
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     cost: CostConfig = Field(default_factory=CostConfig)
+    conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
