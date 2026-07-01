@@ -7,6 +7,11 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Auto-generated model card (`netsentry modelcard`, `netsentry/evaluation/
+  model_card.py`): a factual spec sheet derived straight from the deployed bundle
+  (backend, classes, calibration, threshold profiles, attached components, ATT&CK
+  coverage, provenance) so it can't drift from what ships — complementing the
+  hand-written narrative card. Governance automation.
 - Counterfactual recourse explanations (`netsentry recourse`,
   `netsentry/explain/counterfactual.py`): for a flagged flow, the minimal set of
   moves to attacker-controllable features that would clear it — the analyst's what-if

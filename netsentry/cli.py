@@ -252,6 +252,19 @@ def recourse(
     logger.info("Recourse report ready", extra={"path": str(out)})
 
 
+@app.command("modelcard")
+def modelcard_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Auto-generate the model-card spec sheet from the deployed bundle."""
+    from netsentry.evaluation.model_card import generate_model_card
+
+    settings = _load(config, override)
+    out = generate_model_card(settings)
+    logger.info("Model card ready", extra={"path": str(out)})
+
+
 @app.command("learningcurve")
 def learning_curve_cmd(
     config: ConfigOpt = None,
