@@ -77,7 +77,10 @@ NetSentry is built to be the project that does it right:
   constraint is analyst time, not raw accuracy.
 - **Detects the unknown** — a benign-only anomaly detector flags attack classes
   the supervised model never trained on (leave-one-attack-out).
-- **Explainable** — every prediction returns the top contributing features (SHAP).
+- **Explainable** — every prediction returns the top contributing features (SHAP),
+  and `netsentry recourse` adds the counterfactual *what-if*: the minimal change that
+  would clear a flagged flow (the analyst's triage aid, and the defensive mirror of
+  the evasion study).
 - **Calibrated** — tree scores are not probabilities, so the attack probability is
   passed through a monotonic isotonic/Platt calibrator (fit on validation); the
   report shows the reliability diagram and the Brier/ECE/MCE drop. A reported

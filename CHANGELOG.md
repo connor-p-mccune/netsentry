@@ -7,6 +7,12 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Counterfactual recourse explanations (`netsentry recourse`,
+  `netsentry/explain/counterfactual.py`): for a flagged flow, the minimal set of
+  moves to attacker-controllable features that would clear it — the analyst's what-if
+  that complements SHAP's why. The features it surfaces line up with the robustness
+  study's most-exploitable ones (both are the controllable subspace). In the analysis
+  suite; on the synthetic stand-in the top hits clear within 1-2 changes.
 - Learning-curve / data-efficiency study (`netsentry learningcurve`,
   `netsentry/evaluation/learning_curve.py`): PR-AUC vs training size for both splits,
   with the bias/variance read. On the synthetic stand-in the temporal curve is flat

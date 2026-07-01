@@ -239,6 +239,19 @@ def conformal(
     logger.info("Conformal report ready", extra={"path": str(out)})
 
 
+@app.command()
+def recourse(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Counterfactual recourse for flagged flows: minimal change that would clear them."""
+    from netsentry.explain.counterfactual import run_recourse_report
+
+    settings = _load(config, override)
+    out = run_recourse_report(settings)
+    logger.info("Recourse report ready", extra={"path": str(out)})
+
+
 @app.command("learningcurve")
 def learning_curve_cmd(
     config: ConfigOpt = None,

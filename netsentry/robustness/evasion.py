@@ -76,7 +76,7 @@ class EvasionStudy:
     top_exploitable: list[tuple[str, float]] = field(default_factory=list)
 
 
-def _attack_scores(bundle: ModelBundle, x_transformed: np.ndarray) -> np.ndarray:
+def attack_scores_transformed(bundle: ModelBundle, x_transformed: np.ndarray) -> np.ndarray:
     """Calibrated attack probability from already-transformed features."""
     proba = np.asarray(bundle.model.predict_proba(x_transformed))
     benign = str(bundle.metadata.get("benign_label", "BENIGN"))
@@ -99,7 +99,7 @@ def _mimicry_curve(
     detection = []
     for frac in fractions:
         adv = mimicry_perturb(x_attack, centroid, ctrl_idx, frac)
-        detection.append(_detection_rate(_attack_scores(bundle, adv), threshold))
+        detection.append(_detection_rate(attack_scores_transformed(bundle, adv), threshold))
     return detection
 
 
@@ -117,9 +117,11 @@ def _search_curve(
     detection = []
     for eps in budgets:
         if eps == 0.0 or len(ctrl_idx) == 0:
-            detection.append(_detection_rate(_attack_scores(bundle, x_attack), threshold))
+            detection.append(
+                _detection_rate(attack_scores_transformed(bundle, x_attack), threshold)
+            )
             continue
-        best = _attack_scores(bundle, x_attack)
+        best = attack_scores_transformed(bundle, x_attack)
         for _ in range(iterations):
             direction = np.zeros((n, d))
             step = rng.standard_normal((n, len(ctrl_idx)))
@@ -128,7 +130,7 @@ def _search_curve(
             # Random radius in [0, eps] so the ball interior is searched, not just its shell.
             radius = eps * rng.uniform(size=(n, 1))
             direction[:, ctrl_idx] = step / norms * radius
-            trial = _attack_scores(bundle, x_attack + direction)
+            trial = attack_scores_transformed(bundle, x_attack + direction)
             best = np.minimum(best, trial)
         detection.append(_detection_rate(best, threshold))
     return detection
@@ -144,12 +146,12 @@ def _top_exploitable(
     top_k: int = 8,
 ) -> list[tuple[str, float]]:
     """Detection drop when the attacker fully mimics one controllable feature alone."""
-    base = _detection_rate(_attack_scores(bundle, x_attack), threshold)
+    base = _detection_rate(attack_scores_transformed(bundle, x_attack), threshold)
     drops: list[tuple[str, float]] = []
     for idx in ctrl_idx:
         adv = np.array(x_attack, dtype=float, copy=True)
         adv[:, idx] = centroid[idx]
-        drop = base - _detection_rate(_attack_scores(bundle, adv), threshold)
+        drop = base - _detection_rate(attack_scores_transformed(bundle, adv), threshold)
         drops.append((base_feature_name(feature_names[idx]), drop))
     drops.sort(key=lambda kv: kv[1], reverse=True)
     return drops[:top_k]
@@ -178,7 +180,7 @@ def run_evasion_study(
             f"Unknown threshold profile {cfg.profile!r}; available: {sorted(bundle.thresholds)}"
         )
 
-    baseline = _detection_rate(_attack_scores(bundle, x_attack), threshold)
+    baseline = _detection_rate(attack_scores_transformed(bundle, x_attack), threshold)
     mimicry = _mimicry_curve(bundle, x_attack, centroid, ctrl_idx, cfg.mimicry_fractions, threshold)
     search = _search_curve(
         bundle,

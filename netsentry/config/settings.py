@@ -268,6 +268,7 @@ class RobustnessConfig(BaseModel):
     search_iterations: int = 150
     max_attack_samples: int = 3000  # cap evaluated attack flows so the study stays fast
     profile: str = "fpr_1pct"  # operating point the attacker tries to slip under
+    recourse_max_steps: int = 5  # max features a counterfactual explanation may change
 
 
 class CrossDatasetConfig(BaseModel):
