@@ -162,6 +162,7 @@ netsentry train supervised          # train LightGBM, log to MLflow
 netsentry train anomaly             # benign-only anomaly detector + leave-one-attack-out
 netsentry eval                      # operational metrics report + figures
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
+netsentry score -i flows.csv --output scored.csv   # offline batch scoring
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
 docker compose -f docker/docker-compose.yml up --build

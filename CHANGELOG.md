@@ -7,6 +7,10 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Offline batch scoring (`netsentry score`, `netsentry/serving/batch.py`): score a
+  CSV/Parquet of flows to a predictions file with the same InferenceEngine the API
+  uses (class, probability, decision, anomaly, recommended action, ATT&CK technique,
+  top feature) — the model is usable without standing up the service.
 - MITRE ATT&CK enrichment (`netsentry/intel`, `netsentry intel`): each attack class
   is mapped to an ATT&CK tactic + technique, returned in the `mitre` field of every
   attack prediction and summarised in a coverage report (12 classes → 6 tactics, 8
