@@ -65,6 +65,8 @@ class PredictionResponse(BaseModel):
     # calibrated conformal set): the prediction set and the recommended SOC action.
     prediction_set: list[str] | None = None
     recommended_action: str | None = None
+    # MITRE ATT&CK technique for the predicted attack class (None when benign).
+    mitre: dict[str, str] | None = None
 
 
 class BatchResponse(BaseModel):

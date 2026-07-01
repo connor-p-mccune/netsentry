@@ -17,6 +17,7 @@ import pandas as pd
 from netsentry.evaluation.metrics import attack_probability
 from netsentry.explain.shap_explainer import ShapExplainer
 from netsentry.features.feature_sets import model_features
+from netsentry.intel.attack_mapping import mitre_payload
 from netsentry.log import get_logger
 from netsentry.models.registry import latest_bundle, load_bundle
 from netsentry.monitoring.monitor import DriftMonitor
@@ -144,6 +145,7 @@ class InferenceEngine:
             self._record_metrics(attack_prob, attacking, flagged_anomaly)
             predicted = self._predicted_class(str(argmax[i]), proba[i], classes, attacking)
             pred_set, action = self._conformal_set(attack_prob)
+            mitre = mitre_payload(predicted) if attacking else None
             top = [
                 FeatureContribution(feature=name, contribution=value)
                 for name, value in self.explainer.explain_row(frame.iloc[[i]], top_k)
@@ -160,6 +162,7 @@ class InferenceEngine:
                     threshold_profile=profile,
                     prediction_set=pred_set,
                     recommended_action=action,
+                    mitre=mitre,
                 )
             )
         return responses

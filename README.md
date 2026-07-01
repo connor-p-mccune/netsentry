@@ -176,7 +176,8 @@ curl -X POST localhost:8000/predict -H 'content-type: application/json' \
 #    "anomaly_score":0.37,"is_anomaly":false,
 #    "top_features":[{"feature":"...","contribution":0.21}, ...],
 #    "model_version":"0.1.0","threshold_profile":"fpr_0.1pct",
-#    "prediction_set":["attack"],"recommended_action":"auto_alert"}
+#    "prediction_set":["attack"],"recommended_action":"auto_alert",
+#    "mitre":{"tactic":"Impact","technique_id":"T1499","technique_name":"Endpoint Denial of Service",...}}
 ```
 
 `is_attack` is the thresholded decision at the selected `threshold_profile`
@@ -216,6 +217,17 @@ shuffled one. In serving the same check runs continuously: `/metrics` exposes
 `netsentry_feature_drift_psi_max` / `_mean` over a rolling window of requests, and
 the drift reference travels inside the model bundle so a deployed model
 self-monitors. See [`docs/reports/drift.md`](docs/reports/drift.md).
+
+## Threat intelligence (MITRE ATT&CK)
+
+Detection is only step one; response needs context. Every attack class is mapped to
+a MITRE ATT&CK tactic + technique, so a flagged flow returns a `mitre` field
+(`{tactic, technique_id, technique_name, url}`) an analyst can pivot on — e.g. `DoS
+Hulk → Impact / T1499 Endpoint Denial of Service`, `PortScan → Discovery / T1046`.
+`netsentry intel` writes a coverage report (12 classes → 6 tactics, 8 techniques);
+the mapping is one source of truth shared by the API and the report. See
+[`docs/reports/mitre.md`](docs/reports/mitre.md). Mappings are indicative of the
+CIC-IDS2017 scenarios and documented as such.
 
 ## Observability (Prometheus + Grafana)
 

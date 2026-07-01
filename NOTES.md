@@ -261,6 +261,18 @@ smaller dev-run numbers noted in earlier phases:
   (Brier 0.175 → 0.171, ECE 0.121 → 0.106, MCE 0.315 → 0.138). The big MCE drop is
   the point — the worst-case over-confident bin is roughly halved.
 
+## MITRE ATT&CK enrichment
+
+- A class label ("DoS Hulk") isn't actionable; a tactic/technique ("Impact / T1499")
+  is. Added a curated CIC-IDS2017 → ATT&CK mapping, returned live in the `mitre`
+  field of every attack prediction and summarised in `netsentry intel` (12 classes →
+  6 tactics, 8 techniques). One source of truth shared by serving and the report.
+- Kept it honest: the mapping is **indicative** of the dataset's capture scenarios
+  (CIC-IDS2017 isn't natively ATT&CK-labelled), stated plainly in the report and the
+  README, and keyed on the *consolidated* model labels with raw web-attack variants
+  aliased so `technique_for` works on either. A test asserts every attack class the
+  model can emit has a mapping, so a new class can't silently ship unmapped.
+
 ## Statistical significance (bootstrap CIs)
 
 - The project's whole claim is the *gap* between the honest temporal split and the

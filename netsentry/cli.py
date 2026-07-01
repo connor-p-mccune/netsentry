@@ -219,6 +219,19 @@ def conformal(
 
 
 @app.command()
+def intel(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Write the MITRE ATT&CK coverage report for the detected attack classes."""
+    from netsentry.intel.report import run_mitre_report
+
+    settings = _load(config, override)
+    out = run_mitre_report(settings)
+    logger.info("MITRE ATT&CK report ready", extra={"path": str(out)})
+
+
+@app.command()
 def analyze(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

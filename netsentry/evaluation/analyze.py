@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.report import run_evaluation
+from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
 from netsentry.monitoring.report import run_drift_report
 from netsentry.robustness.report import run_robustness_report
@@ -51,6 +52,7 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_robustness_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
+    ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
 ]
 
 

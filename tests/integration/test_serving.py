@@ -66,6 +66,12 @@ def test_predict_returns_full_contract(client) -> None:  # type: ignore[no-untyp
     assert body["recommended_action"] in {"auto_alert", "auto_clear", "review"}
     assert isinstance(body["prediction_set"], list)
     assert set(body["prediction_set"]) <= {"BENIGN", "attack"}
+    # MITRE enrichment: present + well-formed when flagged, null when benign.
+    if body["is_attack"]:
+        assert body["mitre"] is not None
+        assert {"tactic", "technique_id", "technique_name"} <= set(body["mitre"])
+    else:
+        assert body["mitre"] is None
 
 
 @pytest.mark.slow

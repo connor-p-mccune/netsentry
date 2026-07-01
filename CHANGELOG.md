@@ -7,6 +7,11 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- MITRE ATT&CK enrichment (`netsentry/intel`, `netsentry intel`): each attack class
+  is mapped to an ATT&CK tactic + technique, returned in the `mitre` field of every
+  attack prediction and summarised in a coverage report (12 classes → 6 tactics, 8
+  techniques). One source of truth shared by serving and the report; mappings are
+  documented as indicative of the CIC-IDS2017 scenarios.
 - Bootstrap confidence intervals + significance tests (`netsentry/evaluation/
   confidence.py`): the evaluation report now gives PR-AUC and TPR@FPR percentile-
   bootstrap CIs, and the temporal-vs-stratified over-optimism gap comes with a CI and
