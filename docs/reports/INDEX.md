@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Regenerated 2026-07-01 16:01 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
+_Regenerated 2026-07-01 16:23 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -9,5 +9,6 @@ _Regenerated 2026-07-01 16:01 UTC via `netsentry analyze`. Synthetic stand-in un
 | Conformal prediction | coverage guarantee + selective alerting | [open](conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
+| Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
 | MITRE ATT&CK coverage | attack class -> tactic/technique | [open](mitre.md) |
