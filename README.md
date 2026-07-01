@@ -18,7 +18,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **127 passing tests**), and the full `download → prep → train → eval →
+type-check + **154 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
@@ -50,6 +50,11 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Conformal prediction | distribution-free coverage + selective alerting | ✅ Done |
 | Hyperparameter search | leakage-safe Optuna HPO (`train tune`) | ✅ Done |
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
+| Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
+| Threat intel | MITRE ATT&CK mapping in predictions + coverage report | ✅ Done |
+| Data efficiency | learning curves (does more data help?) | ✅ Done |
+| Data quality | schema / label / duplicate validation gates | ✅ Done |
+| Batch inference | offline `score` a CSV/Parquet of flows to predictions | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
