@@ -307,6 +307,10 @@ class ServingConfig(BaseModel):
     top_k_features: int = 5
     cors_origins: list[str] = Field(default_factory=lambda: ["*"])
     log_payloads: bool = False
+    # Optional API-key auth on the prediction endpoints (via the X-API-Key header).
+    # Unset -> open (dev default); set via NETSENTRY_SERVING__API_KEY in production.
+    api_key: str | None = None
+    rate_limit_per_minute: int = 0  # 0 disables the per-client fixed-window rate limit
 
 
 class Settings(BaseSettings):

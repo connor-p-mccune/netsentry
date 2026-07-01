@@ -193,7 +193,10 @@ curl -X POST localhost:8000/predict -H 'content-type: application/json' \
 `?profile=cost_optimal`); `attack_probability` is the calibrated score for
 transparency. `prediction_set` / `recommended_action` are the conformal
 selective-prediction outputs — `auto_alert`, `auto_clear`, or `review` (ambiguous or
-novel) — so the API tells a SOC not just *what* but *whether to trust it*.
+novel) — so the API tells a SOC not just *what* but *whether to trust it*. The
+prediction endpoints support optional API-key auth (`X-API-Key`) and a per-client
+rate limit, both config-gated (`serving.api_key`, `serving.rate_limit_per_minute`),
+while `/health` and `/metrics` stay open for probes.
 
 ## Reproducibility
 

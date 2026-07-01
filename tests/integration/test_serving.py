@@ -83,6 +83,43 @@ def test_cost_optimal_profile_is_selectable(client) -> None:  # type: ignore[no-
 
 
 @pytest.mark.slow
+def test_api_key_and_rate_limit(repo_root: Path, tmp_path: Path, clean_synth: pd.DataFrame) -> None:
+    from fastapi.testclient import TestClient
+
+    settings = load_settings(repo_root / "configs" / "default.yaml")
+    settings.paths.data_processed = tmp_path / "processed"
+    settings.paths.models_dir = tmp_path / "models"
+    settings.mlflow.enabled = False
+    settings.supervised.n_estimators = 60
+    settings.paths.data_processed.mkdir(parents=True)
+    clean_synth.to_parquet(settings.paths.data_processed / "clean.parquet", index=False)
+    make_splits(settings)
+    build_serving_bundle(settings)
+
+    # --- API-key auth (rate limit disabled) ---
+    settings.serving.api_key = "s3cret"
+    auth = TestClient(create_app(settings))
+    assert auth.get("/health").status_code == 200  # health is unauthenticated
+    assert auth.post("/predict", json={"flow": SAMPLE_FLOW}).status_code == 401  # no key
+    assert (
+        auth.post(
+            "/predict", json={"flow": SAMPLE_FLOW}, headers={"X-API-Key": "wrong"}
+        ).status_code
+        == 401
+    )
+    ok = auth.post("/predict", json={"flow": SAMPLE_FLOW}, headers={"X-API-Key": "s3cret"})
+    assert ok.status_code == 200
+
+    # --- Fixed-window rate limit (auth disabled) ---
+    settings.serving.api_key = None
+    settings.serving.rate_limit_per_minute = 3
+    limited = TestClient(create_app(settings))
+    codes = [limited.post("/predict", json={"flow": SAMPLE_FLOW}).status_code for _ in range(4)]
+    assert codes[:3] == [200, 200, 200]
+    assert codes[3] == 429  # fourth request in the window is throttled
+
+
+@pytest.mark.slow
 def test_malformed_requests_return_422(client) -> None:  # type: ignore[no-untyped-def]
     # Unknown feature column.
     assert client.post("/predict", json={"flow": {"NotAFeature": 1.0}}).status_code == 422

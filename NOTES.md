@@ -291,6 +291,19 @@ smaller dev-run numbers noted in earlier phases:
   arbitrary seeds; the regression test compares a set against itself (symmetric about
   zero) instead.
 
+## API security hardening
+
+- Added optional API-key auth + a per-client fixed-window rate limit on the
+  prediction endpoints, config-gated so dev stays open and prod locks down via env.
+- **Bug worth remembering.** I first wrote these as FastAPI dependencies with a
+  `request: Request` param. Under `from __future__ import annotations` every
+  annotation is a *string*, and FastAPI resolves it via the function's module
+  globals — but FastAPI is imported *inside* the app factory, so `Request` wasn't
+  resolvable and FastAPI treated `req` as a required **query** param (422 on every
+  predict, even the batch contract test). Moved the checks into a Starlette
+  middleware, which receives `request` positionally and needs no type resolution —
+  clean fix, and `/health` + `/metrics` stay unguarded for probes.
+
 ## Serving integration of the new ML rigor
 
 - The calibration / cost / conformal work was at risk of being "report-only". Wired

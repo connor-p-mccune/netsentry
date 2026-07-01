@@ -100,6 +100,12 @@ semantic versioning once released.
   Python path) against dynamic quantization (a documented no-op for tree ensembles).
   Optional `onnx` extra.
 
+### Added
+- API security hardening (`netsentry/serving/app.py`): optional API-key auth
+  (`X-API-Key`) and a per-client fixed-window rate limit on the prediction endpoints,
+  both config-gated (`serving.api_key`, `serving.rate_limit_per_minute`) and enforced
+  in middleware so `/health` and `/metrics` stay open for probes. 401/429 on violation.
+
 ### Changed
 - The serving API now returns the conformal `prediction_set` and a
   `recommended_action` (`auto_alert` / `auto_clear` / `review`) on every prediction,
