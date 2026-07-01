@@ -96,6 +96,27 @@ def prep(
     logger.info("Prep complete", extra={"processed": str(processed)})
 
 
+@app.command()
+def validate(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    data: Annotated[
+        Path | None, typer.Option(help="Dataset to validate (default: cleaned parquet).")
+    ] = None,
+) -> None:
+    """Run data-quality gates against a dataset; exit non-zero on a structural failure."""
+    from netsentry.data.validation import run_validation
+
+    settings = _load(config, override)
+    out, report = run_validation(settings, data)
+    logger.info(
+        "Data quality report ready",
+        extra={"path": str(out), "ok": report.ok, "warnings": report.n_warn},
+    )
+    if not report.ok:
+        raise typer.Exit(code=1)
+
+
 @train_app.command("supervised")
 def train_supervised_cmd(
     config: ConfigOpt = None,

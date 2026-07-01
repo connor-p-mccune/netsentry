@@ -7,6 +7,11 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Data-quality gates (`netsentry validate`, `netsentry/data/validation.py`): validate
+  a dataset against the schema contract — required feature columns, label vocabulary,
+  numeric dtypes (structural failures) plus missingness, duplicates, and degenerate
+  class balance (warnings) — writing a report and exiting non-zero on failure so CI
+  can gate on it. Wired into the CI smoke after `prep`.
 - Offline batch scoring (`netsentry score`, `netsentry/serving/batch.py`): score a
   CSV/Parquet of flows to a predictions file with the same InferenceEngine the API
   uses (class, probability, decision, anomaly, recommended action, ATT&CK technique,

@@ -56,6 +56,7 @@ jobs:
         run: |
           python -m netsentry.cli download -o configs/ci.yaml
           python -m netsentry.cli prep -o configs/ci.yaml
+          python -m netsentry.cli validate -o configs/ci.yaml
           python -m netsentry.cli train tune -o configs/ci.yaml --trials 3
           python -m netsentry.cli train supervised -o configs/ci.yaml
           python -m netsentry.cli eval -o configs/ci.yaml

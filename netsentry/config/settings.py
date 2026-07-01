@@ -172,6 +172,13 @@ class CostConfig(BaseModel):
     grid_points: int = 300  # threshold grid resolution for the cost sweep
 
 
+class ValidationConfig(BaseModel):
+    """Thresholds for the input data-quality gates (fail loudly on bad input)."""
+
+    max_nan_fraction: float = 0.5  # warn if a feature column exceeds this missing rate
+    max_duplicate_fraction: float = 0.2  # warn above this exact-duplicate share
+
+
 class EvaluationConfig(BaseModel):
     """Uncertainty quantification for the reported metrics."""
 
@@ -321,6 +328,7 @@ class Settings(BaseSettings):
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     cost: CostConfig = Field(default_factory=CostConfig)
+    validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
