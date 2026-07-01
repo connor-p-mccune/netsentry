@@ -1,6 +1,6 @@
 # NetSentry — Evaluation Report
 
-_Generated 2026-06-30 21:55 UTC. Numbers below are on
+_Generated 2026-07-01 03:45 UTC. Numbers below are on
 the **synthetic** CIC-IDS2017 stand-in unless you have run on the real dataset;
 the methodology and framing are identical either way._
 
