@@ -7,6 +7,13 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Per-attack-class detection slices (`netsentry slices`,
+  `netsentry/evaluation/slices.py`): detection rate per attack class on the temporal
+  split, exposing *which* later-day (largely novel) attacks are caught. On the
+  synthetic stand-in DDoS transfers (~53%, behaviourally like the trained DoS family)
+  while PortScan/Bot/Web Attack/Infiltration are mostly missed — the concrete
+  known-vs-novel breakdown the aggregate PR-AUC hides, and the case for the anomaly
+  detector. In the analysis suite.
 - Auto-generated model card (`netsentry modelcard`, `netsentry/evaluation/
   model_card.py`): a factual spec sheet derived straight from the deployed bundle
   (backend, classes, calibration, threshold profiles, attached components, ATT&CK

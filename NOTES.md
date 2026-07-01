@@ -291,6 +291,21 @@ smaller dev-run numbers noted in earlier phases:
   arbitrary seeds; the regression test compares a set against itself (symmetric about
   zero) instead.
 
+## Per-class detection slices
+
+- Broke the temporal detection number down by attack class to show *which* novel
+  later-day attacks are caught. The honest read: **DDoS ~53%** (it behaves like the
+  Mon-Wed DoS family the model trained on) but PortScan/Bot/Web Attack/Infiltration
+  are near-zero — a clean known-vs-novel picture, and the per-class case for the
+  benign-only anomaly detector.
+- **Self-audit that fired.** First run showed 0% for *every* class, impossible given
+  the 21% aggregate. Root cause: for the binary task `result.y_val` is already the
+  0/1 target, but I re-derived it as `y_val.astype(str) != "BENIGN"` (always true for
+  "0"/"1"), so validation looked all-attack and `threshold_at_fpr` returned +inf.
+  Fixed to use the binary target directly; per-class now sums to the headline 21%.
+  Also kept slices on the *raw* score (detection is a ranking property) to match the
+  eval report's operating points and dodge isotonic's tie artifacts.
+
 ## API security hardening
 
 - Added optional API-key auth + a per-client fixed-window rate limit on the

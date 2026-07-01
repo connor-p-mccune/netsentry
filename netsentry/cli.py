@@ -279,6 +279,19 @@ def learning_curve_cmd(
 
 
 @app.command()
+def slices(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Report per-attack-class detection on the temporal split (known vs novel)."""
+    from netsentry.evaluation.slices import run_slices_report
+
+    settings = _load(config, override)
+    out = run_slices_report(settings)
+    logger.info("Slices report ready", extra={"path": str(out)})
+
+
+@app.command()
 def intel(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

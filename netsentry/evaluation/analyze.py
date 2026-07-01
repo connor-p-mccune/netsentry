@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.report import run_evaluation
+from netsentry.evaluation.slices import run_slices_report
 from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
@@ -53,6 +54,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_robustness_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
+    (
+        "Per-class detection",
+        "which temporal-split attacks are caught",
+        "slices.md",
+        run_slices_report,
+    ),
     (
         "Counterfactual recourse",
         "minimal change that clears a hit",

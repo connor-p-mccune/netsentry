@@ -62,6 +62,22 @@ def plot_lines(
     return _save(fig, out_path)
 
 
+def plot_barh(
+    labels: list[str], values: list[float], *, xlabel: str, title: str, out_path: Path
+) -> Path:
+    """Horizontal bar chart (e.g. per-class detection). Highest bar on top."""
+    plt = _plt()
+    order = np.argsort(values)
+    names = [labels[i] for i in order]
+    vals = [values[i] for i in order]
+    fig, ax = plt.subplots(figsize=(7, max(3, len(names) * 0.4)))
+    ax.barh(names, vals, color="#3b7dd8")
+    ax.set(xlabel=xlabel, title=title)
+    ax.set_xlim(0, max(1.0, max(vals) if vals else 1.0))
+    ax.grid(alpha=0.3, axis="x")
+    return _save(fig, out_path)
+
+
 def plot_pr_curves(curves: ScoreCurves, out_path: Path) -> Path:
     """Precision-recall curves (one line per split) — the headline comparison."""
     plt = _plt()
