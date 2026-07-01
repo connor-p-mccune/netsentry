@@ -161,7 +161,8 @@ netsentry validate                  # data-quality gates (schema, labels, dupes,
 netsentry train tune                # Optuna HPO on validation (writes configs/tuned.yaml)
 netsentry train supervised          # train LightGBM, log to MLflow
 netsentry train anomaly             # benign-only anomaly detector + leave-one-attack-out
-netsentry eval                      # operational metrics report + figures
+netsentry eval                      # operational metrics report + figures (+ bootstrap CIs)
+netsentry learningcurve             # PR-AUC vs training size (does more data help?)
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')

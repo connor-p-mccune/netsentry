@@ -184,6 +184,9 @@ class EvaluationConfig(BaseModel):
 
     bootstrap_samples: int = 1000  # resamples for metric confidence intervals
     bootstrap_alpha: float = 0.05  # 1 - alpha is the CI level (0.05 -> 95%)
+    learning_curve_fractions: list[float] = Field(
+        default_factory=lambda: [0.1, 0.25, 0.5, 0.75, 1.0]
+    )
 
 
 class ConformalConfig(BaseModel):

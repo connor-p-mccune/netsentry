@@ -239,6 +239,19 @@ def conformal(
     logger.info("Conformal report ready", extra={"path": str(out)})
 
 
+@app.command("learningcurve")
+def learning_curve_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Plot PR-AUC vs training size (does more data help?) for both splits."""
+    from netsentry.evaluation.learning_curve import run_learning_curve_report
+
+    settings = _load(config, override)
+    out = run_learning_curve_report(settings)
+    logger.info("Learning-curve report ready", extra={"path": str(out)})
+
+
 @app.command()
 def intel(
     config: ConfigOpt = None,

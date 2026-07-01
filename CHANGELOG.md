@@ -7,6 +7,12 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Learning-curve / data-efficiency study (`netsentry learningcurve`,
+  `netsentry/evaluation/learning_curve.py`): PR-AUC vs training size for both splits,
+  with the bias/variance read. On the synthetic stand-in the temporal curve is flat
+  (+0.003 from 2.8k→28k examples) — saturated, so more data of the same kind won't
+  move the honest number — while the temporal-vs-stratified gap persists at every
+  size, confirming it is a validation-protocol effect, not a sample-size one.
 - Data-quality gates (`netsentry validate`, `netsentry/data/validation.py`): validate
   a dataset against the schema contract — required feature columns, label vocabulary,
   numeric dtypes (structural failures) plus missingness, duplicates, and degenerate
