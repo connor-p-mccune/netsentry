@@ -367,6 +367,20 @@ class RulesConfig(BaseModel):
     definitions: list[RuleDefinition] = Field(default_factory=_default_rules)
 
 
+class PoisoningConfig(BaseModel):
+    """Training-set poisoning study: how detection degrades as labels are corrupted.
+
+    The evasion study covers the inference-time adversary; this covers the
+    training-time one. Label flips model an attacker who corrupts the labeling
+    source so their attack flows are recorded as benign; benign-pool contamination
+    models attack traffic present during the 'clean' capture the anomaly detector
+    normalises on. Rates are fractions (of attack training rows, and of the benign
+    training pool, respectively)."""
+
+    label_flip_rates: list[float] = Field(default_factory=lambda: [0.0, 0.05, 0.1, 0.25, 0.5])
+    contamination_rates: list[float] = Field(default_factory=lambda: [0.0, 0.01, 0.05, 0.1, 0.2])
+
+
 class CrossDatasetConfig(BaseModel):
     """Synthetic 'foreign' (NetFlow-schema) dataset for cross-dataset generalization."""
 
@@ -437,6 +451,7 @@ class Settings(BaseSettings):
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
+    poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)

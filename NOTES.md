@@ -422,6 +422,35 @@ smaller dev-run numbers noted in earlier phases:
   a silent no-op. A test (`mimicry at fraction 0 == baseline`, curves monotone)
   caught it; fixed with a prefix-stripping `base_feature_name`.
 
+## Training-set poisoning study
+
+- The robustness study covers the inference-time adversary (evasion); this covers
+  the training-time one. Two attacks, each aimed at the component it actually
+  threatens: **label flips** (attack rows relabeled benign) against the supervised
+  model, and **benign-pool contamination** (attack rows injected into the
+  "benign-only" pool) against the anomaly detector. Degradation is always measured
+  on the *clean* test ground truth while train/val carry the poison — the
+  operator's real position, since they only ever hold the labels they were given.
+- **The finding I did not expect, and the reason the study is worth shipping: PR-AUC
+  lies here in the opposite direction from usual.** At a 50% flip rate PR-AUC barely
+  moves (0.529 → 0.465) because it is a *ranking* metric on the raw score and
+  boosting still orders attacks above benign — but detection at the operator's
+  threshold collapses 21.0% → 1.8%. The threshold is chosen on the *poisoned*
+  validation labels, so the flips move the operating point even where they leave the
+  ranking intact. A study reporting only PR-AUC would call this model
+  poison-resistant and be wrong about the number that ships. That is a clean second
+  instance of the project's thesis (operating point ≠ ranking; report the one that
+  matters), now in the security dimension.
+- Anomaly contamination degrades detection 7.3% → 2.8% at 20% injection, via a
+  double mechanism the report names: injected attacks widen the learned "normal"
+  *and* the calibration quantile computed on the contaminated benign pool inflates
+  the threshold. Note the realized benign FPR actually *drifts down* as
+  contamination rises — the threshold is being set too high — which is the tell.
+- Kept the prose sign-aware (three branches: ranking/operating-point split,
+  PR-AUC-dominated, tolerant) so it renders a correct story on real data too, and
+  tied the defences to components already here (validate gates + PSI drift), with
+  the honest caveat that slow poisoning stays under both.
+
 ## Rules-vs-model baseline
 
 - Every ML-IDS write-up implicitly compares against "no detection"; the real

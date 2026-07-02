@@ -24,6 +24,7 @@ from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
 from netsentry.monitoring.report import run_drift_report
+from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 
 if TYPE_CHECKING:
@@ -53,6 +54,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "evasion (mimicry + query search)",
         "robustness.md",
         run_robustness_report,
+    ),
+    (
+        "Training-set poisoning",
+        "label flips + benign-pool contamination",
+        "poisoning.md",
+        run_poisoning_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
     (

@@ -7,6 +7,16 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Training-set poisoning study (`netsentry poisoning`,
+  `netsentry/robustness/poisoning.py`): the training-time counterpart to the evasion
+  study. Label-flip poisoning (attack rows relabeled benign) against the supervised
+  model and benign-pool contamination (attack rows injected into the benign-only
+  pool) against the anomaly detector, with degradation always measured on the clean
+  test split while train/val carry the poison. The headline finding on the synthetic
+  stand-in: PR-AUC (a ranking metric) is robust to label flips while detection at the
+  operator's poisoned-validation threshold collapses (21% → 1.8% at a 50% flip) — the
+  project's operating-point-vs-ranking thesis, in the security dimension. In the
+  analysis suite.
 - Rules-vs-model baseline (`netsentry rules`, `netsentry/models/rules.py` +
   `netsentry/evaluation/rules.py`): a config-driven signature ruleset (six
   Suricata-style, port-scoped threshold rules) benchmarked against the classifier

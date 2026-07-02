@@ -60,6 +60,17 @@ def test_rules_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_poisoning_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.poisoning import run_poisoning_report
+
+    prepared.poisoning.label_flip_rates = [0.0, 0.25]
+    prepared.poisoning.contamination_rates = [0.0, 0.1]
+    out = run_poisoning_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "poisoning" in text and "contamination" in text
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 

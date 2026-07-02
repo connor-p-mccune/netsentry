@@ -214,6 +214,19 @@ def robustness(
 
 
 @app.command()
+def poisoning(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Measure detection decay under training-set poisoning (label flips + contamination)."""
+    from netsentry.robustness.poisoning import run_poisoning_report
+
+    settings = _load(config, override)
+    out = run_poisoning_report(settings)
+    logger.info("Poisoning report ready", extra={"path": str(out)})
+
+
+@app.command()
 def cost(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
