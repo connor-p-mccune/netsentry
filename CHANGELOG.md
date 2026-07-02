@@ -181,6 +181,9 @@ semantic versioning once released.
   in middleware so `/health` and `/metrics` stay open for probes. 401/429 on violation.
 
 ### Changed
+- CI now runs the rules and ablation reports in the analysis-suite smoke and adds a
+  model-integrity gate (`netsentry provenance` then `netsentry verify`) so a corrupted
+  or swapped bundle fails the build; a `make verify` target mirrors it locally.
 - The serving API now returns the conformal `prediction_set` and a
   `recommended_action` (`auto_alert` / `auto_clear` / `review`) on every prediction,
   and exposes a decision-theoretic `cost_optimal` threshold profile alongside the
