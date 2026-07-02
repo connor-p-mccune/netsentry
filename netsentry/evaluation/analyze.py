@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.report import run_evaluation
+from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.intel.report import run_mitre_report
@@ -59,6 +60,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "which temporal-split attacks are caught",
         "slices.md",
         run_slices_report,
+    ),
+    (
+        "Rules-vs-model baseline",
+        "hand-written signatures at a matched FPR budget",
+        "rules.md",
+        run_rules_report,
     ),
     (
         "Counterfactual recourse",

@@ -292,6 +292,19 @@ def slices(
 
 
 @app.command()
+def rules(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Benchmark the hand-written signature ruleset against the model (matched FPR)."""
+    from netsentry.evaluation.rules import run_rules_report
+
+    settings = _load(config, override)
+    out = run_rules_report(settings)
+    logger.info("Rules report ready", extra={"path": str(out)})
+
+
+@app.command()
 def intel(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

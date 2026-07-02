@@ -271,6 +271,102 @@ class RobustnessConfig(BaseModel):
     recourse_max_steps: int = 5  # max features a counterfactual explanation may change
 
 
+class RuleClause(BaseModel):
+    """One comparison in a signature rule: ``feature OP value`` (NaN never matches)."""
+
+    feature: str
+    op: Literal["ge", "le", "eq"]
+    value: float
+
+
+class RuleDefinition(BaseModel):
+    """A named, human-auditable signature that fires when every clause holds."""
+
+    name: str
+    description: str
+    clauses: list[RuleClause]
+
+
+def _clause(feature: str, op: Literal["ge", "le", "eq"], value: float) -> RuleClause:
+    return RuleClause(feature=feature, op=op, value=value)
+
+
+def _default_rules() -> list[RuleDefinition]:
+    """Signatures a SOC would plausibly hand-write for the CIC-IDS2017 attack mix.
+
+    Thresholds are in raw feature units (packets/s, microseconds, bytes) and are
+    deliberately conservative — a signature's job is precision on the pattern it
+    encodes, not coverage. Note rules are *allowed* to key on ``Destination Port``:
+    port-scoping is exactly what real signatures do, whereas the ML model drops the
+    port to avoid memorising it — a contrast the rules report calls out.
+    """
+    return [
+        RuleDefinition(
+            name="volumetric-flood",
+            description="High packet- and byte-rate flood (DoS Hulk / DDoS style)",
+            clauses=[
+                _clause("Flow Packets/s", "ge", 800.0),
+                _clause("Flow Bytes/s", "ge", 8000.0),
+            ],
+        ),
+        RuleDefinition(
+            name="port-scan-sweep",
+            description="Short, SYN-heavy, low-volume probe (PortScan style)",
+            clauses=[
+                _clause("SYN Flag Count", "ge", 4.0),
+                _clause("Flow Duration", "le", 20000.0),
+                _clause("Total Fwd Packets", "le", 5.0),
+            ],
+        ),
+        RuleDefinition(
+            name="slow-drip-dos",
+            description="Connection held open with sparse traffic (slowloris style)",
+            clauses=[
+                _clause("Flow Duration", "ge", 600000.0),
+                _clause("Flow IAT Mean", "ge", 50000.0),
+                _clause("Total Fwd Packets", "le", 8.0),
+            ],
+        ),
+        RuleDefinition(
+            name="ftp-bruteforce",
+            description="Rapid repeated connections to FTP (Patator style)",
+            clauses=[
+                _clause("Destination Port", "eq", 21.0),
+                _clause("SYN Flag Count", "ge", 4.0),
+                _clause("Total Fwd Packets", "ge", 20.0),
+            ],
+        ),
+        RuleDefinition(
+            name="ssh-bruteforce",
+            description="Rapid repeated connections to SSH (Patator style)",
+            clauses=[
+                _clause("Destination Port", "eq", 22.0),
+                _clause("SYN Flag Count", "ge", 4.0),
+                _clause("Total Fwd Packets", "ge", 20.0),
+            ],
+        ),
+        RuleDefinition(
+            name="tls-heartbeat-exfil",
+            description="Oversized TLS responses to tiny requests (Heartbleed style)",
+            clauses=[
+                _clause("Destination Port", "eq", 443.0),
+                _clause("Bwd Packet Length Max", "ge", 300.0),
+                _clause("Total Length of Bwd Packets", "ge", 4000.0),
+            ],
+        ),
+    ]
+
+
+class RulesConfig(BaseModel):
+    """Hand-written signature baseline the ML model is benchmarked against.
+
+    Rules are config, not code, so an operator can audit, tune, or extend them the
+    way they would a Suricata ruleset — and the comparison report re-runs unchanged.
+    """
+
+    definitions: list[RuleDefinition] = Field(default_factory=_default_rules)
+
+
 class CrossDatasetConfig(BaseModel):
     """Synthetic 'foreign' (NetFlow-schema) dataset for cross-dataset generalization."""
 
@@ -341,6 +437,7 @@ class Settings(BaseSettings):
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
+    rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)

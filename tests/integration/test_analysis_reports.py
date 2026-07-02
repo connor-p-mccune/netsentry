@@ -51,6 +51,15 @@ def test_conformal_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_rules_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.rules import run_rules_report
+
+    out = run_rules_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "matched" in text and "per-rule performance" in text
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 

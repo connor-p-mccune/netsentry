@@ -422,6 +422,30 @@ smaller dev-run numbers noted in earlier phases:
   a silent no-op. A test (`mimicry at fraction 0 == baseline`, curves monotone)
   caught it; fixed with a prefix-stripping `base_feature_name`.
 
+## Rules-vs-model baseline
+
+- Every ML-IDS write-up implicitly compares against "no detection"; the real
+  incumbent is a signature engine. Added a config-driven ruleset (six
+  Suricata-style threshold rules, port-scoped like real signatures) and a report
+  that compares it with the classifier **at a matched FP budget** — the model's
+  threshold is chosen on validation at the FPR the ruleset actually spends, so
+  neither system touches test before the comparison.
+- **The honest result is not the one I expected: the rules *win* the single
+  operating point** (21.1% vs 19.6% detection at ~0.5% FPR on the synthetic
+  temporal test). It makes sense on inspection — the temporal test mix is
+  dominated by DDoS + PortScan, precisely the two patterns with signatures, and
+  PortScan is a Friday-only class the Mon–Wed-trained model has literally never
+  seen. Reporting that instead of burying it is the point of the study.
+- The per-class table is the real finding: the model catches DDoS at 49.6% (it
+  generalises from the trained DoS family) but PortScan at 0.2%; the rules catch
+  PortScan at 20.7% but Bot/Infiltration/Web Attack at exactly 0% (no signature →
+  invisible). The hybrid (rules OR model) beats both at 24.3%. Complements, not
+  rivals — and the sign-aware prose renders correctly whichever side wins.
+- Also visible: signatures for attack classes not present in the traffic
+  (ssh-bruteforce, slow-drip-dos) fire only on benign flows — dead rules don't
+  just do nothing, they *spend the FP budget*. That is the maintenance-cost
+  argument against rulesets, measured.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

@@ -7,6 +7,15 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Rules-vs-model baseline (`netsentry rules`, `netsentry/models/rules.py` +
+  `netsentry/evaluation/rules.py`): a config-driven signature ruleset (six
+  Suricata-style, port-scoped threshold rules) benchmarked against the classifier
+  on the same temporal test split at a **matched false-positive budget**, plus the
+  hybrid (rules OR model) and a per-class breakdown. On the synthetic stand-in the
+  signatures win the single operating point (the test mix is dominated by the two
+  patterns they encode, and PortScan is novel to the Mon–Wed model) while having
+  exactly 0% recall on every class without a rule — the complements-not-rivals
+  case, stated with the numbers either way. In the analysis suite.
 - Per-attack-class detection slices (`netsentry slices`,
   `netsentry/evaluation/slices.py`): detection rate per attack class on the temporal
   split, exposing *which* later-day (largely novel) attacks are caught. On the
