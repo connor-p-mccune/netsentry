@@ -367,6 +367,23 @@ class RulesConfig(BaseModel):
     definitions: list[RuleDefinition] = Field(default_factory=_default_rules)
 
 
+class ActiveLearningConfig(BaseModel):
+    """Analyst-labeling-budget study: does querying uncertain flows beat random?
+
+    Labels are the scarce resource in a SOC (an analyst's time), so the question is
+    label *efficiency*: starting from a small labeled seed, which flows should the
+    analyst label next to most improve detection. Uncertainty sampling (query flows
+    nearest the decision boundary) is compared against a random baseline. Runs on the
+    stratified split, where the pool and test are exchangeable — the assumption
+    active learning needs, and the one the temporal shift deliberately breaks."""
+
+    seed_size: int = 500  # initial randomly-labeled flows
+    query_batch: int = 500  # flows labeled per round
+    rounds: int = 8  # labeling rounds after the seed
+    max_pool: int = 20000  # cap the unlabeled pool so the study stays fast
+    strategies: list[str] = Field(default_factory=lambda: ["uncertainty", "random"])
+
+
 class PoisoningConfig(BaseModel):
     """Training-set poisoning study: how detection degrades as labels are corrupted.
 
@@ -451,6 +468,7 @@ class Settings(BaseSettings):
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
+    active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)

@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.report import run_evaluation
@@ -80,6 +81,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "minimal change that clears a hit",
         "recourse.md",
         run_recourse_report,
+    ),
+    (
+        "Active learning",
+        "uncertainty vs random labeling efficiency",
+        "active_learning.md",
+        run_active_learning_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
     (

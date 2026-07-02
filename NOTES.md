@@ -422,6 +422,31 @@ smaller dev-run numbers noted in earlier phases:
   a silent no-op. A test (`mimicry at fraction 0 == baseline`, curves monotone)
   caught it; fixed with a prefix-stripping `base_feature_name`.
 
+## Active learning (analyst labeling budget)
+
+- The whole project frames the SOC's binding constraint as analyst time; this makes
+  it literal on the *training* side. Labels are the scarce resource, so the question
+  is label efficiency: from a small seed, does querying the flows the model is least
+  sure about (**uncertainty sampling**, |p−0.5| smallest) beat labeling at **random**?
+  Refit and score test after each round; the gap between the curves is time saved.
+- **Deliberate split choice, and a clean tie-in to the thesis.** Ran it on the
+  **stratified** split, because active learning assumes the pool and test are
+  exchangeable — the same assumption conformal needs, and the same one the temporal
+  split breaks on purpose. So AL is the reference-split technique and the report says
+  so, rather than overclaiming it on the honest split. It's the training-time mirror
+  of the conformal work: both order analyst attention by model uncertainty.
+- **Leakage discipline:** only *labels* are scarce, so the unsupervised feature
+  pipeline (impute/scale) is fit on the whole pool once — legitimate, and how you'd
+  actually deploy — while the model only ever trains on the labeled subset.
+- **Reporting subtlety I fixed in the loop.** My first efficiency metric ("labels to
+  reach 98% of the best PR-AUC") landed in the *flat* top of both curves, so it
+  reported "curves are close" and buried a real win. Switched to the standard AL
+  metric — labels needed to reach the quality random only reaches at the *end* of its
+  budget — which surfaces the honest result: uncertainty hits random's full-budget
+  0.759 PR-AUC with 3,500 labels vs 4,500 (a 22% saving), and leads at every
+  mid-budget round. The lesson: on a saturating curve, *where* you measure the gap
+  decides whether you see it.
+
 ## Provenance & supply-chain (SBOM + model manifest)
 
 - The auto model card answers "what is this model"; this answers the two questions

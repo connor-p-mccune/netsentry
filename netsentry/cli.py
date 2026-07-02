@@ -326,6 +326,19 @@ def modelcard_cmd(
     logger.info("Model card ready", extra={"path": str(out)})
 
 
+@app.command("activelearning")
+def active_learning_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Compare uncertainty vs random labeling (analyst-budget label efficiency)."""
+    from netsentry.evaluation.active_learning import run_active_learning_report
+
+    settings = _load(config, override)
+    out = run_active_learning_report(settings)
+    logger.info("Active-learning report ready", extra={"path": str(out)})
+
+
 @app.command("learningcurve")
 def learning_curve_cmd(
     config: ConfigOpt = None,

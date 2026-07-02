@@ -7,6 +7,15 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Active-learning label-efficiency study (`netsentry activelearning`,
+  `netsentry/evaluation/active_learning.py`): from a small labeled seed, compare
+  uncertainty sampling (query flows nearest the decision boundary) against random
+  labeling, refitting and scoring test after each round — the analyst-labeling-budget
+  question the rest of the project's "analyst time is the constraint" framing implies.
+  Runs on the stratified split (where the pool and test are exchangeable, the
+  assumption active learning needs — the training-time mirror of conformal selective
+  prediction). On the synthetic stand-in uncertainty sampling reaches random's
+  full-budget PR-AUC with ~22% fewer labels. In the analysis suite.
 - Provenance & supply chain (`netsentry provenance` / `netsentry verify`,
   `netsentry/governance/provenance.py`): a CycloneDX 1.5 SBOM of the project's
   declared dependencies resolved to installed versions (with Package URLs a CVE

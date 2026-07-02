@@ -52,6 +52,19 @@ def test_conformal_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_active_learning_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.active_learning import run_active_learning_report
+
+    prepared.active_learning.seed_size = 200
+    prepared.active_learning.query_batch = 200
+    prepared.active_learning.rounds = 2
+    prepared.active_learning.max_pool = 2000
+    out = run_active_learning_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "uncertainty" in text and "label" in text
+
+
+@pytest.mark.slow
 def test_provenance_writes_sbom_manifest_and_verifies(prepared: Settings) -> None:
     from netsentry.governance.provenance import (
         MANIFEST_NAME,
