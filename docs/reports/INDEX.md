@@ -10,6 +10,7 @@ _Regenerated 2026-07-02 11:02 UTC via `netsentry analyze`. Synthetic stand-in un
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
+| Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
 | Rules-vs-model baseline | hand-written signatures at a matched FPR budget | [open](rules.md) |
 | Feature-group ablation | which behavioural families carry detection | [open](ablation.md) |

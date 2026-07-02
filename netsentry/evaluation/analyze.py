@@ -27,6 +27,7 @@ from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
 from netsentry.monitoring.report import run_drift_report
+from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 
@@ -65,6 +66,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_poisoning_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
+    (
+        "Prequential streaming",
+        "static vs retrained model on the later-day stream",
+        "streaming.md",
+        run_streaming_report,
+    ),
     (
         "Per-class detection",
         "which temporal-split attacks are caught",

@@ -422,6 +422,30 @@ smaller dev-run numbers noted in earlier phases:
   a silent no-op. A test (`mimicry at fraction 0 == baseline`, curves monotone)
   caught it; fixed with a prefix-stripping `base_feature_name`.
 
+## Prequential streaming (drift → retrain → recover)
+
+- The drift monitor *measures* decay; this closes the loop to the *action*. Replay
+  the later-day (temporal test) flows as a time-ordered stream and compare a
+  **static** model (frozen at deploy) against one **retrained** on each labeled
+  batch, scored **prequentially** (interleaved test-then-train: score the batch,
+  then learn from it). One operating threshold fixed on clean validation, so model
+  freshness is the only moving part.
+- **The result tells a genuinely rich story.** Mean batch PR-AUC rises 0.43 (static)
+  → 0.54 (retrained). More telling than the mean is the *shape*: early-Thursday
+  batches (rare Web Attack/Infiltration, few positives) are hard for both, but by the
+  Friday batches the retrained model — having folded in the earlier novel attacks —
+  hits ~0.90 PR-AUC while the static model plateaus at ~0.66. The retrained model
+  literally learns the later-day attack types the frozen one never trained on.
+- **The drift signal and the failure coincide, which is the whole point.** Per-batch
+  model-score PSI starts *major* (0.55) on the earliest, most-novel batches and
+  subsides as the stream approaches the training regime — so the batches where the
+  static model is worst are exactly the ones the PSI alert would fire on. That is the
+  closed loop: PSI rises → major-PSI batch is the retrain trigger (same threshold as
+  the Prometheus drift alert) → retrain on recent labels → recover.
+- Ties the batch together: retraining's *cost* is labels for the new attacks, which
+  is precisely the analyst budget the active-learning study prices, and the recovery
+  is the flip side of the ablation finding that later-day attacks don't transfer.
+
 ## Feature-group ablation
 
 - SHAP says which features a *prediction* leaned on (attribution); it can't say what

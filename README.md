@@ -18,7 +18,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **209 passing tests**), and the full `download → prep → train → eval →
+type-check + **215 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
@@ -54,6 +54,7 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Threat intel | MITRE ATT&CK mapping in predictions + coverage report | ✅ Done |
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
+| Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
@@ -245,6 +246,16 @@ shuffled one. In serving the same check runs continuously: `/metrics` exposes
 `netsentry_feature_drift_psi_max` / `_mean` over a rolling window of requests, and
 the drift reference travels inside the model bundle so a deployed model
 self-monitors. See [`docs/reports/drift.md`](docs/reports/drift.md).
+
+`netsentry streaming` closes that loop from *measuring* drift to *acting* on it:
+it replays the later-day flows as a time-ordered stream and compares a **static**
+model (frozen at deploy) against one **retrained** on each labeled batch, scored
+prequentially (score, then learn). On the synthetic stand-in retraining lifts mean
+batch PR-AUC from **0.43 to 0.54** — the retrained model reaches ~0.90 on late-stream
+batches once it has seen labeled examples of the novel later-day attacks — and the
+per-batch score-PSI (major early, then subsiding) shows the batches where the static
+model slips are exactly the ones the drift alert would fire on. See
+[`docs/reports/streaming.md`](docs/reports/streaming.md).
 
 ## Threat intelligence (MITRE ATT&CK)
 

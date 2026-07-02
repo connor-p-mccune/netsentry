@@ -367,6 +367,20 @@ class RulesConfig(BaseModel):
     definitions: list[RuleDefinition] = Field(default_factory=_default_rules)
 
 
+class StreamingConfig(BaseModel):
+    """Prequential streaming simulation: does retraining recover from drift?
+
+    The drift monitor *measures* decay; this closes the loop to the *action*.
+    Later-day test flows arrive as a time-ordered stream of batches, and two
+    policies are compared prequentially (score each batch, then learn from it): a
+    **static** model frozen at deploy versus one **retrained** on each labeled batch.
+    The gap is the value of continuous learning against later-day, partly-novel
+    attacks — and the reason labels (see the active-learning study) are the cost."""
+
+    n_batches: int = 6  # time-ordered windows the later-day stream is split into
+    retrain: bool = True  # compare a retrained model against the static one
+
+
 class ActiveLearningConfig(BaseModel):
     """Analyst-labeling-budget study: does querying uncertain flows beat random?
 
@@ -469,6 +483,7 @@ class Settings(BaseSettings):
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
+    streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)

@@ -7,6 +7,15 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Prequential streaming simulation (`netsentry streaming`,
+  `netsentry/monitoring/streaming.py`): replay the later-day (temporal test) flows as
+  a time-ordered stream and compare a static model (frozen at deploy) against one
+  retrained on each labeled batch, scored prequentially (test-then-train) at one fixed
+  operating threshold. Overlays per-batch model-score PSI so the batches where the
+  static model decays line up with the drift signal — closing the loop from measuring
+  drift (`netsentry drift`) to acting on it. On the synthetic stand-in retraining
+  lifts mean batch PR-AUC 0.43 → 0.54 (reaching ~0.90 on late-stream batches). In the
+  analysis suite.
 - Feature-group ablation study (`netsentry ablation`,
   `netsentry/evaluation/ablation.py` + behavioural-family groupings in
   `features/feature_sets.py`): leave-one-family-out on the honest temporal split,

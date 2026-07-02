@@ -180,6 +180,19 @@ def evaluate(
 
 
 @app.command()
+def streaming(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Replay later-day flows as a stream; compare a static vs a retrained model."""
+    from netsentry.monitoring.streaming import run_streaming_report
+
+    settings = _load(config, override)
+    out = run_streaming_report(settings)
+    logger.info("Streaming report ready", extra={"path": str(out)})
+
+
+@app.command()
 def drift(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
