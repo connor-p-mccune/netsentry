@@ -178,8 +178,8 @@ def _render(
         + ", ".join(f"**{p.group}** ({-p.pr_auc_drop:+.3f})" for p in helped)
         + " *improved* the honest PR-AUC. That is not a licence to prune — it is the "
         "signature of **overfitting to the temporal shift**: those families encode "
-        "absolute scales (packet/flow volumes, durations) that differ between the Mon–Wed "
-        "training attacks and the Thu–Fri test attacks, so the model learns day-specific "
+        "absolute scales (packet/flow volumes, durations) that differ between the Mon-Wed "
+        "training attacks and the Thu-Fri test attacks, so the model learns day-specific "
         "thresholds that mislead on later days. The rate family, being a ratio, transfers "
         "better. Acting on this would mean selecting features on *validation* "
         "(never this test split — that is the leakage the project exists to avoid); the "

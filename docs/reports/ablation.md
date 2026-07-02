@@ -27,7 +27,7 @@ family and refitting — the causal-flavoured complement to SHAP's attribution.
 The most load-bearing family is **flow rates** (-0.305 PR-AUC,
 +20.2 pts detection when removed): the honest temporal
 signal leans on it most, and it is a *ratio* family that transfers across days.
- Conversely, removing **timing/IAT** (+0.039), **volume/counts** (+0.112) *improved* the honest PR-AUC. That is not a licence to prune — it is the signature of **overfitting to the temporal shift**: those families encode absolute scales (packet/flow volumes, durations) that differ between the Mon–Wed training attacks and the Thu–Fri test attacks, so the model learns day-specific thresholds that mislead on later days. The rate family, being a ratio, transfers better. Acting on this would mean selecting features on *validation* (never this test split — that is the leakage the project exists to avoid); the ablation only tells you where to look.
+ Conversely, removing **timing/IAT** (+0.039), **volume/counts** (+0.112) *improved* the honest PR-AUC. That is not a licence to prune — it is the signature of **overfitting to the temporal shift**: those families encode absolute scales (packet/flow volumes, durations) that differ between the Mon-Wed training attacks and the Thu-Fri test attacks, so the model learns day-specific thresholds that mislead on later days. The rate family, being a ratio, transfers better. Acting on this would mean selecting features on *validation* (never this test split — that is the leakage the project exists to avoid); the ablation only tells you where to look.
 
 This lines up with the adversarial-robustness study — the rate/timing features
 ablation shows carry the transferable signal are exactly the attacker-controllable
