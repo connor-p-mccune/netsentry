@@ -1,0 +1,57 @@
+{
+  "schema": "netsentry/model-manifest@1",
+  "created_at": "2026-07-02T15:39:16Z",
+  "git_commit": "c7f3e232b8b00fe63af43284c222b73b9ae289b3",
+  "runtime": {
+    "python": "3.14.4",
+    "platform": "Windows-11-10.0.26200-SP0"
+  },
+  "bundle": {
+    "name": "serving_bundle.joblib",
+    "sha256": "82c7b3dd0ed1838bf5f4b2d933e9b0745b592bf8fb1eac939f6aee7363713965",
+    "size_bytes": 20089556
+  },
+  "model": {
+    "version": "0.1.0",
+    "task": "multiclass",
+    "split_strategy": "stratified",
+    "backend": "lightgbm",
+    "classes": [
+      "BENIGN",
+      "Bot",
+      "DDoS",
+      "DoS GoldenEye",
+      "DoS Hulk",
+      "DoS Slowhttptest",
+      "DoS slowloris",
+      "FTP-Patator",
+      "Heartbleed",
+      "Infiltration",
+      "PortScan",
+      "SSH-Patator",
+      "Web Attack"
+    ],
+    "n_features": 76,
+    "calibration": {
+      "enabled": true,
+      "method": "isotonic"
+    },
+    "threshold_profiles": [
+      "cost_optimal",
+      "fpr_0.1pct",
+      "fpr_1pct"
+    ],
+    "has_calibrator": true,
+    "has_anomaly_detector": true,
+    "has_conformal": true,
+    "has_drift_reference": true
+  },
+  "config": {
+    "seed": 42,
+    "digest_sha256": "c2935eb484305fa570eea8f0bc8cd42453916973260b665e026dbce05a0a6208"
+  },
+  "sbom": {
+    "component_count": 35,
+    "digest_sha256": "e1962019448371bb4baec904bf4528ccc00c3c950d31cb2f3a50fc03dab1a97d"
+  }
+}

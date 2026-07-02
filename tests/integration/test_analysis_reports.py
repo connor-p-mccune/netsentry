@@ -7,6 +7,7 @@ All paths are redirected to a tmp dir so the committed reports/figures are untou
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -48,6 +49,27 @@ def test_conformal_report_is_written(prepared: Settings) -> None:
 
     out = run_conformal_report(prepared)
     assert out.exists() and "coverage" in out.read_text(encoding="utf-8").lower()
+
+
+@pytest.mark.slow
+def test_provenance_writes_sbom_manifest_and_verifies(prepared: Settings) -> None:
+    from netsentry.governance.provenance import (
+        MANIFEST_NAME,
+        SBOM_NAME,
+        run_provenance_report,
+        verify_manifest,
+    )
+
+    out = run_provenance_report(prepared)
+    reports = prepared.paths.reports_dir
+    assert out.exists()
+    sbom = json.loads((reports / SBOM_NAME).read_text(encoding="utf-8"))
+    assert sbom["bomFormat"] == "CycloneDX" and sbom["components"]
+    # The manifest names the freshly-built bundle, and verify agrees it is intact.
+    manifest = json.loads((reports / MANIFEST_NAME).read_text(encoding="utf-8"))
+    assert manifest["bundle"]["sha256"]
+    bundle_path = prepared.paths.models_dir / manifest["bundle"]["name"]
+    assert verify_manifest(reports / MANIFEST_NAME, bundle_path).ok
 
 
 @pytest.mark.slow

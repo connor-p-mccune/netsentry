@@ -265,6 +265,54 @@ def recourse(
     logger.info("Recourse report ready", extra={"path": str(out)})
 
 
+@app.command()
+def provenance(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Write the supply-chain SBOM + model-integrity manifest and provenance report."""
+    from netsentry.governance.provenance import run_provenance_report
+
+    settings = _load(config, override)
+    out = run_provenance_report(settings)
+    logger.info("Provenance report ready", extra={"path": str(out)})
+
+
+@app.command()
+def verify(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    manifest: Annotated[
+        Path | None, typer.Option(help="Manifest path (default: reports_dir/model_manifest.json).")
+    ] = None,
+    bundle: Annotated[
+        Path | None, typer.Option(help="Bundle to verify (default: the one named in the manifest).")
+    ] = None,
+) -> None:
+    """Verify a deployed bundle against its provenance manifest (integrity gate)."""
+    import json as _json
+
+    from netsentry.governance.provenance import MANIFEST_NAME, verify_manifest
+
+    settings = _load(config, override)
+    manifest_path = manifest or (settings.paths.reports_dir / MANIFEST_NAME)
+    if not manifest_path.exists():
+        logger.error("No manifest at %s; run `netsentry provenance` first.", manifest_path)
+        raise typer.Exit(code=2)
+    # The manifest records only the bundle's *name* (portable, no absolute paths), so
+    # resolve it against the models directory where bundles actually live.
+    if bundle is None:
+        name = _json.loads(manifest_path.read_text(encoding="utf-8")).get("bundle", {}).get("name")
+        if name:
+            bundle = settings.paths.models_dir / name
+    result = verify_manifest(manifest_path, bundle)
+    for name, passed, detail in result.checks:
+        logger.info("verify: %s %s (%s)", name, "OK" if passed else "FAIL", detail)
+    if not result.ok:
+        raise typer.Exit(code=1)
+    logger.info("Bundle integrity verified", extra={"manifest": str(manifest_path)})
+
+
 @app.command("modelcard")
 def modelcard_cmd(
     config: ConfigOpt = None,

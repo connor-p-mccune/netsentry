@@ -1,0 +1,454 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:22c3e9a5-35d5-44c6-bded-b4cbca1a8d7e",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-02T15:39:15Z",
+    "tools": [
+      {
+        "vendor": "NetSentry",
+        "name": "netsentry-provenance",
+        "version": "0.1.0"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "name": "netsentry",
+      "version": "0.1.0",
+      "purl": "pkg:pypi/netsentry@0.1.0"
+    },
+    "properties": [
+      {
+        "name": "netsentry:sbom-scope",
+        "value": "declared-dependencies"
+      },
+      {
+        "name": "netsentry:declared-not-installed",
+        "value": "jupyterlab"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "black",
+      "version": "26.5.1",
+      "purl": "pkg:pypi/black@26.5.1",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "dev"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "fastapi",
+      "version": "0.138.0",
+      "purl": "pkg:pypi/fastapi@0.138.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "serve"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "httpx",
+      "version": "0.28.1",
+      "purl": "pkg:pypi/httpx@0.28.1",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "serve"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "imbalanced-learn",
+      "version": "0.14.2",
+      "purl": "pkg:pypi/imbalanced-learn@0.14.2",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "train"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ipykernel",
+      "version": "7.3.0",
+      "purl": "pkg:pypi/ipykernel@7.3.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "notebooks"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "joblib",
+      "version": "1.5.3",
+      "purl": "pkg:pypi/joblib@1.5.3",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "lightgbm",
+      "version": "4.6.0",
+      "purl": "pkg:pypi/lightgbm@4.6.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "train"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "matplotlib",
+      "version": "3.11.0",
+      "purl": "pkg:pypi/matplotlib@3.11.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mlflow",
+      "version": "3.14.0",
+      "purl": "pkg:pypi/mlflow@3.14.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "train"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "mypy",
+      "version": "2.1.0",
+      "purl": "pkg:pypi/mypy@2.1.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "dev"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "nbconvert",
+      "version": "7.17.1",
+      "purl": "pkg:pypi/nbconvert@7.17.1",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "notebooks"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "numpy",
+      "version": "2.4.6",
+      "purl": "pkg:pypi/numpy@2.4.6",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "onnx",
+      "version": "1.22.0",
+      "purl": "pkg:pypi/onnx@1.22.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "onnx"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "onnxmltools",
+      "version": "1.16.0",
+      "purl": "pkg:pypi/onnxmltools@1.16.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "onnx"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "onnxruntime",
+      "version": "1.27.0",
+      "purl": "pkg:pypi/onnxruntime@1.27.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "onnx"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "optuna",
+      "version": "4.9.0",
+      "purl": "pkg:pypi/optuna@4.9.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "train"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pandas",
+      "version": "2.3.3",
+      "purl": "pkg:pypi/pandas@2.3.3",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pre-commit",
+      "version": "4.6.0",
+      "purl": "pkg:pypi/pre-commit@4.6.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "dev"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "prometheus-client",
+      "version": "0.25.0",
+      "purl": "pkg:pypi/prometheus-client@0.25.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "serve"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pyarrow",
+      "version": "24.0.0",
+      "purl": "pkg:pypi/pyarrow@24.0.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pydantic",
+      "version": "2.13.4",
+      "purl": "pkg:pypi/pydantic@2.13.4",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pydantic-settings",
+      "version": "2.14.2",
+      "purl": "pkg:pypi/pydantic-settings@2.14.2",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pytest",
+      "version": "9.1.1",
+      "purl": "pkg:pypi/pytest@9.1.1",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "dev"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pytest-cov",
+      "version": "7.1.0",
+      "purl": "pkg:pypi/pytest-cov@7.1.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "dev"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "pyyaml",
+      "version": "6.0.3",
+      "purl": "pkg:pypi/pyyaml@6.0.3",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ruff",
+      "version": "0.15.19",
+      "purl": "pkg:pypi/ruff@0.15.19",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "dev"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "scikit-learn",
+      "version": "1.9.0",
+      "purl": "pkg:pypi/scikit-learn@1.9.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "seaborn",
+      "version": "0.13.2",
+      "purl": "pkg:pypi/seaborn@0.13.2",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "train"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "shap",
+      "version": "0.52.0",
+      "purl": "pkg:pypi/shap@0.52.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "train"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "skl2onnx",
+      "version": "1.20.0",
+      "purl": "pkg:pypi/skl2onnx@1.20.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "onnx"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "streamlit",
+      "version": "1.58.0",
+      "purl": "pkg:pypi/streamlit@1.58.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "demo"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "torch",
+      "version": "2.12.1",
+      "purl": "pkg:pypi/torch@2.12.1",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "ae"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "typer",
+      "version": "0.26.7",
+      "purl": "pkg:pypi/typer@0.26.7",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "core"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "types-PyYAML",
+      "version": "6.0.12.20260518",
+      "purl": "pkg:pypi/types-pyyaml@6.0.12.20260518",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "dev"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "uvicorn",
+      "version": "0.49.0",
+      "purl": "pkg:pypi/uvicorn@0.49.0",
+      "properties": [
+        {
+          "name": "netsentry:dependency-group",
+          "value": "serve"
+        }
+      ]
+    }
+  ]
+}

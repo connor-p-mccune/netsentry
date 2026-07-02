@@ -21,6 +21,7 @@ from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.explain.counterfactual import run_recourse_report
+from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
 from netsentry.monitoring.report import run_drift_report
@@ -81,6 +82,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_recourse_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
+    (
+        "Provenance & supply chain",
+        "CycloneDX SBOM + model-integrity manifest",
+        "provenance.md",
+        run_provenance_report,
+    ),
 ]
 
 

@@ -7,6 +7,15 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Provenance & supply chain (`netsentry provenance` / `netsentry verify`,
+  `netsentry/governance/provenance.py`): a CycloneDX 1.5 SBOM of the project's
+  declared dependencies resolved to installed versions (with Package URLs a CVE
+  scanner keys on), and a model-integrity manifest — the bundle SHA-256, a digest of
+  the resolved training config, the git commit, the runtime, and a summary of the
+  bundle's contents. `netsentry verify` recomputes the hash and exits non-zero on a
+  mismatch — the deploy/CI integrity gate against a swapped or corrupted artifact.
+  The SBOM is hand-emitted to the schema (not via a churning library API) so it
+  stays a stable, spec-valid artifact. In the analysis suite.
 - Training-set poisoning study (`netsentry poisoning`,
   `netsentry/robustness/poisoning.py`): the training-time counterpart to the evasion
   study. Label-flip poisoning (attack rows relabeled benign) against the supervised

@@ -422,6 +422,31 @@ smaller dev-run numbers noted in earlier phases:
   a silent no-op. A test (`mimicry at fraction 0 == baseline`, curves monotone)
   caught it; fixed with a prefix-stripping `base_feature_name`.
 
+## Provenance & supply-chain (SBOM + model manifest)
+
+- The auto model card answers "what is this model"; this answers the two questions
+  a security reviewer or a deploy gate actually asks about a binary artifact that
+  decides maliciousness: **what went into it** (a CycloneDX SBOM) and **has it been
+  altered** (a SHA-256 model manifest + a `verify` integrity gate). It rounds out
+  the governance story from "documented" to "attestable".
+- **Design call: hand-built the CycloneDX 1.5 JSON rather than going through
+  `cyclonedx-python-lib`** (which is installed). The library's model API churns
+  across majors; a spec is stable. A dependency-free emitter that writes valid
+  CycloneDX keeps the artifact durable and the code reviewable, and a test asserts
+  the structure + `purl` form scanners key on. Scoped the SBOM to *declared*
+  dependencies resolved to installed versions — a bounded, meaningful BOM — rather
+  than the full transitive environment (hundreds of env-specific rows).
+- **Manifest portability bug I caught in the loop.** First `verify` run failed:
+  the manifest records only the bundle *name* (deliberately — absolute paths in a
+  committed artifact are non-portable), so `verify_manifest` resolved it next to
+  the manifest (docs/reports/) instead of models/. Kept `verify_manifest` pure
+  (hash in, compare) and moved the "where do bundles live" knowledge into the CLI,
+  which has settings — so it resolves the name against `models_dir`. Tampering a
+  byte flips the hash and `verify` exits non-zero, which is the whole point.
+- `netsentry verify` is a real CI/deploy gate: recompute the bundle SHA-256, fail
+  loudly on a swap or corruption — the model-serving analogue of checking a package
+  signature, and the natural consumer of the manifest the pipeline now emits.
+
 ## Training-set poisoning study
 
 - The robustness study covers the inference-time adversary (evasion); this covers
