@@ -353,6 +353,19 @@ def learning_curve_cmd(
 
 
 @app.command()
+def ablation(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Leave-one-feature-family-out ablation: which behavioural families carry detection."""
+    from netsentry.evaluation.ablation import run_ablation_report
+
+    settings = _load(config, override)
+    out = run_ablation_report(settings)
+    logger.info("Ablation report ready", extra={"path": str(out)})
+
+
+@app.command()
 def slices(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

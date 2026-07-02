@@ -95,6 +95,15 @@ def test_rules_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_ablation_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.ablation import run_ablation_report
+
+    out = run_ablation_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "ablation" in text and "family removed" in text
+
+
+@pytest.mark.slow
 def test_poisoning_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.poisoning import run_poisoning_report
 

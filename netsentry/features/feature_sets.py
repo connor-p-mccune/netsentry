@@ -18,6 +18,35 @@ FEATURE_SETS: dict[str, list[str]] = {
     "full_with_port": schema.feature_columns(include_destination_port=True),
 }
 
+# Behavioural families the CICFlowMeter statistics fall into, defined by keyword so
+# the partition is legible and covers new columns automatically. Ordered because the
+# first matching family wins (e.g. "Flow Packets/s" is a rate, not a volume count).
+# Used by the feature-group ablation study to measure each family's marginal value.
+_FEATURE_GROUP_KEYWORDS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("timing/IAT", ("IAT", "Active", "Idle", "Duration")),
+    ("flow rates", ("/s",)),
+    ("packet size", ("Packet Length", "Segment Size", "Packet Size")),
+    ("TCP flags", ("Flag", "PSH", "URG", "ECE", "CWE")),
+    ("volume/counts", ("Total", "Subflow", "act_data_pkt", "Down/Up")),
+    ("header/window/bulk", ("Header", "Init_Win", "min_seg", "Bulk")),
+)
+
+
+def feature_group(feature: str) -> str:
+    """Behavioural family a feature belongs to (first keyword match, else 'other')."""
+    for group, keywords in _FEATURE_GROUP_KEYWORDS:
+        if any(keyword in feature for keyword in keywords):
+            return group
+    return "other"
+
+
+def feature_groups(*, include_destination_port: bool = False) -> dict[str, list[str]]:
+    """Partition the feature columns into behavioural families (non-empty groups)."""
+    groups: dict[str, list[str]] = {}
+    for feature in schema.feature_columns(include_destination_port=include_destination_port):
+        groups.setdefault(feature_group(feature), []).append(feature)
+    return groups
+
 
 def get_feature_set(name: str, *, include_destination_port: bool = False) -> list[str]:
     """Return the ordered feature columns for a named feature set."""

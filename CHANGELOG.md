@@ -7,6 +7,16 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Feature-group ablation study (`netsentry ablation`,
+  `netsentry/evaluation/ablation.py` + behavioural-family groupings in
+  `features/feature_sets.py`): leave-one-family-out on the honest temporal split,
+  refitting with each behavioural family (timing/IAT, flow rates, packet size, TCP
+  flags, volume/counts, header/window) removed to measure its marginal detection
+  value — the causal complement to SHAP's attribution. On the synthetic stand-in
+  removing flow rates collapses PR-AUC (0.529 → 0.224) while removing volume/counts
+  *improves* it — the fingerprint of overfitting to the temporal shift, reported as
+  such (with an explicit warning against selecting features on the test split). In the
+  analysis suite.
 - Active-learning label-efficiency study (`netsentry activelearning`,
   `netsentry/evaluation/active_learning.py`): from a small labeled seed, compare
   uncertainty sampling (query flows nearest the decision boundary) against random

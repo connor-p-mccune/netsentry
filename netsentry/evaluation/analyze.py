@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
@@ -75,6 +76,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "hand-written signatures at a matched FPR budget",
         "rules.md",
         run_rules_report,
+    ),
+    (
+        "Feature-group ablation",
+        "which behavioural families carry detection",
+        "ablation.md",
+        run_ablation_report,
     ),
     (
         "Counterfactual recourse",

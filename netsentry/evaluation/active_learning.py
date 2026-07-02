@@ -25,7 +25,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
-import pandas as pd
 from sklearn.metrics import average_precision_score
 
 from netsentry.data.clean import BINARY_TARGET

@@ -422,6 +422,33 @@ smaller dev-run numbers noted in earlier phases:
   a silent no-op. A test (`mimicry at fraction 0 == baseline`, curves monotone)
   caught it; fixed with a prefix-stripping `base_feature_name`.
 
+## Feature-group ablation
+
+- SHAP says which features a *prediction* leaned on (attribution); it can't say what
+  the model would lose if a whole family were gone, because a high-SHAP feature may
+  be redundant with a fallback. Ablation answers that causal question: partition the
+  CICFlowMeter stats into behavioural families (timing/IAT, flow rates, packet size,
+  TCP flags, volume/counts, header/window) and refit with each family removed. Done
+  on the fitted feature matrix (drop columns, refit model) so the leakage-safe
+  pipeline and every other column's train-fit stats are untouched.
+- **The result is the most interesting honest finding of this batch.** Removing
+  **flow rates** collapses temporal PR-AUC 0.529 → 0.224 (detection 21% → 0.8%) — the
+  honest signal leans overwhelmingly on the rate family. But removing **volume/counts
+  *improved* PR-AUC to 0.641** and timing/IAT removal helped too. That is not "prune
+  them"; it is the fingerprint of **overfitting to the temporal shift** — volume and
+  duration magnitudes differ between the Mon–Wed training attacks and the Thu–Fri
+  test attacks, so the model learns day-specific thresholds that mislead later, while
+  the rate *ratios* transfer. A third independent view of the project's core thesis.
+- **Credibility guard I put in deliberately.** "Removing X improves the test number"
+  is one keystroke from "so I selected features on the test set" — the exact leakage
+  the project is about. The report states plainly that acting on this means selecting
+  on *validation*, never the test split; ablation only says where to look. Without
+  that sentence the feature would undercut the whole project's thesis.
+- Ties to robustness: the rate/timing families ablation shows carry the transferable
+  signal are the attacker-controllable ones the evasion study exploits — the same
+  argument for pairing the classifier with the benign-only anomaly detector, now from
+  a second direction.
+
 ## Active learning (analyst labeling budget)
 
 - The whole project frames the SOC's binding constraint as analyst time; this makes
