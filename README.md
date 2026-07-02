@@ -18,7 +18,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **166 passing tests**), and the full `download → prep → train → eval →
+type-check + **209 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
@@ -53,9 +53,14 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
 | Threat intel | MITRE ATT&CK mapping in predictions + coverage report | ✅ Done |
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
+| Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
+| Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
+| Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
+| Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
 | Batch inference | offline `score` a CSV/Parquet of flows to predictions | ✅ Done |
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
+| Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
@@ -174,6 +179,11 @@ netsentry train anomaly             # benign-only anomaly detector + leave-one-a
 netsentry eval                      # operational metrics report + figures (+ bootstrap CIs)
 netsentry learningcurve             # PR-AUC vs training size (does more data help?)
 netsentry slices                    # per-attack-class detection (known vs novel)
+netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
+netsentry ablation                  # leave-one-feature-family-out importance
+netsentry activelearning            # uncertainty vs random labeling (label efficiency)
+netsentry poisoning                 # detection decay under training-set poisoning
+netsentry provenance && netsentry verify   # SBOM + model manifest, then integrity gate
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
@@ -321,6 +331,61 @@ operating point, and the most-exploitable features (Flow Duration, packet counts
 flow rates) line up with the SHAP global importances. That fragility is the
 concrete argument for pairing the classifier with the benign-only anomaly
 detector. See [`docs/reports/robustness.md`](docs/reports/robustness.md).
+
+## Training-set poisoning
+
+Evasion is the inference-time adversary; `netsentry poisoning` measures the
+training-time one. It flips a fraction of attack labels to benign (a corrupted
+labeling source) against the supervised model, and contaminates the "benign-only"
+pool with attack flows against the anomaly detector — always scoring on the *clean*
+test split while train/val carry the poison (the operator's real position). The
+headline is a second instance of the project's thesis: PR-AUC (a **ranking** metric)
+barely moves under label flips while detection at the operator's threshold — chosen
+on the *poisoned* validation labels — **collapses from 21% to 1.8%** at a 50% flip.
+A study reporting only PR-AUC would call the model poison-resistant and be wrong
+about the number that ships. See [`docs/reports/poisoning.md`](docs/reports/poisoning.md).
+
+## Signature-rule baseline
+
+An ML detector should have to beat the incumbent, not "no detection". `netsentry
+rules` runs a config-driven, port-scoped signature ruleset (Suricata-style threshold
+rules) against the classifier on the same temporal test split **at a matched
+false-positive budget** — the model's threshold is chosen on validation at the FPR
+the ruleset actually spends. The honest synthetic result: the tuned signatures edge
+the model at the single operating point (the test mix is dominated by the two
+patterns they encode, and PortScan is novel to the Mon–Wed model) while having ~0%
+recall on every class without a rule; the **hybrid** (rules OR model) beats both.
+Complements, not rivals — stated with the numbers either way. See
+[`docs/reports/rules.md`](docs/reports/rules.md).
+
+## Feature-group ablation
+
+SHAP attributes a prediction to features; it can't say what the model would lose if
+a whole family were gone. `netsentry ablation` refits the temporal model with each
+behavioural family (timing/IAT, flow rates, packet size, TCP flags, volume, header)
+removed and measures the detection drop — the causal complement to SHAP. Removing
+**flow rates** collapses PR-AUC (0.529 → 0.224); removing **volume/counts** *raises*
+it — the fingerprint of overfitting to the temporal shift (absolute volumes don't
+transfer across days, rate ratios do). Reported as a place to look, **not** a licence
+to prune on the test split. See [`docs/reports/ablation.md`](docs/reports/ablation.md).
+
+## Active learning (label efficiency)
+
+Labels — an analyst's time — are the scarce resource, so `netsentry activelearning`
+asks *which* flows to label next: uncertainty sampling (query nearest the decision
+boundary) vs random. On the stratified split (where the pool/test exchangeability
+that active learning needs holds — the training-time mirror of conformal), uncertainty
+sampling reaches random's full-budget PR-AUC with **~22% fewer labels**. See
+[`docs/reports/active_learning.md`](docs/reports/active_learning.md).
+
+## Provenance & supply chain
+
+`netsentry provenance` emits a **CycloneDX 1.5 SBOM** of the dependency graph (with
+Package URLs a CVE scanner keys on) and a **model-integrity manifest** — the bundle
+SHA-256, a digest of the training config, the git commit, and the runtime. `netsentry
+verify` recomputes the hash and exits non-zero on a mismatch: the deploy/CI gate
+against a swapped or corrupted artifact, the model-serving analogue of checking a
+package signature. See [`docs/reports/provenance.md`](docs/reports/provenance.md).
 
 ## ONNX export
 
