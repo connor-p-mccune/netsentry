@@ -61,13 +61,14 @@ jobs:
           python -m netsentry.cli train supervised -o configs/ci.yaml
           python -m netsentry.cli eval -o configs/ci.yaml
           python -m netsentry.cli train anomaly -o configs/ci.yaml
-      - name: Analysis suite (cost · conformal · robustness · rules · ablation)
+      - name: Analysis suite (cost · conformal · robustness · rules · ablation · subgroups)
         run: |
           python -m netsentry.cli cost -o configs/ci.yaml
           python -m netsentry.cli conformal -o configs/ci.yaml
           python -m netsentry.cli robustness -o configs/ci.yaml
           python -m netsentry.cli rules -o configs/ci.yaml
           python -m netsentry.cli ablation -o configs/ci.yaml
+          python -m netsentry.cli subgroups -o configs/ci.yaml
       - name: Model-integrity gate (SBOM + manifest, then verify)
         run: |
           python -m netsentry.cli provenance -o configs/ci.yaml
