@@ -189,6 +189,19 @@ class EvaluationConfig(BaseModel):
     )
 
 
+class SubgroupsConfig(BaseModel):
+    """Per-service detection-parity audit at a single global threshold.
+
+    Groups the honest-split test flows by the service implied by ``Destination Port``
+    — a field the model never sees, since it is dropped to prevent port-memorisation —
+    and measures detection rate and false-positive rate per service at one global
+    operating threshold. Large unintended gaps are the operational analogue of an
+    equalized-odds fairness audit: they show where a per-service threshold would beat
+    one global cut, and which services a global cut floods with false positives."""
+
+    min_support: int = 100  # flows a service needs before its rates are reported
+
+
 class ConformalConfig(BaseModel):
     """Split-conformal prediction: distribution-free coverage + selective alerting.
 
@@ -479,6 +492,7 @@ class Settings(BaseSettings):
     cost: CostConfig = Field(default_factory=CostConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
+    subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)

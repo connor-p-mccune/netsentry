@@ -7,6 +7,18 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Per-service detection-parity audit (`netsentry subgroups`,
+  `netsentry/evaluation/subgroups.py`): the temporal test flows grouped by the
+  service implied by `Destination Port` — a field the model never sees, used only to
+  *slice*, never to predict — with per-service detection and false-positive rates at
+  the single global operating threshold, each carrying a Wilson 95% interval so
+  binomial noise is not mistaken for disparity. An equalized-odds-style audit in
+  security clothing: on the synthetic stand-in the per-service FPR spread
+  (0.57–1.11% around the 1% budget) straddles its intervals (reported as such), while
+  the detection gap (HTTP 42% vs ephemeral-port traffic 0.3%, i.e. PortScan/
+  Infiltration) is far outside them — showing one global cut guarantees only the
+  aggregate budget, and which service queue fills with false positives first. In the
+  analysis suite.
 - Prequential streaming simulation (`netsentry streaming`,
   `netsentry/monitoring/streaming.py`): replay the later-day (temporal test) flows as
   a time-ordered stream and compare a static model (frozen at deploy) against one

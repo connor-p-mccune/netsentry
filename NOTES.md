@@ -576,6 +576,31 @@ smaller dev-run numbers noted in earlier phases:
   just do nothing, they *spend the FP budget*. That is the maintenance-cost
   argument against rulesets, measured.
 
+## Per-service detection parity (subgroups)
+
+- The per-class slices answer "which *attacks* are caught"; a SOC also needs
+  "does one global threshold treat each *service* fairly" — services are what
+  alerts are routed by, and the attack class is unknown when the alert fires.
+  Added `netsentry subgroups`: temporal-test flows grouped by the service implied
+  by `Destination Port`, with per-service detection and FPR at the single global
+  threshold. It is an equalized-odds fairness audit transplanted to security.
+- The port is the one field the project pointedly *drops* from the model (the
+  memorisation leak), which is exactly what makes it safe here: it only labels
+  the slice, never enters a prediction. Grouping by a deliberately-excluded
+  column to audit the model is a nice closure of the port-leakage story.
+- First draft over-read the FPR spread (0.57–1.11% across services around the 1%
+  budget). At ~2–4k benign flows per service that spread is mostly binomial
+  noise, so I added Wilson 95% intervals to every rate and made the prose
+  interval-aware: it only claims a service "genuinely exceeds the budget" when
+  its whole interval sits above it (on the current data IMAP straddles, so the
+  report says so). The structural point survives regardless — a global threshold
+  constrains only the aggregate FPR; nothing pins any single service's queue.
+- The detection side needs no hedging: HTTP-bound attacks are caught at 42.1%
+  [40.4, 43.9] while ephemeral-port traffic (PortScan spray + Infiltration) sits
+  at 0.3% [0.2, 0.6] — non-overlapping intervals, consistent with the per-class
+  slices, and stated as signal. Alert-share per service ("IMAP alone raises 27%
+  of all false positives") is the queue-level view of alert fatigue.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

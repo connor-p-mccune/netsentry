@@ -63,9 +63,22 @@ def plot_lines(
 
 
 def plot_barh(
-    labels: list[str], values: list[float], *, xlabel: str, title: str, out_path: Path
+    labels: list[str],
+    values: list[float],
+    *,
+    xlabel: str,
+    title: str,
+    out_path: Path,
+    xmax: float | None = None,
+    vline: tuple[str, float] | None = None,
 ) -> Path:
-    """Horizontal bar chart (e.g. per-class detection). Highest bar on top."""
+    """Horizontal bar chart (e.g. per-class detection). Highest bar on top.
+
+    ``xmax`` overrides the axis maximum (default ``max(1.0, max(values))``, suited to
+    rates in [0, 1]); pass it for small-magnitude series like per-service FPR so the
+    bars are visible. ``vline`` draws a labelled vertical reference line — e.g. the
+    global FPR budget the per-service bars are being compared against.
+    """
     plt = _plt()
     order = np.argsort(values)
     names = [labels[i] for i in order]
@@ -73,7 +86,11 @@ def plot_barh(
     fig, ax = plt.subplots(figsize=(7, max(3, len(names) * 0.4)))
     ax.barh(names, vals, color="#3b7dd8")
     ax.set(xlabel=xlabel, title=title)
-    ax.set_xlim(0, max(1.0, max(vals) if vals else 1.0))
+    ax.set_xlim(0, xmax if xmax is not None else max(1.0, max(vals) if vals else 1.0))
+    if vline is not None:
+        line_label, xpos = vline
+        ax.axvline(xpos, color="#d1495b", linestyle="--", alpha=0.9, label=line_label)
+        ax.legend(loc="lower right")
     ax.grid(alpha=0.3, axis="x")
     return _save(fig, out_path)
 

@@ -392,6 +392,19 @@ def slices(
 
 
 @app.command()
+def subgroups(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit per-service detection/false-alarm parity at the single global threshold."""
+    from netsentry.evaluation.subgroups import run_subgroups_report
+
+    settings = _load(config, override)
+    out = run_subgroups_report(settings)
+    logger.info("Subgroups report ready", extra={"path": str(out)})
+
+
+@app.command()
 def rules(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -22,6 +22,7 @@ from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.slices import run_slices_report
+from netsentry.evaluation.subgroups import run_subgroups_report
 from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.report import run_mitre_report
@@ -77,6 +78,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "which temporal-split attacks are caught",
         "slices.md",
         run_slices_report,
+    ),
+    (
+        "Per-service parity",
+        "detection/false-alarm equity across services",
+        "subgroups.md",
+        run_subgroups_report,
     ),
     (
         "Rules-vs-model baseline",

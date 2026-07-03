@@ -104,6 +104,16 @@ def test_ablation_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_subgroups_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.subgroups import run_subgroups_report
+
+    prepared.subgroups.min_support = 20  # the 6k-row fixture has small service buckets
+    out = run_subgroups_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "parity" in text and "service" in text
+
+
+@pytest.mark.slow
 def test_streaming_report_is_written(prepared: Settings) -> None:
     from netsentry.monitoring.streaming import run_streaming_report
 
