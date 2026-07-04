@@ -653,6 +653,29 @@ smaller dev-run numbers noted in earlier phases:
   day's "detection" must not read as "caught nothing"; `rates_at_threshold`'s
   0.0 convention would have. Unit tests lock the NaN semantics.
 
+## Label-noise audit (find it, don't assume it)
+
+- The poisoning study prices label corruption; this finds the corrupted rows —
+  the pair mirrors Engelen et al.'s point that CIC-IDS2017 needed a corrected
+  re-release at all. Implementation is confident-learning distilled to the
+  binary case: out-of-fold scores (StratifiedKFold on the temporal *train* split
+  only; the test split is never touched) and class-conditional mean thresholds.
+  No new dependency — the Northcutt idea is a dozen lines here.
+- The audit validates itself by planting flips, because a noise detector never
+  tested against known noise is just an opinion. Recovery on the stand-in:
+  58.8% recall, 19.8% precision — and the precision number is where honesty
+  earned its keep twice. First, 19.8% must be read against the 1.2% planted
+  base rate: a 16x concentration, i.e. a triage multiplier, not an oracle (the
+  render computes the lift and refuses the triage framing below 2x). Second,
+  the intrinsic flags (3.2% of benign-labeled, 18.1% of attack-labeled rows)
+  are on labels that are correct by construction — they are the method's
+  ambiguity floor caused by the generator's deliberate class overlap, and my
+  first template called them "likely mislabeled" before I rewrote it. The same
+  rows are the ones the per-class slices show being missed, which is a
+  satisfying cross-check: hard-to-classify and hard-to-audit coincide.
+- Two-pass design (audit as recorded, then plant-and-recover) doubles the k-fold
+  cost; `label_audit.max_rows` caps it and the fold count is config.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

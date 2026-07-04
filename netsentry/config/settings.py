@@ -445,6 +445,21 @@ class PoisoningConfig(BaseModel):
     contamination_rates: list[float] = Field(default_factory=lambda: [0.0, 0.01, 0.05, 0.1, 0.2])
 
 
+class LabelAuditConfig(BaseModel):
+    """Confident-learning-style label-noise audit of the training split.
+
+    CIC-IDS2017 has community-documented label errors (the Engelen et al. WTMC 2021
+    corrections exist for a reason); this audit *finds* candidate errors rather than
+    assuming them away. Out-of-fold predictions flag rows whose model score is as
+    extreme as the typical score of the *opposite* class (class-conditional mean
+    thresholds). The audit validates itself by planting a known fraction of label
+    flips and measuring how many it recovers, and at what precision."""
+
+    folds: int = 3  # out-of-fold prediction folds (train split only; test untouched)
+    planted_flip_rate: float = 0.05  # attack rows flipped benign for the recovery check
+    max_rows: int = 30000  # subsample cap so the k-fold study stays fast
+
+
 class CrossDatasetConfig(BaseModel):
     """Synthetic 'foreign' (NetFlow-schema) dataset for cross-dataset generalization."""
 
@@ -520,6 +535,7 @@ class Settings(BaseSettings):
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
+    label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)

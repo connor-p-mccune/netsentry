@@ -19,6 +19,7 @@ from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
+from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.report import run_evaluation
@@ -67,6 +68,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "label flips + benign-pool contamination",
         "poisoning.md",
         run_poisoning_report,
+    ),
+    (
+        "Label-noise audit",
+        "confident-learning flags + planted-flip self-validation",
+        "label_audit.md",
+        run_label_audit_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
     (

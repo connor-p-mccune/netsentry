@@ -7,6 +7,17 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Label-noise audit (`netsentry labelaudit`, `netsentry/evaluation/label_audit.py`):
+  confident-learning-style detection of likely label errors on the temporal training
+  split — out-of-fold k-fold scores (no row judged by a model that trained on it)
+  with class-conditional mean thresholds, so a benign-labeled row scoring like a
+  typical attack is flagged. Validates itself by planting a known fraction of label
+  flips: on the stand-in it recovers 58.8% of planted flips at 19.8% precision
+  against a 1.2% base rate (a 16x triage concentration), and the intrinsic flags on
+  the clean-by-construction labels are reported as the method's ambiguity floor, not
+  as errors. Complements the poisoning study (which prices corruption; this finds
+  it) and connects to the documented CIC-IDS2017 label corrections (Engelen et al.,
+  WTMC 2021). In the analysis suite.
 - Leave-one-day-out temporal sensitivity (`netsentry lodo`,
   `netsentry/evaluation/lodo.py`): every capture day takes a turn as the held-out
   "future" (train on the other four, validation carved from train, threshold chosen

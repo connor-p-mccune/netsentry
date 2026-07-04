@@ -417,6 +417,19 @@ def novelty(
     logger.info("Novelty report ready", extra={"path": str(out)})
 
 
+@app.command("labelaudit")
+def label_audit_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit training labels for likely errors (confident-learning style, self-validated)."""
+    from netsentry.evaluation.label_audit import run_label_audit_report
+
+    settings = _load(config, override)
+    out = run_label_audit_report(settings)
+    logger.info("Label-audit report ready", extra={"path": str(out)})
+
+
 @app.command()
 def lodo(
     config: ConfigOpt = None,

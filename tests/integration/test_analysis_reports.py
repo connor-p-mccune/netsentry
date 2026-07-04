@@ -125,6 +125,17 @@ def test_novelty_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_label_audit_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.label_audit import run_label_audit_report
+
+    prepared.label_audit.folds = 2
+    prepared.label_audit.max_rows = 2500
+    out = run_label_audit_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "planted" in text and "recovery" in text
+
+
+@pytest.mark.slow
 def test_lodo_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.lodo import run_lodo_report
 
