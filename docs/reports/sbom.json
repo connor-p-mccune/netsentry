@@ -1,10 +1,10 @@
 {
   "bomFormat": "CycloneDX",
   "specVersion": "1.5",
-  "serialNumber": "urn:uuid:2866f35b-5fc5-425c-b152-d90a22972f88",
+  "serialNumber": "urn:uuid:cc9a30a5-f484-4395-86b3-3c3ed8c475eb",
   "version": 1,
   "metadata": {
-    "timestamp": "2026-07-04T04:53:36Z",
+    "timestamp": "2026-07-04T15:34:06Z",
     "tools": [
       {
         "vendor": "NetSentry",

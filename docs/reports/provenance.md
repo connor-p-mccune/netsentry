@@ -13,14 +13,14 @@ manifest and `netsentry verify` answer the second.
 
 | field | value |
 |---|---|
-| bundle | `serving_bundle.joblib` (20,089,556 bytes) |
-| bundle SHA-256 | `82c7b3dd0ed1838bf5f4b2d933e9b0745b592bf8fb1eac939f6aee7363713965` |
-| git commit | `87d51b28c97d967bced0098f6d6471baad9e8136` |
+| bundle | `serving_bundle.joblib` (20,093,028 bytes) |
+| bundle SHA-256 | `166041cea54870f440996b18a9e508aa46b02939d78895270a7eb90781805674` |
+| git commit | `30e52acd629a7a65162b8421856a80808cbdd82b` |
 | runtime | Python 3.14.4 · Windows-11-10.0.26200-SP0 |
 | config digest | `cb06b25888e3e8e0bad0ebb1…` (seed 42) |
 | model | lightgbm · multiclass · 76 features · 13 classes |
 | attached components | calibrator: True · anomaly detector: True · conformal: True |
-| threshold profiles | `cost_optimal`, `fpr_0.1pct`, `fpr_1pct` |
+| threshold profiles | `cost_optimal`, `fpr_0.1pct`, `fpr_1pct`, `per_service` |
 
 Verify integrity against the manifest before promoting a model:
 

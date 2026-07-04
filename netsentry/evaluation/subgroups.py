@@ -35,6 +35,7 @@ import numpy as np
 
 from netsentry.data.clean import BINARY_TARGET
 from netsentry.data.schema import DESTINATION_PORT
+from netsentry.data.services import OTHER_SERVICE, service_of
 from netsentry.data.split import load_split
 from netsentry.evaluation import plots
 from netsentry.evaluation.metrics import positive_scores, rates_at_threshold, threshold_at_fpr
@@ -49,46 +50,15 @@ logger = get_logger(__name__)
 
 REPORT_NAME = "subgroups.md"
 
-# Well-known TCP/UDP port -> coarse service. IANA-registered assignments; this is
-# reference data (like the ATT&CK mapping) rather than a per-deployment knob. Ports
-# outside the map fall into "other/ephemeral" — which is exactly where a port scan's
-# sprayed destinations and odd C2 ports land, itself a meaningful bucket.
-_PORT_SERVICE: dict[int, str] = {
-    20: "FTP",
-    21: "FTP",
-    22: "SSH",
-    23: "Telnet",
-    25: "SMTP",
-    465: "SMTP",
-    587: "SMTP",
-    53: "DNS",
-    80: "HTTP",
-    8000: "HTTP",
-    8080: "HTTP",
-    110: "POP3",
-    995: "POP3",
-    143: "IMAP",
-    993: "IMAP",
-    443: "HTTPS",
-    8443: "HTTPS",
-    139: "SMB",
-    445: "SMB",
-    3389: "RDP",
-}
-OTHER_SERVICE = "other/ephemeral"
-
-
-def service_of(port: float) -> str:
-    """Map a destination port to a coarse service name (well-known ports; else 'other').
-
-    Non-finite or non-integer ports (missing/garbled rows) fall into the 'other'
-    bucket rather than raising — this is an evaluation slice, not a hard gate.
-    """
-    try:
-        number = int(port)
-    except (ValueError, TypeError, OverflowError):
-        return OTHER_SERVICE
-    return _PORT_SERVICE.get(number, OTHER_SERVICE)
+__all__ = [  # service_of/OTHER_SERVICE re-exported: the audit and serving share one map
+    "OTHER_SERVICE",
+    "ServiceSlice",
+    "parity_gap",
+    "run_subgroups_report",
+    "service_of",
+    "service_slices",
+    "wilson_interval",
+]
 
 
 @dataclass

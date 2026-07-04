@@ -15,10 +15,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from netsentry.data.clean import MULTICLASS_TARGET
+from netsentry.data.schema import DESTINATION_PORT
+from netsentry.data.services import PER_SERVICE_PROFILE, service_of
 from netsentry.data.split import load_split
 from netsentry.evaluation.conformal import class_conditional_thresholds
 from netsentry.evaluation.cost import cost_optimal_threshold
-from netsentry.evaluation.metrics import attack_probability
+from netsentry.evaluation.metrics import attack_probability, threshold_at_fpr
 from netsentry.features.feature_sets import model_features
 from netsentry.log import get_logger
 from netsentry.models.anomaly import build_anomaly_detector
@@ -27,6 +29,8 @@ from netsentry.monitoring.monitor import reference_summary
 from netsentry.training.train_supervised import fit_supervised
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from netsentry.config import Settings
 
 logger = get_logger(__name__)
@@ -57,6 +61,7 @@ def build_serving_bundle(settings: Settings) -> Path:
 
     train = load_split(variant, "stratified", "train")
     val = load_split(variant, "stratified", "val")
+    _attach_service_thresholds(bundle, variant, val, p_val, y_val_bin)
     benign_train = train[train[MULTICLASS_TARGET] == benign]
     benign_val = val[val[MULTICLASS_TARGET] == benign]
     if len(benign_train) and len(benign_val):
@@ -118,3 +123,55 @@ def _attach_operating_profiles(
         }
     except Exception as exc:  # conformal is additive; never fatal
         logger.warning("Conformal thresholds skipped (%s)", exc)
+
+
+def _attach_service_thresholds(
+    bundle: ModelBundle,
+    settings: Settings,
+    val: pd.DataFrame,
+    p_val: np.ndarray,
+    y_val_bin: np.ndarray,
+) -> None:
+    """Per-service operating thresholds — the parity audit's finding, productised.
+
+    The subgroups report shows a single global threshold only constrains the
+    *aggregate* FPR; nothing pins any individual service's queue to the budget. This
+    computes, on the same calibrated validation scores every other profile uses, a
+    threshold per service (grouped by ``Destination Port``, which never enters a
+    prediction) at the primary FPR target. Services with thin support or one-class
+    validation traffic fall back to the global threshold. Selecting the profile is
+    the operator's choice: ``?profile=per_service``.
+    """
+    try:
+        ports = val[DESTINATION_PORT].to_numpy()
+        if len(ports) != len(p_val):
+            raise ValueError("validation frame and scores are misaligned")
+        target = settings.thresholds.primary_fpr
+        min_support = settings.subgroups.min_support
+        global_threshold = threshold_at_fpr(y_val_bin, p_val, target)
+        services = np.array([service_of(p) for p in ports])
+        table: dict[str, float] = {}
+        for service in sorted(set(services.tolist())):
+            mask = services == service
+            if int(mask.sum()) < min_support or len(np.unique(y_val_bin[mask])) < 2:
+                continue  # thin or one-class service: the global threshold serves it
+            threshold = float(threshold_at_fpr(y_val_bin[mask], p_val[mask], target))
+            if not np.isfinite(threshold):
+                # No finite threshold meets the budget at this support (roc_curve's
+                # inf sentinel): storing it would silently disable detection for the
+                # service (and break strict JSON) — the global cut serves it instead.
+                continue
+            table[service] = threshold
+        bundle.thresholds[PER_SERVICE_PROFILE] = float(global_threshold)
+        bundle.metadata["service_thresholds"] = {
+            "target_fpr": target,
+            "min_support": min_support,
+            "global": float(global_threshold),
+            "thresholds": table,
+        }
+        logger.info(
+            "Attached per-service thresholds",
+            extra={"services": len(table), "target_fpr": target},
+        )
+    except Exception as exc:  # an extra profile must never break the build
+        logger.warning("Per-service profile skipped (%s)", exc)

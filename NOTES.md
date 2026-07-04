@@ -676,6 +676,32 @@ smaller dev-run numbers noted in earlier phases:
 - Two-pass design (audit as recorded, then plant-and-recover) doubles the k-fold
   cost; `label_audit.max_rows` caps it and the fold count is config.
 
+## Per-service thresholds in serving (audit -> product)
+
+- The subgroups report ends by saying per-service thresholds would pin each
+  queue to its budget where one global cut cannot; leaving that as prose felt
+  like stopping one step short, so the serving layer now ships it:
+  `?profile=per_service`. The bundle builder calibrates a threshold per service
+  on the same calibrated validation scores as every other profile; inference
+  routes each flow to its service's cut.
+- The leakage story stays intact and is the design's spine: `Destination Port`
+  was already an accepted request field (it is in the schema's feature columns)
+  that the model pipeline drops — so it rides as routing metadata and never
+  enters a prediction. The port picks *which validation-calibrated threshold
+  applies*; it contributes nothing to the score. Same rule as the audit, now
+  enforced by a shared `data/services.py` map so the audit and serving cannot
+  drift apart (the old private copy in subgroups.py moved there; `__all__`
+  re-exports keep the audit's public surface unchanged).
+- Failure modes decided conservatively: no port in the request, a service the
+  bundle has no entry for (support floor `subgroups.min_support`, one-class
+  validation traffic, or a budget no finite threshold can meet at the service's
+  support - sklearn's roc_curve returns an inf sentinel there, which would have
+  silently disabled detection for the service and broken strict JSON; caught on
+  inspection of the first built bundle) -> the profile's global threshold. The
+  profile degrades to the global cut; it never guesses. Storing the global
+  under `bundle.thresholds["per_service"]` makes the profile selectable through
+  the existing profile-validation path with zero app changes.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

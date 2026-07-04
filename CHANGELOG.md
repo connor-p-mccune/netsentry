@@ -7,6 +7,16 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Per-service threshold profile in serving (`?profile=per_service`): the parity
+  audit's finding shipped as a product feature. The bundle builder computes, on the
+  same calibrated validation scores as every other profile, a decision threshold per
+  service at the primary FPR target (`netsentry/serving/bundle.py`), and inference
+  judges each flow at its service's threshold. The flow's `Destination Port` rides
+  in the request as routing metadata — it is never a model feature — and selects the
+  threshold via a shared port→service map (`netsentry/data/services.py`, extracted
+  from the subgroups audit so both layers agree by construction). Absent ports and
+  thin/one-class services fall back to the profile's global threshold, so the
+  profile degrades to the global cut rather than misrouting.
 - Label-noise audit (`netsentry labelaudit`, `netsentry/evaluation/label_audit.py`):
   confident-learning-style detection of likely label errors on the temporal training
   split — out-of-fold k-fold scores (no row judged by a model that trained on it)

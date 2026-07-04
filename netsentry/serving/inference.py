@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pandas as pd
 
+from netsentry.data.schema import DESTINATION_PORT
+from netsentry.data.services import PER_SERVICE_PROFILE, service_of
 from netsentry.evaluation.metrics import attack_probability
 from netsentry.explain.shap_explainer import ShapExplainer
 from netsentry.features.feature_sets import model_features
@@ -27,6 +29,32 @@ if TYPE_CHECKING:
     from netsentry.config import Settings
 
 logger = get_logger(__name__)
+
+
+def resolve_service_thresholds(
+    flows: list[dict[str, float]], config: dict[str, object], fallback: float
+) -> list[float]:
+    """Per-flow decision thresholds for the ``per_service`` profile.
+
+    A flow's ``Destination Port`` — accepted as request metadata, never a model
+    feature — selects its service's validation-calibrated threshold. Flows that omit
+    the port, and services the bundle has no calibrated entry for (thin or one-class
+    validation traffic), fall back to the profile's global threshold, so the profile
+    degrades to the global cut rather than misrouting.
+    """
+    table = config.get("thresholds")
+    lookup: dict[str, float] = dict(table) if isinstance(table, dict) else {}
+    raw_default = config.get("global", fallback)
+    default = float(raw_default) if isinstance(raw_default, (int, float)) else fallback
+    thresholds: list[float] = []
+    for flow in flows:
+        port = flow.get(DESTINATION_PORT)
+        if port is None:
+            thresholds.append(default)
+            continue
+        threshold = lookup.get(service_of(port))
+        thresholds.append(float(threshold) if threshold is not None else default)
+    return thresholds
 
 
 class InferenceEngine:
@@ -129,6 +157,13 @@ class InferenceEngine:
             # Thresholds live on the calibrated scale; calibrate before comparing.
             probs = self.bundle.calibrator.transform(probs)
         threshold = self.bundle.thresholds.get(profile, 0.5)
+        service_config = self.bundle.metadata.get("service_thresholds")
+        if profile == PER_SERVICE_PROFILE and isinstance(service_config, dict):
+            # The parity audit's fix: each flow is judged at its own service's
+            # validation-calibrated threshold (global fallback when unmapped).
+            row_thresholds = resolve_service_thresholds(flows, service_config, threshold)
+        else:
+            row_thresholds = [threshold] * len(flows)
         argmax = classes[proba.argmax(axis=1)]
 
         anomaly_scores = is_anomaly = None
@@ -140,7 +175,7 @@ class InferenceEngine:
         responses: list[PredictionResponse] = []
         for i in range(len(flows)):
             attack_prob = float(probs[i])
-            attacking = attack_prob >= threshold
+            attacking = attack_prob >= row_thresholds[i]
             flagged_anomaly = bool(is_anomaly[i]) if is_anomaly is not None else None
             self._record_metrics(attack_prob, attacking, flagged_anomaly)
             predicted = self._predicted_class(str(argmax[i]), proba[i], classes, attacking)

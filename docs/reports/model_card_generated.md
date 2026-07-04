@@ -1,6 +1,6 @@
 # NetSentry — Model Card (auto-generated)
 
-_Generated 2026-07-01 15:49 UTC from the deployed bundle.
+_Generated 2026-07-04 15:34 UTC from the deployed bundle.
 This is the factual spec sheet; see [`MODEL_CARD.md`](../MODEL_CARD.md) for intended
 use, limitations, and ethics, and [`reports/evaluation.md`](evaluation.md) for the
 honest metrics._
@@ -15,7 +15,7 @@ honest metrics._
 | backend | lightgbm |
 | features | 76 |
 | training rows | 38400 |
-| created | 2026-07-01T15:49:44.608553+00:00 |
+| created | 2026-07-04T15:32:47.720160+00:00 |
 
 ## Classes (13)
 
@@ -31,6 +31,7 @@ BENIGN, Bot, DDoS, DoS GoldenEye, DoS Hulk, DoS Slowhttptest, DoS slowloris, FTP
 | cost_optimal | 0.6034 |
 | fpr_0.1pct | 0.9538 |
 | fpr_1pct | 0.8000 |
+| per_service | 0.9538 |
 
 ## Attached components
 

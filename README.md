@@ -56,7 +56,7 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
 | Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
-| Detection parity | per-service TPR/FPR audit at the global threshold (Wilson CIs) | ✅ Done |
+| Detection parity | per-service TPR/FPR audit (Wilson CIs) → served `per_service` profile | ✅ Done |
 | Novelty distance | the split gap decomposed: composition vs at-distance shift | ✅ Done |
 | Temporal sensitivity | leave-one-day-out: every day takes a turn as the future | ✅ Done |
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
@@ -215,8 +215,11 @@ curl -X POST localhost:8000/predict -H 'content-type: application/json' \
 ```
 
 `is_attack` is the thresholded decision at the selected `threshold_profile`
-(operator-selectable via `?profile=fpr_1pct` or the decision-theoretic
-`?profile=cost_optimal`); `attack_probability` is the calibrated score for
+(operator-selectable via `?profile=fpr_1pct`, the decision-theoretic
+`?profile=cost_optimal`, or `?profile=per_service`, which judges each flow at its
+service's own validation-calibrated threshold — the parity audit's finding shipped
+as a serving feature; the flow's `Destination Port` rides along as routing metadata
+and never enters the model); `attack_probability` is the calibrated score for
 transparency. `prediction_set` / `recommended_action` are the conformal
 selective-prediction outputs — `auto_alert`, `auto_clear`, or `review` (ambiguous or
 novel) — so the API tells a SOC not just *what* but *whether to trust it*. The
@@ -399,8 +402,9 @@ interval** so binomial noise is not sold as disparity. On the stand-in the FPR s
 straddles its intervals (said so, plainly) while the detection gap does not: HTTP
 attacks are caught at 42% vs **0.3%** on ephemeral ports (PortScan/Infiltration) —
 one global cut guarantees only the *aggregate* budget, and the alert-share column
-shows which service queue floods first. See
-[`docs/reports/subgroups.md`](docs/reports/subgroups.md).
+shows which service queue floods first. The finding ships as a serving feature:
+`?profile=per_service` judges each flow at its service's own validation-calibrated
+threshold. See [`docs/reports/subgroups.md`](docs/reports/subgroups.md).
 
 ## Novelty distance (the split gap, decomposed)
 

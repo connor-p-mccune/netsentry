@@ -27,6 +27,7 @@ def client(repo_root: Path, tmp_path: Path, clean_synth: pd.DataFrame):  # type:
     settings.supervised.n_estimators = 60
 
     settings.paths.data_processed.mkdir(parents=True)
+    settings.subgroups.min_support = 20  # small fixture: let services qualify for thresholds
     clean_synth.to_parquet(settings.paths.data_processed / "clean.parquet", index=False)
     make_splits(settings)
     build_serving_bundle(settings)
@@ -80,6 +81,20 @@ def test_cost_optimal_profile_is_selectable(client) -> None:  # type: ignore[no-
     response = client.post("/predict?profile=cost_optimal", json={"flow": SAMPLE_FLOW})
     assert response.status_code == 200
     assert response.json()["threshold_profile"] == "cost_optimal"
+
+
+@pytest.mark.slow
+def test_per_service_profile_routes_by_destination_port(client) -> None:  # type: ignore[no-untyped-def]
+    # The port rides in the flow mapping as metadata (it is never a model feature);
+    # the per_service profile judges the flow at its service's calibrated threshold.
+    flow = dict(SAMPLE_FLOW) | {"Destination Port": 22.0}
+    response = client.post("/predict?profile=per_service", json={"flow": flow})
+    assert response.status_code == 200
+    assert response.json()["threshold_profile"] == "per_service"
+    # A flow that omits the port still works: it falls back to the global cut.
+    response = client.post("/predict?profile=per_service", json={"flow": SAMPLE_FLOW})
+    assert response.status_code == 200
+    assert response.json()["threshold_profile"] == "per_service"
 
 
 @pytest.mark.slow
