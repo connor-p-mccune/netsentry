@@ -125,6 +125,15 @@ def test_novelty_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_lodo_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.lodo import run_lodo_report
+
+    out = run_lodo_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "held-out day" in text and "monday" in text
+
+
+@pytest.mark.slow
 def test_streaming_report_is_written(prepared: Settings) -> None:
     from netsentry.monitoring.streaming import run_streaming_report
 

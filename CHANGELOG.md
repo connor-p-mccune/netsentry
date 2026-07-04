@@ -7,6 +7,17 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Leave-one-day-out temporal sensitivity (`netsentry lodo`,
+  `netsentry/evaluation/lodo.py`): every capture day takes a turn as the held-out
+  "future" (train on the other four, validation carved from train, threshold chosen
+  there), reusing the temporal-split machinery per fold. Because each CIC-IDS2017
+  attack class lives on exactly one day, every fold is zero-shot class detection; and
+  benign-only Monday becomes a pure quiet-day false-alarm audit (0.94% FPR ≈ 9.4k
+  alerts/day at the assumed volume). On the stand-in, novel-family detection ranges
+  1.5% (Web/Infiltration) to 25.4% (the DoS family, which generalises from DDoS and
+  vice versa), mean 13% — the headline temporal conclusion holds under every
+  rotation, with the spread reported as a per-family difficulty profile. In the
+  analysis suite.
 - Novelty-distance study (`netsentry novelty`, `netsentry/evaluation/novelty.py`):
   for every test attack, the Euclidean distance to its nearest **training** attack in
   the pipeline's standardized space, profiled for both split strategies on shared

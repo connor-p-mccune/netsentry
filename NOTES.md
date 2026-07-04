@@ -630,6 +630,29 @@ smaller dev-run numbers noted in earlier phases:
   ranges. Reference/query caps and the twin epsilon are config
   (`novelty.*`), seeded subsampling keeps it deterministic.
 
+## Leave-one-day-out (temporal sensitivity)
+
+- The ml.md rules name two honest temporal designs ("train on earlier days,
+  test on later days, OR do leave-one-day-out"); only the first existed. Added
+  the second as `netsentry lodo`, reusing `temporal_split` per fold with
+  rotated `train_days`/`test_days` so the val-carve and disjointness discipline
+  is inherited rather than re-implemented.
+- Two structural facts make the study more than an error bar. Each CIC-IDS2017
+  attack class lives on exactly one capture day, so holding a day out removes
+  its classes from training entirely — every fold is zero-shot class detection.
+  And Monday is benign-only, so its fold is a pure quiet-day false-alarm audit:
+  0.94% realized FPR ≈ 9.4k alerts/day, the number a SOC pays on the days when
+  nothing happens (most days).
+- The spread is the finding: novel-family detection runs 1.5% (Thursday:
+  Web Attack/Infiltration — subtle, no behavioural cousins in training) to
+  25.4% (Wednesday: the DoS family, which generalises from Friday's DDoS and
+  vice versa), mean 13%. Every rotation supports the headline conclusion
+  (novel families are hard at a fixed FP budget); which families are hard is
+  the per-family difficulty profile the fixed cut can only show once.
+- `fold_metrics` returns NaN (not 0.0) for undefined sides — a benign-only
+  day's "detection" must not read as "caught nothing"; `rates_at_threshold`'s
+  0.0 convention would have. Unit tests lock the NaN semantics.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

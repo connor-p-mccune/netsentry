@@ -19,6 +19,7 @@ from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
+from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
@@ -91,6 +92,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection vs distance-to-training; the split gap decomposed",
         "novelty.md",
         run_novelty_report,
+    ),
+    (
+        "Leave-one-day-out",
+        "temporal sensitivity: every day takes a turn as the future",
+        "lodo.md",
+        run_lodo_report,
     ),
     (
         "Rules-vs-model baseline",

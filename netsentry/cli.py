@@ -418,6 +418,19 @@ def novelty(
 
 
 @app.command()
+def lodo(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Leave-one-day-out: every day takes a turn as the held-out future."""
+    from netsentry.evaluation.lodo import run_lodo_report
+
+    settings = _load(config, override)
+    out = run_lodo_report(settings)
+    logger.info("LODO report ready", extra={"path": str(out)})
+
+
+@app.command()
 def rules(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
