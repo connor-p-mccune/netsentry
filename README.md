@@ -18,7 +18,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **235 passing tests**), and the full `download → prep → train → eval →
+type-check + **245 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
@@ -58,8 +58,10 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
 | Detection parity | per-service TPR/FPR audit at the global threshold (Wilson CIs) | ✅ Done |
 | Novelty distance | the split gap decomposed: composition vs at-distance shift | ✅ Done |
+| Temporal sensitivity | leave-one-day-out: every day takes a turn as the future | ✅ Done |
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
+| Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
 | Batch inference | offline `score` a CSV/Parquet of flows to predictions | ✅ Done |
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
@@ -184,6 +186,8 @@ netsentry learningcurve             # PR-AUC vs training size (does more data he
 netsentry slices                    # per-attack-class detection (known vs novel)
 netsentry subgroups                 # per-service detection/false-alarm parity audit
 netsentry novelty                   # detection vs distance-to-training (split gap decomposed)
+netsentry lodo                      # leave-one-day-out temporal sensitivity
+netsentry labelaudit                # find likely label errors (self-validated)
 netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
@@ -411,6 +415,30 @@ at matched novelty). Two honest stand-in findings: the gap here is ~all at-dista
 leakage), and detection **rises** with distance — extremes are easy, the attacks
 hugging the benign manifold are the hard ones, exactly the geometry the evasion
 study exploits. See [`docs/reports/novelty.md`](docs/reports/novelty.md).
+
+## Temporal sensitivity (leave-one-day-out)
+
+The headline uses one temporal cut; `netsentry lodo` rotates it — every capture day
+takes a turn as the held-out "future", trained on the other four. Because each
+CIC-IDS2017 attack class lives on exactly one day, every fold is **zero-shot class
+detection**; and benign-only Monday becomes the quiet-day false-alarm audit no other
+split offers (0.94% FPR ≈ 9.4k alerts/day — what a SOC pays on the days nothing
+happens). Novel-family detection spans 1.5% (Web/Infiltration) to 25.4% (DoS, which
+generalises from DDoS and back): the temporal conclusion holds under every rotation,
+and the spread is a per-family difficulty profile. See
+[`docs/reports/lodo.md`](docs/reports/lodo.md).
+
+## Label-noise audit
+
+CIC-IDS2017's label errors are documented (Engelen et al., WTMC 2021); rather than
+assume clean labels, `netsentry labelaudit` finds candidates — confident-learning
+style: out-of-fold scores over the training split flag rows scoring like the
+opposite class. The audit **validates itself** by planting known flips: it recovers
+58.8% of them at 19.8% precision against a 1.2% base rate — a **16× triage
+concentration**, framed as a multiplier, not an oracle. Intrinsic flags on the
+clean-by-construction synthetic labels are reported as the method's ambiguity
+floor, and they coincide with the families the per-class slices show being missed.
+See [`docs/reports/label_audit.md`](docs/reports/label_audit.md).
 
 ## Active learning (label efficiency)
 

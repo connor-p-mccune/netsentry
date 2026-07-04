@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Regenerated 2026-07-04 04:13 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
+_Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -9,11 +9,13 @@ _Regenerated 2026-07-04 04:13 UTC via `netsentry analyze`. Synthetic stand-in un
 | Conformal prediction | coverage guarantee + selective alerting | [open](conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
+| Label-noise audit | confident-learning flags + planted-flip self-validation | [open](label_audit.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
 | Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
 | Per-service parity | detection/false-alarm equity across services | [open](subgroups.md) |
 | Novelty distance | detection vs distance-to-training; the split gap decomposed | [open](novelty.md) |
+| Leave-one-day-out | temporal sensitivity: every day takes a turn as the future | [open](lodo.md) |
 | Rules-vs-model baseline | hand-written signatures at a matched FPR budget | [open](rules.md) |
 | Feature-group ablation | which behavioural families carry detection | [open](ablation.md) |
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
