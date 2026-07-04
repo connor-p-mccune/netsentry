@@ -18,7 +18,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **215 passing tests**), and the full `download → prep → train → eval →
+type-check + **235 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
@@ -56,6 +56,8 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
 | Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
+| Detection parity | per-service TPR/FPR audit at the global threshold (Wilson CIs) | ✅ Done |
+| Novelty distance | the split gap decomposed: composition vs at-distance shift | ✅ Done |
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
@@ -180,6 +182,8 @@ netsentry train anomaly             # benign-only anomaly detector + leave-one-a
 netsentry eval                      # operational metrics report + figures (+ bootstrap CIs)
 netsentry learningcurve             # PR-AUC vs training size (does more data help?)
 netsentry slices                    # per-attack-class detection (known vs novel)
+netsentry subgroups                 # per-service detection/false-alarm parity audit
+netsentry novelty                   # detection vs distance-to-training (split gap decomposed)
 netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
@@ -379,6 +383,34 @@ removed and measures the detection drop — the causal complement to SHAP. Remov
 it — the fingerprint of overfitting to the temporal shift (absolute volumes don't
 transfer across days, rate ratios do). Reported as a place to look, **not** a licence
 to prune on the test split. See [`docs/reports/ablation.md`](docs/reports/ablation.md).
+
+## Per-service detection parity
+
+A SOC routes alerts by **service**, not attack class, so `netsentry subgroups` audits
+whether one global threshold treats services equally — an equalized-odds fairness
+audit in security clothing. It slices the temporal test set by the service implied by
+`Destination Port` (a field the model deliberately **never sees** — it only labels
+the slice) and reports per-service detection and FPR, each with a **Wilson 95%
+interval** so binomial noise is not sold as disparity. On the stand-in the FPR spread
+straddles its intervals (said so, plainly) while the detection gap does not: HTTP
+attacks are caught at 42% vs **0.3%** on ephemeral ports (PortScan/Infiltration) —
+one global cut guarantees only the *aggregate* budget, and the alert-share column
+shows which service queue floods first. See
+[`docs/reports/subgroups.md`](docs/reports/subgroups.md).
+
+## Novelty distance (the split gap, decomposed)
+
+`netsentry novelty` turns "shuffled splits leak" from a slogan into a measurement:
+for every test attack, the distance to its **nearest training attack** in the
+model's own standardized feature space, with detection binned by that distance for
+both splits on shared edges. Reweighting stratified per-bin detection to the
+temporal distance mix decomposes the headline gap into **composition** (nearer,
+near-twin attacks — the leakage proper) and **at-distance shift** (later days harder
+at matched novelty). Two honest stand-in findings: the gap here is ~all at-distance
+(the iid generator has no burst near-twins — on the real data that twin bar *is* the
+leakage), and detection **rises** with distance — extremes are easy, the attacks
+hugging the benign manifold are the hard ones, exactly the geometry the evasion
+study exploits. See [`docs/reports/novelty.md`](docs/reports/novelty.md).
 
 ## Active learning (label efficiency)
 

@@ -1,6 +1,6 @@
 # NetSentry — Drift Report
 
-_Generated 2026-07-01 16:23 UTC. Reference: `train.parquet` vs current: `test.parquet`._
+_Generated 2026-07-04 04:07 UTC. Reference: `train.parquet` vs current: `test.parquet`._
 
 Population Stability Index (PSI) per feature. Reading: **< 0.1** no
 meaningful shift, **0.1-0.25** moderate, **>= 0.25**

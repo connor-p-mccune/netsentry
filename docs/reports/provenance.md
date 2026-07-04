@@ -15,9 +15,9 @@ manifest and `netsentry verify` answer the second.
 |---|---|
 | bundle | `serving_bundle.joblib` (20,089,556 bytes) |
 | bundle SHA-256 | `82c7b3dd0ed1838bf5f4b2d933e9b0745b592bf8fb1eac939f6aee7363713965` |
-| git commit | `c7f3e232b8b00fe63af43284c222b73b9ae289b3` |
+| git commit | `1117ede86527bf2d44e33ee58771459bb19c4c88` |
 | runtime | Python 3.14.4 · Windows-11-10.0.26200-SP0 |
-| config digest | `c2935eb484305fa570eea8f0…` (seed 42) |
+| config digest | `56b5069a19accd65caf4f1c6…` (seed 42) |
 | model | lightgbm · multiclass · 76 features · 13 classes |
 | attached components | calibrator: True · anomaly detector: True · conformal: True |
 | threshold profiles | `cost_optimal`, `fpr_0.1pct`, `fpr_1pct` |

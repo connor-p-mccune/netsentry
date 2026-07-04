@@ -1,7 +1,7 @@
 {
   "schema": "netsentry/model-manifest@1",
-  "created_at": "2026-07-02T15:39:16Z",
-  "git_commit": "c7f3e232b8b00fe63af43284c222b73b9ae289b3",
+  "created_at": "2026-07-04T04:13:29Z",
+  "git_commit": "1117ede86527bf2d44e33ee58771459bb19c4c88",
   "runtime": {
     "python": "3.14.4",
     "platform": "Windows-11-10.0.26200-SP0"
@@ -48,10 +48,10 @@
   },
   "config": {
     "seed": 42,
-    "digest_sha256": "c2935eb484305fa570eea8f0bc8cd42453916973260b665e026dbce05a0a6208"
+    "digest_sha256": "56b5069a19accd65caf4f1c637ea8a9bf7f809fbaf415752882d08001ad0ae93"
   },
   "sbom": {
     "component_count": 35,
-    "digest_sha256": "e1962019448371bb4baec904bf4528ccc00c3c950d31cb2f3a50fc03dab1a97d"
+    "digest_sha256": "4533219c5b21bd74028dbcbadbf5f0b03c15ac91208a6e7071032562cc63dbd9"
   }
 }

@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Regenerated 2026-07-02 11:02 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
+_Regenerated 2026-07-04 04:13 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -12,6 +12,8 @@ _Regenerated 2026-07-02 11:02 UTC via `netsentry analyze`. Synthetic stand-in un
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
 | Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
+| Per-service parity | detection/false-alarm equity across services | [open](subgroups.md) |
+| Novelty distance | detection vs distance-to-training; the split gap decomposed | [open](novelty.md) |
 | Rules-vs-model baseline | hand-written signatures at a matched FPR budget | [open](rules.md) |
 | Feature-group ablation | which behavioural families carry detection | [open](ablation.md) |
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |

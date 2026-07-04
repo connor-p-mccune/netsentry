@@ -62,11 +62,28 @@ model, handle imbalance, seed determinism, and log everything to MLflow; save th
 **pipeline+model bundle** as the deployable artifact.
 
 **Evaluation (`netsentry/evaluation`)** — operational metrics (PR-AUC, per-class
-P/R/F1, TPR@fixed-FPR, alerts/day), plots, and a report contrasting the honest
-temporal split with the optimistic stratified split.
+P/R/F1, TPR@fixed-FPR, alerts/day) with bootstrap CIs, plots, and a report
+contrasting the honest temporal split with the optimistic stratified one; plus the
+one-command analysis suite (`netsentry analyze`): cost-optimal thresholds, conformal
+selective alerting, per-class and per-service detection slices, the novelty-distance
+gap decomposition, rules-vs-model at matched FPR, feature-group ablation, active
+learning, learning curves, cross-dataset transfer, and an auto-generated model card.
+
+**Robustness (`netsentry/robustness`)** — the adversarial studies: evasion (mimicry
++ adaptive query search) at inference time and label-flip / benign-pool-contamination
+poisoning at training time, each reported as detection-vs-attacker-effort curves.
+
+**Monitoring (`netsentry/monitoring`)** — PSI drift detection (offline report and
+rolling serving gauges) and the prequential streaming study that closes the
+drift → retrain → recover loop on the later-day stream.
+
+**Intel & governance (`netsentry/intel`, `netsentry/governance`)** — MITRE ATT&CK
+tactic/technique mapping in predictions and a coverage report; CycloneDX SBOM and a
+model-integrity manifest with a `netsentry verify` CI gate.
 
 **Explain (`netsentry/explain`)** — SHAP global importance and per-prediction
-attributions, surfaced both in the report and in API responses.
+attributions (in the report and in API responses), plus counterfactual recourse:
+the minimal feature change that would clear a flagged flow.
 
 **Serving (`netsentry/serving`)** — FastAPI app loading the bundle once; predict /
 batch / health / metrics; pydantic contract; Prometheus latency; selectable
