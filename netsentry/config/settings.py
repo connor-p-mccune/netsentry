@@ -202,6 +202,26 @@ class SubgroupsConfig(BaseModel):
     min_support: int = 100  # flows a service needs before its rates are reported
 
 
+class NoveltyConfig(BaseModel):
+    """Novelty-distance study: detection as a function of distance to the training set.
+
+    For every test attack, the Euclidean distance (in the pipeline's standardized
+    feature space) to its nearest training attack measures how *novel* the flow is to
+    the model. Binning detection rate by that distance, for both split strategies,
+    exposes the mechanism behind the temporal-vs-stratified gap: whether the shuffled
+    split flatters because its test attacks sit near training twins (a composition
+    effect over one decay curve), or because performance at matched novelty also
+    shifts. Reference/query caps keep the k-NN index fast on the full dataset."""
+
+    max_reference: int = 30000  # cap on training attacks indexed for the NN lookup
+    max_queries: int = 10000  # cap on test attacks scored per split
+    n_bins: int = 5  # distance bins (quantile edges over the pooled distances)
+    # A test attack closer than this (standardized units, summed over ~77 dims) to a
+    # training attack is a near-twin — on the real CIC data these are the shuffled
+    # split's leakage; exact duplicates were already dropped in cleaning.
+    twin_epsilon: float = 0.5
+
+
 class ConformalConfig(BaseModel):
     """Split-conformal prediction: distribution-free coverage + selective alerting.
 
@@ -493,6 +513,7 @@ class Settings(BaseSettings):
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)
+    novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)

@@ -601,6 +601,35 @@ smaller dev-run numbers noted in earlier phases:
   slices, and stated as signal. Alert-share per service ("IMAP alone raises 27%
   of all false positives") is the queue-level view of alert fatigue.
 
+## Novelty distance (the split gap, decomposed)
+
+- The project's spine is the temporal-vs-stratified gap; this study builds the
+  instrument that says what the gap is *made of*. Distance from each test attack
+  to its nearest training attack (in the pipeline's standardized space) is a
+  direct novelty measure; binning detection by it on shared quantile edges for
+  both splits separates two stories that "shuffled splits leak" conflates:
+  **composition** (the shuffled split's test attacks sit near training twins) and
+  **at-distance shift** (later days are harder even at matched novelty).
+- The decomposition is a one-line counterfactual: apply stratified per-bin
+  detection to the temporal distance mix. On the stand-in it says composition is
+  ~nothing (-1.1 pts) and at-distance is ~everything (+27.8 pts of the 26.7-pt
+  gap) — which is *correct*, because the generator draws flows independently and
+  so has no burst near-twins. The report says that plainly and states the
+  real-data expectation (twin bar ≈ the leakage) instead of pretending the
+  stand-in showed it.
+- My first draft's prose assumed the classic story (nearer = flatter,
+  detection decays with distance). The data said otherwise on both counts: the
+  medians nearly coincide (6.87 vs 7.15) and detection **rises** with distance in
+  both splits (+20/+24 pts) — far-from-training attacks are volumetric extremes
+  that are easy *because* they are extreme; the hard attacks hug the benign
+  manifold, exactly where the evasion study's mimicry pushes. I rewrote the
+  render with three-way sign-aware branches (material-difference margins, not
+  bare `<`) so the report can never claim a mechanism its own table contradicts.
+- Also fixed the figure: quantile bins have a heavy-tailed last range whose
+  midpoint squashed everything left; x is now bin index and the table carries the
+  ranges. Reference/query caps and the twin epsilon are config
+  (`novelty.*`), seeded subsampling keeps it deterministic.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

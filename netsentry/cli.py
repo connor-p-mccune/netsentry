@@ -405,6 +405,19 @@ def subgroups(
 
 
 @app.command()
+def novelty(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Profile detection vs distance-to-training (why shuffled splits flatter)."""
+    from netsentry.evaluation.novelty import run_novelty_report
+
+    settings = _load(config, override)
+    out = run_novelty_report(settings)
+    logger.info("Novelty report ready", extra={"path": str(out)})
+
+
+@app.command()
 def rules(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

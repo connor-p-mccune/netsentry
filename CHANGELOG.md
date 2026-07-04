@@ -7,6 +7,19 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Novelty-distance study (`netsentry novelty`, `netsentry/evaluation/novelty.py`):
+  for every test attack, the Euclidean distance to its nearest **training** attack in
+  the pipeline's standardized space, profiled for both split strategies on shared
+  quantile bins with detection at the operating threshold. Decomposes the headline
+  temporal-vs-stratified gap into a **composition** part (nearness/near-twins — the
+  shuffled split's leakage proper) and an **at-distance** part (the later days are
+  harder at matched novelty) by reweighting stratified per-bin detection to the
+  temporal distance mix. On the synthetic stand-in the mixes nearly coincide (no
+  burst near-twins by construction — stated, with the real-data expectation) and the
+  gap is ~all at-distance (-1.1 vs +27.8 pts); detection *rises* with distance in
+  both splits, honestly reported: extremes are easy, the near-benign-manifold attacks
+  are the hard ones — the same geometry the evasion study exploits. In the analysis
+  suite.
 - Per-service detection-parity audit (`netsentry subgroups`,
   `netsentry/evaluation/subgroups.py`): the temporal test flows grouped by the
   service implied by `Destination Port` — a field the model never sees, used only to

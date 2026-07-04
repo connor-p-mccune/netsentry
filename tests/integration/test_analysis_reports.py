@@ -114,6 +114,17 @@ def test_subgroups_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_novelty_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.novelty import run_novelty_report
+
+    prepared.novelty.n_bins = 3
+    prepared.novelty.max_queries = 500
+    out = run_novelty_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "novelty" in text and "distance bin" in text
+
+
+@pytest.mark.slow
 def test_streaming_report_is_written(prepared: Settings) -> None:
     from netsentry.monitoring.streaming import run_streaming_report
 
