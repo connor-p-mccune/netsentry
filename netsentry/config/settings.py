@@ -277,6 +277,28 @@ class ImportanceStabilityConfig(BaseModel):
     max_val_rows: int = 4000  # cap validation rows for the permutation fallback (speed)
 
 
+class GateConfig(BaseModel):
+    """Release quality gate: the bars a candidate must clear before it ships.
+
+    Structural honesty checks (leakage firewall on the fitted artifact, calibrator
+    present, threshold profiles complete, scoring smoke) always run; these knobs set
+    the performance floors — and one deliberate *ceiling*: a PR-AUC above
+    ``max_pr_auc`` fails the gate because on this data a near-perfect score is
+    overwhelmingly more likely to be leakage than skill. Floors are relative to the
+    attack prevalence where possible so the policy transfers across base rates.
+    Defaults are set to pass the synthetic stand-in with headroom; tune per
+    deployment."""
+
+    min_pr_auc_lift: float = 1.5  # PR-AUC >= lift x prevalence (random-ranker baseline)
+    max_pr_auc: float = 0.999  # above this, assume leakage until a human explains it
+    min_tpr_at_primary_fpr: float = 0.05  # detection floor at the primary FP budget
+    # ECE of the *calibrated* score on the honest test split. Under temporal shift a
+    # validation-fit calibrator honestly degrades (~0.11 on the stand-in, vs ~0.12
+    # raw); the bar allows that documented headroom while still catching a grossly
+    # mis-calibrated probability.
+    max_ece: float = 0.15
+
+
 class SeedVarianceConfig(BaseModel):
     """Training-noise audit: refit the honest model across seeds, report the spread.
 
@@ -613,6 +635,7 @@ class Settings(BaseSettings):
     alert_queue: AlertQueueConfig = Field(default_factory=AlertQueueConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
+    gate: GateConfig = Field(default_factory=GateConfig)
     seed_variance: SeedVarianceConfig = Field(default_factory=SeedVarianceConfig)
     subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)

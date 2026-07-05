@@ -439,6 +439,24 @@ def importance_stability_cmd(
 
 
 @app.command()
+def gate(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Release quality gate: honesty invariants + metric floors; non-zero exit on failure."""
+    from netsentry.evaluation.gate import run_gate
+
+    settings = _load(config, override)
+    out, result = run_gate(settings)
+    logger.info(
+        "Gate report ready",
+        extra={"path": str(out), "ok": result.ok, "failed": result.n_failed},
+    )
+    if not result.ok:
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def seeds(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

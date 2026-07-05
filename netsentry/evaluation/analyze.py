@@ -20,6 +20,7 @@ from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.alert_queue import run_alert_queue_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
+from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.novelty import run_novelty_report
@@ -46,6 +47,13 @@ if TYPE_CHECKING:
 logger = get_logger(__name__)
 
 INDEX_NAME = "INDEX.md"
+
+
+def _run_gate_report(settings: Settings) -> Path:
+    """Adapter: the gate writes its report either way; enforcement is the CLI's job."""
+    out, _ = run_gate(settings)
+    return out
+
 
 # (title, description, output filename, runner). Runners take only Settings.
 _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
@@ -164,6 +172,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the training-noise floor under every reported metric",
         "seed_variance.md",
         run_seed_variance_report,
+    ),
+    (
+        "Release gate",
+        "honesty invariants + metric floors the candidate must clear",
+        "gate.md",
+        _run_gate_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
     (

@@ -177,6 +177,24 @@ def test_seed_variance_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_gate_report_verdict_and_exit_state(prepared: Settings) -> None:
+    from netsentry.evaluation.gate import run_gate
+
+    # Metric floors are relaxed for the tiny fixture; the structural checks are the point.
+    prepared.gate.min_tpr_at_primary_fpr = 0.0
+    prepared.gate.max_ece = 1.0
+    out, result = run_gate(prepared)
+    text = out.read_text(encoding="utf-8")
+    assert out.exists() and "leakage firewall" in text
+    assert result.ok and "**PASS**" in text
+
+    # An impossible floor must flip the verdict — the CI-enforcement path.
+    prepared.gate.min_pr_auc_lift = 100.0
+    _, failing = run_gate(prepared)
+    assert not failing.ok
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 
