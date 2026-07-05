@@ -214,6 +214,27 @@ def drift(
 
 
 @app.command()
+def driftscan(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    reference: Annotated[
+        Path | None,
+        typer.Option(help="Reference dataset (parquet/csv); default: temporal train split."),
+    ] = None,
+    current: Annotated[
+        Path | None,
+        typer.Option(help="Current dataset (parquet/csv); default: temporal test split."),
+    ] = None,
+) -> None:
+    """Significance-tested drift: per-feature KS+FDR plus online Page-Hinkley/DDM."""
+    from netsentry.monitoring.report import run_drift_tests_report
+
+    settings = _load(config, override)
+    out = run_drift_tests_report(settings, reference_path=reference, current_path=current)
+    logger.info("Statistical drift report ready", extra={"path": str(out)})
+
+
+@app.command()
 def robustness(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

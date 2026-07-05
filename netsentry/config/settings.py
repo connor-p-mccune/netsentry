@@ -244,6 +244,29 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class DriftDetectorConfig(BaseModel):
+    """Statistical / online concept-drift detectors — significance, not just PSI magnitude.
+
+    PSI reports how *far* a distribution moved but carries no notion of significance,
+    and it is computed on static batches. These add the two things PSI cannot: a
+    per-feature two-sample **Kolmogorov-Smirnov** test (with Benjamini-Hochberg FDR
+    control, so 'how many features genuinely drifted' is an honest count, not a
+    threshold on an effect size), and two classic **online** detectors that answer
+    *when* the stream broke — **Page-Hinkley** on the model-score stream and **DDM**
+    (Gama et al. 2004) on the model-error stream."""
+
+    ks_fdr_alpha: float = 0.05  # Benjamini-Hochberg false-discovery rate for the KS tests
+    ph_delta: float = 0.005  # Page-Hinkley magnitude tolerance (drift allowed before alarming)
+    ph_lambda: float = 50.0  # Page-Hinkley alarm threshold on the cumulative deviation
+    ddm_warn_level: float = 2.0  # DDM warning zone: error rate >= min + warn * sigma_min
+    ddm_drift_level: float = 3.0  # DDM drift alarm: error rate >= min + drift * sigma_min
+    # DDM's cumulative error-rate estimate is volatile at small n and its 3-sigma band
+    # tightens as the stream grows, so a real-data error stream needs a substantial
+    # warmup to establish a stable baseline before the detector is armed.
+    ddm_min_samples: int = 2000
+    max_features_reported: int = 25  # cap the per-feature KS table in the report
+
+
 class RobustnessConfig(BaseModel):
     """Adversarial-evasion evaluation: how detection degrades under an attacker.
 
@@ -548,6 +571,7 @@ class Settings(BaseSettings):
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
+    drift_detectors: DriftDetectorConfig = Field(default_factory=DriftDetectorConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)

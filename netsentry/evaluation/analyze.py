@@ -30,7 +30,7 @@ from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
-from netsentry.monitoring.report import run_drift_report
+from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.hardening import run_hardening_report
 from netsentry.robustness.poisoning import run_poisoning_report
@@ -83,6 +83,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_label_audit_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
+    (
+        "Statistical drift",
+        "per-feature KS+FDR, online Page-Hinkley/DDM",
+        "drift_tests.md",
+        run_drift_tests_report,
+    ),
     (
         "Prequential streaming",
         "static vs retrained model on the later-day stream",
