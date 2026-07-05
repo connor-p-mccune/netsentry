@@ -1,0 +1,201 @@
+{
+  "name": "NetSentry \u2014 Detection Coverage",
+  "versions": {
+    "attack": "14",
+    "navigator": "4.9.1",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "NetSentry ML-NIDS detection coverage mapped to MITRE ATT&CK. Each technique is scored by the model's per-class recall at the 1% false-positive operating point on the stratified reference split. Indicative mappings for the CIC-IDS2017 scenarios.",
+  "techniques": [
+    {
+      "techniqueID": "T1046",
+      "tactic": "discovery",
+      "score": 44.3,
+      "color": "",
+      "comment": "NetSentry classes: PortScan. Detection (recall) 44.3% @ 1% FPR (stratified split, n=623).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "PortScan"
+        },
+        {
+          "name": "support",
+          "value": "623"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1071",
+      "tactic": "command-and-control",
+      "score": 2.9,
+      "color": "",
+      "comment": "NetSentry classes: Bot. Detection (recall) 2.9% @ 1% FPR (stratified split, n=70).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "Bot"
+        },
+        {
+          "name": "support",
+          "value": "70"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1110",
+      "tactic": "credential-access",
+      "score": 4.8,
+      "color": "",
+      "comment": "NetSentry classes: FTP-Patator, SSH-Patator. Detection (recall) 4.8% @ 1% FPR (stratified split, n=270).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "FTP-Patator, SSH-Patator"
+        },
+        {
+          "name": "support",
+          "value": "270"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1190",
+      "tactic": "initial-access",
+      "score": 1.7,
+      "color": "",
+      "comment": "NetSentry classes: Heartbleed, Web Attack. Detection (recall) 1.7% @ 1% FPR (stratified split, n=60).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "Heartbleed, Web Attack"
+        },
+        {
+          "name": "support",
+          "value": "60"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1204",
+      "tactic": "execution",
+      "score": 0.0,
+      "color": "",
+      "comment": "NetSentry classes: Infiltration. Detection (recall) 0.0% @ 1% FPR (stratified split, n=8).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "Infiltration"
+        },
+        {
+          "name": "support",
+          "value": "8"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1498",
+      "tactic": "impact",
+      "score": 77.7,
+      "color": "",
+      "comment": "NetSentry classes: DDoS. Detection (recall) 77.7% @ 1% FPR (stratified split, n=488).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "DDoS"
+        },
+        {
+          "name": "support",
+          "value": "488"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1499",
+      "tactic": "impact",
+      "score": 59.8,
+      "color": "",
+      "comment": "NetSentry classes: DoS GoldenEye, DoS Hulk. Detection (recall) 59.8% @ 1% FPR (stratified split, n=927).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "DoS GoldenEye, DoS Hulk"
+        },
+        {
+          "name": "support",
+          "value": "927"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1499.002",
+      "tactic": "impact",
+      "score": 18.5,
+      "color": "",
+      "comment": "NetSentry classes: DoS Slowhttptest, DoS slowloris. Detection (recall) 18.5% @ 1% FPR (stratified split, n=200).",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "classes",
+          "value": "DoS Slowhttptest, DoS slowloris"
+        },
+        {
+          "name": "support",
+          "value": "200"
+        }
+      ],
+      "showSubtechniques": true
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#e02b35",
+      "#f7e463",
+      "#3fa34d"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "low detection (coverage gap)",
+      "color": "#e02b35"
+    },
+    {
+      "label": "high detection",
+      "color": "#3fa34d"
+    }
+  ],
+  "metadata": [
+    {
+      "name": "generated_by",
+      "value": "netsentry navigator"
+    },
+    {
+      "name": "operating_point",
+      "value": "fpr_1pct"
+    },
+    {
+      "name": "scoring_split",
+      "value": "stratified"
+    }
+  ],
+  "showTacticRowBackground": true,
+  "tacticRowBackground": "#205b8f",
+  "selectTechniquesAcrossTactics": true,
+  "sorting": 3
+}

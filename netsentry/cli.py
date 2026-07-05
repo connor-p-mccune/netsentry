@@ -504,6 +504,19 @@ def intel(
 
 
 @app.command()
+def navigator(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Export detection coverage as a MITRE ATT&CK Navigator layer (scored by recall)."""
+    from netsentry.intel.navigator import run_navigator_export
+
+    settings = _load(config, override)
+    out = run_navigator_export(settings)
+    logger.info("ATT&CK Navigator layer ready", extra={"path": str(out)})
+
+
+@app.command()
 def analyze(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

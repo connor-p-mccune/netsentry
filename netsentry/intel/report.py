@@ -47,6 +47,15 @@ with its ATT&CK technique lets a SOC correlate NetSentry alerts with EDR/SIEM
 detections that speak the same language, prioritise by tactic (a Credential-Access
 brute force vs an Impact DoS), and measure detection coverage against the framework
 their threat model is written in.
+
+## ATT&CK Navigator layer
+
+`netsentry navigator` exports this coverage as a **MITRE ATT&CK Navigator layer**
+(`attack_navigator_layer.json`) — a file you can load directly into the
+[ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/) to see the
+technique matrix colored by NetSentry's measured per-class detection (red = coverage
+gap, green = well detected). It turns this table into the shareable, framework-native
+picture a detection-engineering team actually works from.
 """
     out_path = settings.paths.reports_dir / REPORT_NAME
     out_path.parent.mkdir(parents=True, exist_ok=True)

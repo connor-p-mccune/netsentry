@@ -19,6 +19,22 @@ TACTIC_EXECUTION = "Execution"
 TACTIC_C2 = "Command and Control"
 TACTIC_DISCOVERY = "Discovery"
 
+# ATT&CK Navigator keys techniques by tactic *shortname* (lower-kebab), not the
+# display name; kept here so the Navigator layer export and the mapping never drift.
+_TACTIC_SHORTNAMES: dict[str, str] = {
+    TACTIC_CREDENTIAL_ACCESS: "credential-access",
+    TACTIC_IMPACT: "impact",
+    TACTIC_INITIAL_ACCESS: "initial-access",
+    TACTIC_EXECUTION: "execution",
+    TACTIC_C2: "command-and-control",
+    TACTIC_DISCOVERY: "discovery",
+}
+
+
+def tactic_shortname(tactic: str) -> str:
+    """ATT&CK tactic shortname (e.g. 'Impact' -> 'impact') for the Navigator layer."""
+    return _TACTIC_SHORTNAMES.get(tactic, tactic.lower().replace(" ", "-"))
+
 
 @dataclass(frozen=True)
 class AttackTechnique:
