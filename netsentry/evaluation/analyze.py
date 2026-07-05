@@ -32,6 +32,7 @@ from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
 from netsentry.monitoring.report import run_drift_report
 from netsentry.monitoring.streaming import run_streaming_report
+from netsentry.robustness.hardening import run_hardening_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 
@@ -68,6 +69,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "label flips + benign-pool contamination",
         "poisoning.md",
         run_poisoning_report,
+    ),
+    (
+        "Adversarial hardening",
+        "adversarial training vs mimicry, re-measured",
+        "hardening.md",
+        run_hardening_report,
     ),
     (
         "Label-noise audit",

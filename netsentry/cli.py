@@ -240,6 +240,19 @@ def poisoning(
 
 
 @app.command()
+def harden(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Adversarially train against mimicry evasion, then re-measure robustness."""
+    from netsentry.robustness.hardening import run_hardening_report
+
+    settings = _load(config, override)
+    out = run_hardening_report(settings)
+    logger.info("Hardening report ready", extra={"path": str(out)})
+
+
+@app.command()
 def cost(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

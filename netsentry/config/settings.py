@@ -304,6 +304,23 @@ class RobustnessConfig(BaseModel):
     recourse_max_steps: int = 5  # max features a counterfactual explanation may change
 
 
+class HardeningConfig(BaseModel):
+    """Adversarial training against the feature-space mimicry the evasion study runs.
+
+    The robustness study *measures* how mimicry collapses detection; this closes the
+    loop and *acts* on it. Training is augmented with mimicry-perturbed copies of the
+    attack flows — the same move the attacker makes, so the classifier learns that a
+    flow shaped toward the benign centroid on its attacker-controllable features is
+    still an attack. Adversarial training is expected to trade a little clean
+    detection for robustness; the report measures both sides of that trade rather than
+    asserting the win, in keeping with the project's honesty thesis."""
+
+    # Mimicry fractions synthesized into the training set. Including 1.0 means the
+    # model trains on exactly the fully-mimicked attack the evasion study produces.
+    mimicry_train_fractions: list[float] = Field(default_factory=lambda: [0.5, 0.75, 1.0])
+    max_augmented: int = 6000  # cap on synthesized adversarial rows (keeps refits fast)
+
+
 class RuleClause(BaseModel):
     """One comparison in a signature rule: ``feature OP value`` (NaN never matches)."""
 
@@ -532,6 +549,7 @@ class Settings(BaseSettings):
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
+    hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
