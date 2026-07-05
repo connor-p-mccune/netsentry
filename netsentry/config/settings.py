@@ -299,6 +299,24 @@ class GateConfig(BaseModel):
     max_ece: float = 0.15
 
 
+class PromotionConfig(BaseModel):
+    """Champion/challenger promotion policy (the decision layer before serving).
+
+    Margins are non-inferiority bands on the paired-bootstrap deltas, calibrated
+    from the seed-sensitivity audit: PR-AUC moves ~0.002 sd and TPR@0.1%FPR ~0.006 sd
+    across seeds on the stand-in, so the defaults sit just above that training-noise
+    floor — a promotion decided inside the band would be a decision about luck.
+    ``non_inferiority`` rolls routine retrains forward unless credibly worse (right
+    under drift, where freshness has measured value); ``superiority`` additionally
+    demands the delta CI exclude zero (right for risky architecture swaps)."""
+
+    policy: Literal["non_inferiority", "superiority"] = "non_inferiority"
+    metric_margin: float = 0.005  # PR-AUC non-inferiority margin (~3x seed sd)
+    tpr_margin: float = 0.015  # TPR@primary-FPR margin (~2.5x seed sd)
+    require_tpr_non_inferior: bool = True
+    n_boot: int = 1000  # paired-bootstrap resamples for the delta CIs
+
+
 class SeedVarianceConfig(BaseModel):
     """Training-noise audit: refit the honest model across seeds, report the spread.
 
@@ -636,6 +654,7 @@ class Settings(BaseSettings):
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     gate: GateConfig = Field(default_factory=GateConfig)
+    promotion: PromotionConfig = Field(default_factory=PromotionConfig)
     seed_variance: SeedVarianceConfig = Field(default_factory=SeedVarianceConfig)
     subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)

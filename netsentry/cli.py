@@ -439,6 +439,36 @@ def importance_stability_cmd(
 
 
 @app.command()
+def promote(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    challenger: Annotated[
+        Path | None,
+        typer.Option(help="Challenger bundle (default: the trained temporal bundle)."),
+    ] = None,
+    champion: Annotated[
+        Path | None,
+        typer.Option(help="Champion bundle (default: the registry's champion pointer)."),
+    ] = None,
+) -> None:
+    """Champion/challenger promotion: paired-bootstrap deltas; non-zero exit on HOLD."""
+    from netsentry.models.promotion import run_promotion
+
+    settings = _load(config, override)
+    out, decision = run_promotion(settings, challenger_path=challenger, champion_path=champion)
+    logger.info(
+        "Promotion report ready",
+        extra={
+            "path": str(out),
+            "decision": "promote" if decision.promote else "hold",
+            "reason": decision.reason,
+        },
+    )
+    if not decision.promote:
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def gate(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

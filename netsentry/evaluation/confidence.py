@@ -91,6 +91,44 @@ class DiffResult:
     p_value: float  # P(diff <= 0) under the bootstrap — small => b > a is significant
 
 
+def paired_diff(
+    y_true: np.ndarray,
+    s_a: np.ndarray,
+    s_b: np.ndarray,
+    metric: Metric,
+    *,
+    metric_b: Metric | None = None,
+    n_boot: int = 1000,
+    alpha: float = 0.05,
+    seed: int = 42,
+) -> DiffResult:
+    """Bootstrap the gap ``metric(b) - metric(a)`` when both models scored the SAME rows.
+
+    One set of row indices is resampled per iteration and both models are scored on
+    it, so the shared sampling noise cancels and the CI reflects the *difference
+    between the models*, not the difficulty of the resample — the right shape for a
+    champion/challenger comparison. ``metric_b`` (default: ``metric``) lets each side
+    carry its own fixed operating threshold.
+    """
+    y_true, s_a, s_b = map(np.asarray, (y_true, s_a, s_b))
+    mb = metric_b if metric_b is not None else metric
+    rng = np.random.default_rng(seed)
+    n = len(y_true)
+    point = mb(y_true, s_b) - metric(y_true, s_a)
+    diffs: list[float] = []
+    for _ in range(n_boot):
+        idx = rng.integers(0, n, n)
+        yt = y_true[idx]
+        if len(np.unique(yt)) < 2:
+            continue
+        diffs.append(mb(yt, s_b[idx]) - metric(yt, s_a[idx]))
+    if not diffs:
+        return DiffResult(point, point, point, 1.0)
+    low, high = np.percentile(diffs, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    p_value = float(np.mean(np.asarray(diffs) <= 0.0))
+    return DiffResult(float(point), float(low), float(high), p_value)
+
+
 def independent_diff(
     y_a: np.ndarray,
     s_a: np.ndarray,

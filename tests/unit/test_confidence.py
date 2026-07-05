@@ -8,6 +8,7 @@ from netsentry.evaluation.confidence import (
     Interval,
     bootstrap_ci,
     independent_diff,
+    paired_diff,
     pr_auc,
     tpr_at_threshold,
 )
@@ -59,3 +60,32 @@ def test_independent_diff_no_gap_is_not_significant() -> None:
     result = independent_diff(y, s, y, s, pr_auc, n_boot=300, seed=8)
     assert result.low < 0 < result.high  # CI straddles zero
     assert 0.2 < result.p_value < 0.8  # no directional signal
+
+
+def test_paired_diff_cancels_shared_noise() -> None:
+    # Same rows scored by a strong and a weak model: paired delta is positive and
+    # significant, and its CI is tighter than the independent comparison's.
+    y, s_weak = _separable(sep=0.4, seed=9)
+    rng = np.random.default_rng(10)
+    s_strong = np.clip(s_weak + np.where(y == 1, 0.15, -0.15) + rng.normal(0, 0.02, len(y)), 0, 1)
+    paired = paired_diff(y, s_weak, s_strong, pr_auc, n_boot=300, seed=11)
+    independent = independent_diff(y, s_weak, y, s_strong, pr_auc, n_boot=300, seed=11)
+    assert paired.diff > 0 and paired.p_value < 0.05
+    assert (paired.high - paired.low) < (independent.high - independent.low)
+
+
+def test_paired_diff_of_identical_models_is_exactly_zero() -> None:
+    y, s = _separable(seed=12)
+    result = paired_diff(y, s, s, pr_auc, n_boot=100, seed=13)
+    assert result.diff == 0.0 and result.low == 0.0 and result.high == 0.0
+
+
+def test_paired_diff_supports_per_side_thresholds() -> None:
+    # Each side judged at its own operating threshold (the promotion gate's shape).
+    y = np.array([1, 1, 1, 0, 0, 0] * 40)
+    s_a = np.array([0.9, 0.6, 0.4, 0.3, 0.2, 0.1] * 40)  # catches 2/3 at 0.5
+    s_b = s_a  # same scores, but the challenger's threshold is looser
+    result = paired_diff(
+        y, s_a, s_b, tpr_at_threshold(0.5), metric_b=tpr_at_threshold(0.35), n_boot=50, seed=14
+    )
+    assert result.diff > 0  # looser threshold detects strictly more on these scores

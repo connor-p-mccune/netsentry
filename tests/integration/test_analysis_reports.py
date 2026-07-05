@@ -195,6 +195,36 @@ def test_gate_report_verdict_and_exit_state(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_promotion_lifecycle_bootstrap_hold_and_rollforward(prepared: Settings) -> None:
+    from netsentry.models.promotion import CHAMPION_POINTER, HISTORY_NAME, run_promotion
+    from netsentry.training.train_supervised import train_supervised
+
+    prepared.split.strategy = "temporal"
+    prepared.supervised.task = "binary"
+    prepared.promotion.n_boot = 50
+    train_supervised(prepared)
+
+    # 1) Empty registry: the first candidate seeds the champion.
+    out, first = run_promotion(prepared)
+    assert first.promote and first.champion is None
+    assert (prepared.paths.models_dir / CHAMPION_POINTER).exists()
+
+    # 2) Superiority policy vs an identical challenger: parity is not evidence.
+    prepared.promotion.policy = "superiority"
+    _, held = run_promotion(prepared)
+    assert not held.promote and held.pr_delta is not None
+    assert held.pr_delta.diff == 0.0  # identical bundle scores identically
+
+    # 3) Non-inferiority policy: parity rolls forward (freshness wins under drift).
+    prepared.promotion.policy = "non_inferiority"
+    out, rolled = run_promotion(prepared)
+    assert rolled.promote
+    history = (prepared.paths.models_dir / HISTORY_NAME).read_text(encoding="utf-8")
+    assert len(history.strip().splitlines()) == 3  # every decision is on the record
+    assert "PROMOTE" in out.read_text(encoding="utf-8")
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 
