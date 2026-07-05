@@ -7,6 +7,46 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Adversarial hardening (`netsentry harden`, `netsentry/robustness/hardening.py`):
+  adversarial training against the feature-space mimicry the evasion study measures.
+  It augments the honest temporal/binary training set with mimicry-perturbed copies of
+  the attack flows (the attacker's own move toward the benign centroid, still labeled
+  attack), refits, and runs the **same** evasion study against baseline and hardened
+  models — closing the loop the robustness report only pointed at. Calibration and FPR
+  thresholds are fit on the clean validation split for both, so operating points
+  compare like-for-like. On the stand-in, full-mimicry detection recovers 0% → ~100%
+  at a small clean cost (temporal PR-AUC 0.529 → 0.519); the report leads with the
+  trade-off and states that adversarial training only defends the perturbation it
+  trains on. Augmentation mechanics unit-tested; end-to-end determinism checked. In
+  the analysis suite.
+- Statistical & online drift detectors (`netsentry driftscan`,
+  `netsentry/monitoring/detectors.py`): the significance and timing PSI omits. A
+  per-feature two-sample Kolmogorov-Smirnov test with a Benjamini-Hochberg FDR
+  procedure across features (5/76 certified as genuinely shifted on the stand-in, vs
+  PSI's magnitude ranking), plus two classic online detectors on the deployed model's
+  streams — Page-Hinkley on the score stream and DDM (Gama et al., 2004) on the error
+  stream — that report the change-point index. Against a planted reference→current
+  boundary both alarm within the later-day segment. Detectors are pure and validated
+  against planted shifts (the DDM zero-baseline warmup degeneracy is guarded). In the
+  analysis suite.
+- MITRE ATT&CK Navigator layer export (`netsentry navigator`,
+  `netsentry/intel/navigator.py`): NetSentry's detection coverage written as a valid
+  ATT&CK Navigator layer JSON, colored by support-weighted per-class recall at the
+  operating FPR (stratified reference split, where every class is evaluable). A file a
+  detection-engineering team loads directly into the ATT&CK Navigator to see its
+  coverage in the framework its threat model is written in — floods green, stealthy
+  classes as red gaps. Tactic shortnames live beside the existing ATT&CK mapping so the
+  layer and the `mitre` prediction field cannot drift; layer builder + aggregation
+  unit-tested incl. JSON validity. In the analysis suite.
+- Alert-queue capacity planning (`netsentry alertqueue`,
+  `netsentry/evaluation/alert_queue.py`): the detection a fixed analyst budget buys.
+  A budget of K alerts/day maps to the ROC operating point whose alert volume equals K
+  at a realistic 1% production base rate, so recall, queue precision, and the **lift
+  over random triage** are read off the score ranking. On the stand-in the ranking is
+  worth ~50-60× random triage (~12 analysts catch 2.5% of attacks at ~83% precision,
+  8.2% at 2,500/day), with detection flattening as staffing climbs. Complements the
+  cost report (which picks the economically optimal threshold). Pure simulator
+  unit-tested; in the analysis suite.
 - Per-service threshold profile in serving (`?profile=per_service`): the parity
   audit's finding shipped as a product feature. The bundle builder computes, on the
   same calibrated validation scores as every other profile, a decision threshold per

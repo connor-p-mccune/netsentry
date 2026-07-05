@@ -18,7 +18,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **251 passing tests**), and the full `download → prep → train → eval →
+type-check + **271 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
@@ -46,12 +46,15 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 |---|---|---|
 | Probability calibration | isotonic/Platt calibrator + reliability/Brier/ECE diagnostics | ✅ Done |
 | Adversarial robustness | mimicry + adaptive query-search evasion, robustness curves | ✅ Done |
+| Adversarial hardening | adversarial training vs mimicry, re-measured (measure → fix → re-measure) | ✅ Done |
 | Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
+| Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |
 | Conformal prediction | distribution-free coverage + selective alerting | ✅ Done |
 | Hyperparameter search | leakage-safe Optuna HPO (`train tune`) | ✅ Done |
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
+| Statistical drift | per-feature KS + Benjamini–Hochberg FDR, online Page–Hinkley / DDM | ✅ Done |
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
-| Threat intel | MITRE ATT&CK mapping in predictions + coverage report | ✅ Done |
+| Threat intel | MITRE ATT&CK mapping in predictions + coverage report + Navigator layer | ✅ Done |
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
 | Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
@@ -192,6 +195,10 @@ netsentry rules                     # ML vs a signature ruleset at a matched FPR
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
 netsentry poisoning                 # detection decay under training-set poisoning
+netsentry harden                    # adversarial training vs mimicry, then re-measure
+netsentry alertqueue                # detection vs analyst budget (lift over random triage)
+netsentry driftscan                 # KS+FDR + online Page-Hinkley/DDM drift detection
+netsentry navigator                 # export ATT&CK Navigator layer (colored by detection)
 netsentry provenance && netsentry verify   # SBOM + model manifest, then integrity gate
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
@@ -268,6 +275,17 @@ per-batch score-PSI (major early, then subsiding) shows the batches where the st
 model slips are exactly the ones the drift alert would fire on. See
 [`docs/reports/streaming.md`](docs/reports/streaming.md).
 
+PSI reports *how much* a distribution moved, but it is an effect size with a
+rule-of-thumb cutoff, not a test. `netsentry driftscan` adds the two things PSI can't:
+**significance** — a per-feature two-sample Kolmogorov–Smirnov test with a
+**Benjamini–Hochberg FDR** correction across features (5 of 76 certified as genuinely
+shifted on the stand-in, not just ranked by magnitude) — and **timing**, via two
+classic *online* detectors that report *when* the stream broke: **Page–Hinkley** on
+the deployed model's score stream and **DDM** (Gama et al., 2004) on its error stream.
+Against a planted reference→current boundary, both alarm within the later-day segment,
+which is what a production monitor needs: not "the batch drifted" but "alert now, at
+flow N." See [`docs/reports/drift_tests.md`](docs/reports/drift_tests.md).
+
 ## Threat intelligence (MITRE ATT&CK)
 
 Detection is only step one; response needs context. Every attack class is mapped to
@@ -278,6 +296,15 @@ Hulk → Impact / T1499 Endpoint Denial of Service`, `PortScan → Discovery / T
 the mapping is one source of truth shared by the API and the report. See
 [`docs/reports/mitre.md`](docs/reports/mitre.md). Mappings are indicative of the
 CIC-IDS2017 scenarios and documented as such.
+
+`netsentry navigator` goes one step further and exports that coverage as a **MITRE
+ATT&CK Navigator layer** ([`attack_navigator_layer.json`](docs/reports/attack_navigator_layer.json))
+— a file you drop straight into the [ATT&CK Navigator](https://mitre-attack.github.io/attack-navigator/)
+to see the technique matrix colored by NetSentry's measured per-class detection (green
+= well detected, red = coverage gap). On the stand-in the volumetric floods light up
+(DDoS ~78, DoS ~60) and the stealthy classes are the visible red gaps (Infiltration 0,
+Web/Heartbleed ~2, brute force ~5) — the honest shape of the coverage, in the
+framework a detection-engineering team already works from.
 
 ## Observability (Prometheus + Grafana)
 
@@ -340,6 +367,20 @@ tuned on validation (earlier days) can drift on the later-day test set, the same
 temporal effect the headline split exposes. See
 [`docs/reports/cost.md`](docs/reports/cost.md).
 
+## Alert-queue capacity planning
+
+The cost report picks a threshold; a SOC lead budgets in analyst time. `netsentry
+alertqueue` answers the deployment question directly — "my team can work K alerts a
+day; ranking flows by risk, how many attacks do we catch, and how much better is that
+than triaging K flows at random?" A budget of K alerts/day maps to the operating point
+whose alert volume equals K at a realistic **1%** production base rate (not the ~22%
+test mix), so detection, queue precision, and the **lift over random triage** are read
+straight off the score ranking. On the stand-in the ranking is worth **~50–60×** random
+triage: ~12 analysts (500 alerts/day) catch 2.5% of attacks at ~83% queue precision,
+rising to 8.2% at 2,500/day, with detection flattening as staffing climbs — the
+capacity-planning knee PR-AUC alone can't show. See
+[`docs/reports/alert_queue.md`](docs/reports/alert_queue.md).
+
 ## Adversarial robustness
 
 A NIDS faces *adaptive* attackers, so "not adversarially robust" should be a
@@ -353,6 +394,20 @@ operating point, and the most-exploitable features (Flow Duration, packet counts
 flow rates) line up with the SHAP global importances. That fragility is the
 concrete argument for pairing the classifier with the benign-only anomaly
 detector. See [`docs/reports/robustness.md`](docs/reports/robustness.md).
+
+## Adversarial hardening (measure → fix → re-measure)
+
+Measuring a weakness is half the job; the robustness report ends by naming
+adversarial training as a *direction*. `netsentry harden` takes it: it augments
+training with mimicry-perturbed copies of the attack flows — the attacker's own move,
+still labeled attack — refits the honest temporal model, and runs the **same** evasion
+study against the baseline and the hardened model. On the stand-in, full-mimicry
+detection recovers from **0% to ~100%** at a small clean cost (temporal PR-AUC 0.529 →
+0.519). The report leads with that trade-off, not the win, and states plainly that
+adversarial training only defends the *specific* perturbation it trains on — the
+standing case for pairing it with the benign-only anomaly detector. It is the honest
+arc: NetSentry *measured* the evasion weakness, *acted* on it, and *re-measured*. See
+[`docs/reports/hardening.md`](docs/reports/hardening.md).
 
 ## Training-set poisoning
 

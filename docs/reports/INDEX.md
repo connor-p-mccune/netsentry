@@ -6,11 +6,14 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 |---|---|---|
 | Operational evaluation | PR-AUC, TPR@FPR, per-class, calibration | [open](evaluation.md) |
 | Cost-sensitive thresholds | decision-theoretic operating point | [open](cost.md) |
+| Alert-queue capacity | detection vs analyst budget; lift over random triage | [open](alert_queue.md) |
 | Conformal prediction | coverage guarantee + selective alerting | [open](conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
+| Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |
 | Label-noise audit | confident-learning flags + planted-flip self-validation | [open](label_audit.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
+| Statistical drift | per-feature KS+FDR, online Page-Hinkley/DDM | [open](drift_tests.md) |
 | Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
 | Per-service parity | detection/false-alarm equity across services | [open](subgroups.md) |
@@ -21,4 +24,5 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
 | MITRE ATT&CK coverage | attack class -> tactic/technique | [open](mitre.md) |
+| ATT&CK Navigator layer | detection coverage as a loadable Navigator layer | [open](attack_navigator_layer.json) |
 | Provenance & supply chain | CycloneDX SBOM + model-integrity manifest | [open](provenance.md) |

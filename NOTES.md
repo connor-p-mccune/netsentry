@@ -702,6 +702,72 @@ smaller dev-run numbers noted in earlier phases:
   under `bundle.thresholds["per_service"]` makes the profile selectable through
   the existing profile-validation path with zero app changes.
 
+## Adversarial hardening (close the loop the robustness report opens)
+
+- The robustness report measures the evasion weakness and ends by *naming*
+  adversarial training as a direction; leaving it there felt like stopping one step
+  short, exactly as the per-service note describes for the parity audit. So `harden`
+  implements it: augment training with mimicry-perturbed attack rows (the attacker's
+  own move toward the benign centroid, computed on train benign only - no leak),
+  refit, and re-run the *same* evasion study on baseline vs hardened.
+- The design decision that keeps it honest: calibration and the FPR thresholds are
+  fit on the **clean** validation split for both models, so the two operating points
+  are the same kind of thing. The only variable between them is the injected rows.
+- The stand-in result is almost too clean (full-mimicry detection 0% -> ~100%),
+  because the hardened model literally trains on fraction-1.0 mimicry examples. That
+  is why the report leads with the **trade-off** (clean PR-AUC 0.529 -> 0.519) and
+  states plainly that adversarial training only defends the perturbation it trains on
+  - the standing argument for the anomaly detector. Reporting the win without the
+  cost would have been the "too-good number" the whole project is a rebuke to.
+
+## Statistical drift detectors (significance and timing, not just PSI magnitude)
+
+- PSI is an effect size with a rule-of-thumb cutoff; it has no p-value and runs on
+  static batches. `driftscan` adds a per-feature KS test with Benjamini-Hochberg FDR
+  (so "5/76 drifted" is multiplicity-corrected, not 5% of stable features flagged by
+  chance) and two online detectors (Page-Hinkley on the score stream, DDM on the
+  error stream) that report *when*.
+- **DDM warmup was the real lesson.** First cut fired drift at index 29 of a 10k
+  stream: an all-correct warmup locks a (0,0) baseline, and `0 >= 0` trips the alarm
+  on the first error. Guarded by not arming until `p > 0` *and* `n >= min_samples`.
+  Even then DDM is genuinely jumpy at small n (the cumulative error rate is volatile
+  and the 3-sigma band tightens as the stream grows), so `ddm_min_samples` is a
+  substantial 2000 on the real-data stream - established empirically by sweeping it
+  (200 -> spurious warning; 2000 -> warning 6013 / drift 7133, both cleanly past the
+  5000 boundary). The unit test uses evenly-spaced errors so the baseline is stable
+  by construction and the assertion is deterministic.
+- **Which model to monitor** mattered. The temporal model's score mean does not rise
+  on later days (novel attacks score *lower*), so Page-Hinkley on it never fired; the
+  deployed stratified serving bundle is the honest subject anyway (you monitor what is
+  deployed), and its score distribution *does* shift at the boundary. Both detectors
+  now locate the same later-day boundary the temporal split embodies.
+
+## ATT&CK Navigator layer (coverage in the framework the SOC already uses)
+
+- `navigator` writes a real Navigator layer JSON, scored by support-weighted per-class
+  recall. The one judgement call: **which split**. The temporal headline split only
+  contains later-day classes, so it cannot color the whole matrix; per-class recall is
+  only well-posed where every class appears in test, which is the **stratified**
+  reference split (the same split NOTES already assigns the "name the attack" job).
+  The split and operating point are written into the layer description + metadata, so
+  the artifact is self-describing rather than quietly mixing splits.
+- Tactic shortnames live next to the existing ATT&CK mapping (not a second copy in the
+  navigator module), the same single-source-of-truth discipline the port->service map
+  got, so the layer and the served `mitre` field cannot drift.
+
+## Alert-queue capacity planning (detection per unit of analyst time)
+
+- Distinct from `cost`: cost picks the expected-cost-minimising threshold; this reads
+  detection off a *fixed* analyst budget. A budget of K alerts/day is the ROC point
+  whose alert volume equals K at the production base rate, so recall/precision/lift
+  come straight from the score ranking - no new model, just the operating-point
+  arithmetic the cost report already reweights to a realistic 1% prior.
+- The honest number is the **lift over random** (~50-60x on the stand-in): recall
+  divided by random triage's K/flows hit rate. Precision is reported at the production
+  prior, not the 22% test mix, so it reflects the benign-heavy queue an analyst really
+  faces. Below ~500 alerts/day detection is 0% on the hard temporal split - reported
+  as-is, because a capacity plan that hides its floor is worthless.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
