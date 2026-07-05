@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
+from netsentry.evaluation.alert_queue import run_alert_queue_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.label_audit import run_label_audit_report
@@ -53,6 +54,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_evaluation,
     ),
     ("Cost-sensitive thresholds", "decision-theoretic operating point", "cost.md", run_cost_report),
+    (
+        "Alert-queue capacity",
+        "detection vs analyst budget; lift over random triage",
+        "alert_queue.md",
+        run_alert_queue_report,
+    ),
     (
         "Conformal prediction",
         "coverage guarantee + selective alerting",

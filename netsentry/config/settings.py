@@ -172,6 +172,23 @@ class CostConfig(BaseModel):
     grid_points: int = 300  # threshold grid resolution for the cost sweep
 
 
+class AlertQueueConfig(BaseModel):
+    """Capacity-constrained triage: the detection a fixed analyst budget actually buys.
+
+    The cost report picks an expected-cost-minimising threshold; this asks the
+    complementary operational question a SOC lead faces on Monday morning — "my team
+    can work K alerts a day; ranking flows by risk, how many attacks do we catch, and
+    how much better is that than triaging K flows at random?" Detection and precision
+    are evaluated at a realistic production base rate (not the synthetic test mix), so
+    the alert-per-day and analyst-headcount figures are not degenerate."""
+
+    alert_budgets_per_day: list[int] = Field(
+        default_factory=lambda: [50, 100, 250, 500, 1000, 2500]
+    )
+    minutes_per_alert: float = 10.0  # analyst triage time budgeted per alert
+    analyst_minutes_per_day: float = 420.0  # ~7 productive hours per analyst per day
+
+
 class ValidationConfig(BaseModel):
     """Thresholds for the input data-quality gates (fail loudly on bad input)."""
 
@@ -565,6 +582,7 @@ class Settings(BaseSettings):
     anomaly: AnomalyConfig = Field(default_factory=AnomalyConfig)
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     cost: CostConfig = Field(default_factory=CostConfig)
+    alert_queue: AlertQueueConfig = Field(default_factory=AlertQueueConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)

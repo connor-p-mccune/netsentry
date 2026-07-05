@@ -286,6 +286,19 @@ def cost(
     logger.info("Cost report ready", extra={"path": str(out)})
 
 
+@app.command("alertqueue")
+def alert_queue_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Capacity-constrained triage: detection vs analyst budget, and lift over random."""
+    from netsentry.evaluation.alert_queue import run_alert_queue_report
+
+    settings = _load(config, override)
+    out = run_alert_queue_report(settings)
+    logger.info("Alert-queue report ready", extra={"path": str(out)})
+
+
 @app.command()
 def conformal(
     config: ConfigOpt = None,
