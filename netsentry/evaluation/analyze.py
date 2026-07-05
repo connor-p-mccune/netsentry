@@ -28,6 +28,7 @@ from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.subgroups import run_subgroups_report
 from netsentry.explain.counterfactual import run_recourse_report
+from netsentry.explain.importance_stability import run_importance_stability_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
@@ -144,6 +145,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "minimal change that clears a hit",
         "recourse.md",
         run_recourse_report,
+    ),
+    (
+        "Importance stability",
+        "are the shipped explanations stable across refits",
+        "importance_stability.md",
+        run_importance_stability_report,
     ),
     (
         "Active learning",

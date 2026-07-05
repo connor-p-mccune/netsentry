@@ -261,6 +261,22 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class ImportanceStabilityConfig(BaseModel):
+    """Explanation-trust audit: are the model's feature importances stable across refits?
+
+    The API ships SHAP top-features as a product contract, and the report shows a global
+    importance ranking — but a ranking from a *single* fit could be an artifact of one
+    lucky sample. This refits the model on bootstrap resamples of the training data,
+    recomputes global importance each time, and measures how much the ranking moves: a
+    high rank correlation and top-k overlap means the explanations are trustworthy, not
+    noise. It is the honesty check behind treating explainability as a contract."""
+
+    n_bootstrap: int = 15  # bootstrap refits of the training data
+    top_k: int = 10  # size of the top-feature set whose stability is tracked
+    permutation_repeats: int = 3  # only for the model-agnostic permutation fallback
+    max_val_rows: int = 4000  # cap validation rows for the permutation fallback (speed)
+
+
 class DriftDetectorConfig(BaseModel):
     """Statistical / online concept-drift detectors — significance, not just PSI magnitude.
 
@@ -590,6 +606,9 @@ class Settings(BaseSettings):
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     drift_detectors: DriftDetectorConfig = Field(default_factory=DriftDetectorConfig)
+    importance_stability: ImportanceStabilityConfig = Field(
+        default_factory=ImportanceStabilityConfig
+    )
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)

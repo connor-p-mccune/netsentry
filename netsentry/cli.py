@@ -425,6 +425,19 @@ def ablation(
     logger.info("Ablation report ready", extra={"path": str(out)})
 
 
+@app.command("importance")
+def importance_stability_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit feature-importance stability across bootstrap refits (are explanations stable?)."""
+    from netsentry.explain.importance_stability import run_importance_stability_report
+
+    settings = _load(config, override)
+    out = run_importance_stability_report(settings)
+    logger.info("Importance-stability report ready", extra={"path": str(out)})
+
+
 @app.command()
 def slices(
     config: ConfigOpt = None,
