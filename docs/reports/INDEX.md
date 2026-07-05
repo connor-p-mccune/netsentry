@@ -22,6 +22,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Rules-vs-model baseline | hand-written signatures at a matched FPR budget | [open](rules.md) |
 | Feature-group ablation | which behavioural families carry detection | [open](ablation.md) |
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
+| Importance stability | are the shipped explanations stable across refits | [open](importance_stability.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
 | MITRE ATT&CK coverage | attack class -> tactic/technique | [open](mitre.md) |
 | ATT&CK Navigator layer | detection coverage as a loadable Navigator layer | [open](attack_navigator_layer.json) |

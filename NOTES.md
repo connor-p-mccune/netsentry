@@ -768,6 +768,25 @@ smaller dev-run numbers noted in earlier phases:
   faces. Below ~500 alerts/day detection is 0% on the hard temporal split - reported
   as-is, because a capacity plan that hides its floor is worthless.
 
+## Feature-importance stability (can you trust the shipped explanations?)
+
+- The API returns SHAP top-features as a contract and the eval report shows a global
+  ranking - both from a *single* fit. `importance` audits whether that ranking is
+  signal or sampling luck: refit on bootstrap resamples, recompute importance, measure
+  how much it moves (mean pairwise Spearman of the vectors; Jaccard of the top-k sets).
+- The stand-in result is the honest kind: full-ranking Spearman ~0.40 (noisy) but
+  top-10 Jaccard ~0.59 (the leaders mostly hold). My first `_verdict` collapsed that to
+  a blanket "unstable", which under-reads it - the real, common pattern is *the tail is
+  noise, the head holds*, so the verdict now says so and ties it to why the API returns
+  only the top few features. A weak-signal iid generator (top |corr| ~0.3, no dominant
+  feature) is exactly where the low-importance tail should reshuffle; on real CIC data
+  with stronger drivers the Spearman would be higher, and the audit would say that too.
+- Importance per refit uses the model's gain importances (LightGBM) with a model-
+  agnostic permutation fallback for the HistGB path, so the audit runs on either
+  backend. Kept the pure `stability_metrics` separate from the refitting so it unit-
+  tests against hand-built matrices (identical -> 1.0; reversed -> negative Spearman,
+  zero Jaccard) without training anything.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

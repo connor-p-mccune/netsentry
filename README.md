@@ -18,7 +18,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **271 passing tests**), and the full `download → prep → train → eval →
+type-check + **275 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data.
 
 | Phase | Scope | Status |
@@ -54,6 +54,7 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
 | Statistical drift | per-feature KS + Benjamini–Hochberg FDR, online Page–Hinkley / DDM | ✅ Done |
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
+| Explanation trust | feature-importance stability across bootstrap refits | ✅ Done |
 | Threat intel | MITRE ATT&CK mapping in predictions + coverage report + Navigator layer | ✅ Done |
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
@@ -193,6 +194,7 @@ netsentry lodo                      # leave-one-day-out temporal sensitivity
 netsentry labelaudit                # find likely label errors (self-validated)
 netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
 netsentry ablation                  # leave-one-feature-family-out importance
+netsentry importance                # feature-importance stability (are explanations trustworthy?)
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
@@ -445,6 +447,20 @@ removed and measures the detection drop — the causal complement to SHAP. Remov
 it — the fingerprint of overfitting to the temporal shift (absolute volumes don't
 transfer across days, rate ratios do). Reported as a place to look, **not** a licence
 to prune on the test split. See [`docs/reports/ablation.md`](docs/reports/ablation.md).
+
+## Explanation stability (can you trust the SHAP the API ships?)
+
+Explainability is a product contract here — the API returns SHAP top-features per
+prediction — so whether those attributions are **stable** is a question worth
+answering, not assuming. `netsentry importance` refits the model on bootstrap resamples
+of the training data, recomputes global importance each time, and measures how much the
+ranking moves: the mean pairwise **Spearman** rank correlation and the top-k **Jaccard**
+overlap. The stand-in gives the honest, nuanced answer — the full ranking is noisy
+(Spearman ~0.40) but the top-10 leaders are comparatively stable (Jaccard ~0.59): *trust
+the head, not the tail*, which is exactly why the API returns only the top few features.
+It's the companion to the SHAP global summary (which explains one model) and the
+ablation (which measures each family's causal value). See
+[`docs/reports/importance_stability.md`](docs/reports/importance_stability.md).
 
 ## Per-service detection parity
 

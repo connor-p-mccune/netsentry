@@ -7,6 +7,17 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Feature-importance stability audit (`netsentry importance`,
+  `netsentry/explain/importance_stability.py`): the honesty check behind treating
+  explainability as a contract. The model is refit on bootstrap resamples of the
+  temporal training split, global feature importance is recomputed each time, and the
+  ranking's movement is summarised by the mean pairwise Spearman rank correlation and
+  the top-k Jaccard overlap. On the stand-in the full ranking is noisy (Spearman ~0.40)
+  while the top-10 leaders are comparatively stable (Jaccard ~0.59) — the honest
+  "trust the head, not the tail" read, and the reason the API returns only the top few
+  features. Pure metric computation is unit-tested against known matrices; companion to
+  the SHAP global summary (explains one model) and the ablation (family causal value).
+  In the analysis suite.
 - Adversarial hardening (`netsentry harden`, `netsentry/robustness/hardening.py`):
   adversarial training against the feature-space mimicry the evasion study measures.
   It augments the honest temporal/binary training set with mimicry-perturbed copies of
