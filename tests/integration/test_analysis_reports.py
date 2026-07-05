@@ -166,6 +166,17 @@ def test_poisoning_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_seed_variance_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.seed_variance import run_seed_variance_report
+
+    prepared.seed_variance.n_seeds = 2
+    prepared.evaluation.bootstrap_samples = 50
+    out = run_seed_variance_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "reproducibility" in text and "noise" in text
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 

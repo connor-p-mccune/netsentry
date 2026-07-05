@@ -25,6 +25,7 @@ from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
+from netsentry.evaluation.seed_variance import run_seed_variance_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.subgroups import run_subgroups_report
 from netsentry.explain.counterfactual import run_recourse_report
@@ -157,6 +158,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "uncertainty vs random labeling efficiency",
         "active_learning.md",
         run_active_learning_report,
+    ),
+    (
+        "Seed sensitivity",
+        "the training-noise floor under every reported metric",
+        "seed_variance.md",
+        run_seed_variance_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
     (

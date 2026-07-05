@@ -439,6 +439,19 @@ def importance_stability_cmd(
 
 
 @app.command()
+def seeds(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Refit across seeds: the training-noise floor under every reported metric."""
+    from netsentry.evaluation.seed_variance import run_seed_variance_report
+
+    settings = _load(config, override)
+    out = run_seed_variance_report(settings)
+    logger.info("Seed-variance report ready", extra={"path": str(out)})
+
+
+@app.command()
 def slices(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

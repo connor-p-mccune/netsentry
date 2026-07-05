@@ -277,6 +277,18 @@ class ImportanceStabilityConfig(BaseModel):
     max_val_rows: int = 4000  # cap validation rows for the permutation fallback (speed)
 
 
+class SeedVarianceConfig(BaseModel):
+    """Training-noise audit: refit the honest model across seeds, report the spread.
+
+    Bootstrap CIs quantify *data* noise (resampling the evaluation rows); this
+    measures *training* noise (row/feature subsampling, tie-breaking) by refitting
+    the same config at consecutive seeds. The metric standard deviation across those
+    refits is the noise floor any model-to-model comparison must clear, and the
+    evidence behind the promotion gate's non-inferiority margin (PromotionConfig)."""
+
+    n_seeds: int = 5  # refits at consecutive seeds, base seed first
+
+
 class DriftDetectorConfig(BaseModel):
     """Statistical / online concept-drift detectors — significance, not just PSI magnitude.
 
@@ -601,6 +613,7 @@ class Settings(BaseSettings):
     alert_queue: AlertQueueConfig = Field(default_factory=AlertQueueConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
+    seed_variance: SeedVarianceConfig = Field(default_factory=SeedVarianceConfig)
     subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
