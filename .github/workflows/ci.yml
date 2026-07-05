@@ -69,6 +69,12 @@ jobs:
           python -m netsentry.cli rules -o configs/ci.yaml
           python -m netsentry.cli ablation -o configs/ci.yaml
           python -m netsentry.cli subgroups -o configs/ci.yaml
+      - name: Advanced suite (harden · alertqueue · driftscan · navigator)
+        run: |
+          python -m netsentry.cli harden -o configs/ci.yaml
+          python -m netsentry.cli alertqueue -o configs/ci.yaml
+          python -m netsentry.cli driftscan -o configs/ci.yaml
+          python -m netsentry.cli navigator -o configs/ci.yaml
       - name: Model-integrity gate (SBOM + manifest, then verify)
         run: |
           python -m netsentry.cli provenance -o configs/ci.yaml
