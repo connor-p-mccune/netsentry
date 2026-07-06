@@ -635,6 +635,11 @@ class ServingConfig(BaseModel):
     host: str = "0.0.0.0"
     port: int = 8000
     artifact_path: Path | None = None  # defaults to the latest bundle in models_dir
+    # Optional shadow challenger: a second bundle scored silently on every request.
+    # It never affects responses; it emits disagreement metrics (score delta +
+    # decision disagreement) to Prometheus — live paired evidence for `netsentry
+    # promote`, gathered on production traffic instead of the frozen test split.
+    shadow_artifact_path: Path | None = None
     default_threshold_profile: str = "fpr_0.1pct"
     max_batch_size: int = 1000
     top_k_features: int = 5

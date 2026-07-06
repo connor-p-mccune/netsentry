@@ -174,3 +174,42 @@ def test_health_reports_a_passing_canary(client) -> None:  # type: ignore[no-unt
     assert body["canary"]["n"] > 0
     assert body["canary"]["max_delta"] <= body["canary"]["tolerance"]
     assert body["status"] == "ok"
+
+
+@pytest.mark.slow
+def test_shadow_challenger_scores_silently(  # type: ignore[no-untyped-def]
+    repo_root: Path, tmp_path: Path, clean_synth: pd.DataFrame
+) -> None:
+    import re
+    import shutil
+
+    from fastapi.testclient import TestClient
+
+    settings = load_settings(repo_root / "configs" / "default.yaml")
+    settings.paths.data_processed = tmp_path / "processed"
+    settings.paths.models_dir = tmp_path / "models"
+    settings.paths.mlruns_dir = tmp_path / "mlruns"
+    settings.mlflow.enabled = False
+    settings.supervised.n_estimators = 60
+    settings.paths.data_processed.mkdir(parents=True)
+    clean_synth.to_parquet(settings.paths.data_processed / "clean.parquet", index=False)
+    make_splits(settings)
+    bundle_path = build_serving_bundle(settings)
+
+    # The shadow is the identical bundle under another name: deltas must be zero.
+    shadow_path = tmp_path / "models" / "shadow.joblib"
+    shutil.copy2(bundle_path, shadow_path)
+    settings.serving.artifact_path = bundle_path
+    settings.serving.shadow_artifact_path = shadow_path
+    client = TestClient(create_app(settings))
+
+    assert client.get("/health").json()["shadow_model_version"] is not None
+    for _ in range(3):
+        assert client.post("/predict", json={"flow": SAMPLE_FLOW}).status_code == 200
+
+    metrics = client.get("/metrics").text
+    scored = re.search(r"^netsentry_shadow_scored_total (\S+)", metrics, re.MULTILINE)
+    assert scored is not None and float(scored.group(1)) >= 3.0
+    # An identical shadow cannot disagree with the champion at the same profile.
+    disagreements = re.search(r"^netsentry_shadow_disagreements_total (\S+)", metrics, re.MULTILINE)
+    assert disagreements is not None and float(disagreements.group(1)) == 0.0

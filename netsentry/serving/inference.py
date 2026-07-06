@@ -28,6 +28,7 @@ from netsentry.serving.schemas import FeatureContribution, PredictionResponse
 
 if TYPE_CHECKING:
     from netsentry.config import Settings
+    from netsentry.models.registry import ModelBundle
 
 logger = get_logger(__name__)
 
@@ -85,6 +86,7 @@ class InferenceEngine:
         self.conformal: dict[str, float] | None = conformal if isinstance(conformal, dict) else None
         self.drift = self._build_monitor(settings)
         self.canary = self._run_canary(settings)
+        self.shadow, self.shadow_version = self._load_shadow(settings)
         self.loaded_at = datetime.now(UTC).isoformat()
         logger.info(
             "Loaded model bundle",
@@ -107,6 +109,52 @@ class InferenceEngine:
         else:
             logger.info("Model canary: %s", result.message)
         return result
+
+    def _load_shadow(self, settings: Settings) -> tuple[ModelBundle | None, str | None]:
+        """Load the optional shadow challenger; a bad shadow must never block serving."""
+        path = settings.serving.shadow_artifact_path
+        if path is None:
+            return None, None
+        try:
+            shadow = load_bundle(Path(path))
+            version = str(shadow.metadata.get("version", "?"))
+            logger.info("Loaded shadow challenger", extra={"path": str(path), "version": version})
+            return shadow, version
+        except Exception as exc:
+            logger.warning("Shadow challenger disabled (%s)", exc)
+            return None, None
+
+    def _observe_shadow(
+        self, frame: pd.DataFrame, champion_probs: np.ndarray, decisions: list[bool], profile: str
+    ) -> None:
+        """Score the same flows through the shadow and record disagreement metrics.
+
+        The shadow never touches the response: it is measured, not consulted. Each
+        model is judged at its *own* threshold for the active profile (thresholds
+        live on each bundle's own calibrated scale), which is the deployment-faithful
+        comparison — the same shape `netsentry promote` uses offline. Per-service
+        routing is a champion-only refinement; the shadow uses its global threshold.
+        A failing shadow disables itself rather than taxing every request.
+        """
+        if self.shadow is None:
+            return
+        try:
+            shadow_probs = self.shadow.attack_scores(frame)
+            fallback = self.shadow.thresholds.get(self.default_profile, 0.5)
+            threshold = float(self.shadow.thresholds.get(profile, fallback))
+            from netsentry.serving import metrics as M
+
+            disagreements = 0
+            for i, champion_decision in enumerate(decisions):
+                M.SHADOW_SCORE_DELTA.observe(abs(float(champion_probs[i]) - float(shadow_probs[i])))
+                if bool(shadow_probs[i] >= threshold) != champion_decision:
+                    disagreements += 1
+            M.SHADOW_SCORED.inc(len(decisions))
+            if disagreements:
+                M.SHADOW_DISAGREEMENTS.inc(disagreements)
+        except Exception as exc:  # the shadow must never break or slow the champion
+            logger.warning("Shadow scoring disabled after failure (%s)", exc)
+            self.shadow = None
 
     def _build_monitor(self, settings: Settings) -> DriftMonitor | None:
         """Reconstruct the drift monitor from the bundle's reference, if it carries one."""
@@ -183,6 +231,8 @@ class InferenceEngine:
             row_thresholds = resolve_service_thresholds(flows, service_config, threshold)
         else:
             row_thresholds = [threshold] * len(flows)
+        decisions = [bool(float(probs[i]) >= row_thresholds[i]) for i in range(len(flows))]
+        self._observe_shadow(frame, probs, decisions, profile)
         argmax = classes[proba.argmax(axis=1)]
 
         anomaly_scores = is_anomaly = None
@@ -194,7 +244,7 @@ class InferenceEngine:
         responses: list[PredictionResponse] = []
         for i in range(len(flows)):
             attack_prob = float(probs[i])
-            attacking = attack_prob >= row_thresholds[i]
+            attacking = decisions[i]
             flagged_anomaly = bool(is_anomaly[i]) if is_anomaly is not None else None
             self._record_metrics(attack_prob, attacking, flagged_anomaly)
             predicted = self._predicted_class(str(argmax[i]), proba[i], classes, attacking)

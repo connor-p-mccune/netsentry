@@ -89,3 +89,5 @@ class HealthResponse(BaseModel):
     # None when the bundle predates canaries; otherwise the load-time replay result,
     # so readiness probes can pull a pod whose runtime skews the model's behavior.
     canary: CanaryStatus | None = None
+    # Version of the silently-scored shadow challenger, when one is configured.
+    shadow_model_version: str | None = None

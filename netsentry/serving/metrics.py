@@ -28,6 +28,22 @@ ATTACK_PROBABILITY = Histogram(
     buckets=(0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.99, 1.0),
 )
 
+# Shadow-challenger metrics: the champion answers, the shadow is only measured.
+# Score-delta buckets + a decision-disagreement counter are the live paired
+# evidence a promotion decision wants, collected on real traffic.
+SHADOW_SCORED = Counter(
+    "netsentry_shadow_scored_total", "Flows also scored by the shadow challenger"
+)
+SHADOW_DISAGREEMENTS = Counter(
+    "netsentry_shadow_disagreements_total",
+    "Flows where champion and shadow decisions differ at the active profile",
+)
+SHADOW_SCORE_DELTA = Histogram(
+    "netsentry_shadow_score_delta",
+    "Absolute champion-vs-shadow calibrated attack-probability delta",
+    buckets=(0.01, 0.05, 0.1, 0.2, 0.5, 1.0),
+)
+
 # Feature-drift gauges, refreshed once per rolling window of served flows (see
 # netsentry.monitoring). Bounded cardinality: two series, no per-feature labels.
 FEATURE_DRIFT_PSI_MAX = Gauge(

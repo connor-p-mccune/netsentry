@@ -140,6 +140,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 if canary.present
                 else None
             ),
+            shadow_model_version=engine.shadow_version,
         )
 
     @app.post("/predict", response_model=PredictionResponse)
