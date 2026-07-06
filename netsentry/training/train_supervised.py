@@ -182,6 +182,33 @@ def fit_supervised(settings: Settings) -> FitResult:
     )
 
 
+def _embed_training_canary(
+    settings: Settings, bundle: ModelBundle, task: str, strategy: str
+) -> None:
+    """Embed behavioral canaries in the bundle about to be persisted.
+
+    A promoted training bundle is a deployable artifact, so ``netsentry canary``
+    must be able to attest it — not only the serving bundle. A class-mixed handful
+    of validation rows is scored and stored (see ``serving/canary.py``); embedding
+    is additive and must never fail a training run.
+    """
+    try:
+        import pandas as pd
+
+        from netsentry.serving.canary import embed_canary
+
+        val = load_split(settings, strategy, "val")
+        target = _target_column(task)
+        benign_value: object = 0 if task == "binary" else settings.labels.benign_label
+        benign_mask = val[target] == benign_value
+        half = max(settings.serving.canary_rows // 2, 1)
+        sample = pd.concat([val[benign_mask].head(half), val[~benign_mask].head(half)])
+        if len(sample):
+            embed_canary(bundle, sample, settings)
+    except Exception as exc:  # canaries are additive; never fatal
+        logger.warning("Canary embedding skipped (%s)", exc)
+
+
 def train_supervised(settings: Settings) -> dict[str, Any]:
     """Run supervised training end-to-end; persist the bundle and log the run."""
     if settings.supervised.tune:
@@ -199,6 +226,7 @@ def train_supervised(settings: Settings) -> dict[str, Any]:
     metrics = quick_metrics(result.y_test, result.proba_test, result.classes, task)
     baseline_metrics = result.baselines
 
+    _embed_training_canary(settings, bundle, task, strategy)
     bundle_path = settings.paths.models_dir / f"supervised_{task}_{strategy}.joblib"
     save_bundle(bundle, bundle_path)
 

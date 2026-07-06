@@ -216,6 +216,15 @@ def test_promotion_lifecycle_bootstrap_hold_and_rollforward(prepared: Settings) 
     prepared.promotion.n_boot = 50
     train_supervised(prepared)
 
+    # Every persisted training bundle carries behavioral canaries the same runtime
+    # must reproduce — the deployable artifact is attestable, not just the serving one.
+    from netsentry.models.registry import load_bundle
+    from netsentry.serving.canary import run_canary
+
+    trained = prepared.paths.models_dir / "supervised_binary_temporal.joblib"
+    replay = run_canary(load_bundle(trained))
+    assert replay.present and replay.ok
+
     # 1) Empty registry: the first candidate seeds the champion.
     out, first = run_promotion(prepared)
     assert first.promote and first.champion is None
