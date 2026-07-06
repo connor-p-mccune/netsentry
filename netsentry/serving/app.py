@@ -18,6 +18,7 @@ from netsentry.serving.inference import InferenceEngine
 from netsentry.serving.schemas import (
     BatchRequest,
     BatchResponse,
+    CanaryStatus,
     FlowRequest,
     HealthResponse,
     PredictionResponse,
@@ -124,7 +125,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/health", response_model=HealthResponse)
     def health() -> HealthResponse:
-        return HealthResponse(status="ok", model_version=engine.version, loaded_at=engine.loaded_at)
+        canary = engine.canary
+        return HealthResponse(
+            status="ok" if canary.ok else "degraded",
+            model_version=engine.version,
+            loaded_at=engine.loaded_at,
+            canary=(
+                CanaryStatus(
+                    ok=canary.ok,
+                    n=canary.n,
+                    max_delta=canary.max_delta,
+                    tolerance=canary.tolerance,
+                )
+                if canary.present
+                else None
+            ),
+        )
 
     @app.post("/predict", response_model=PredictionResponse)
     def predict(

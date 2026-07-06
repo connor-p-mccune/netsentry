@@ -163,3 +163,14 @@ def test_model_behaviour_metrics_emitted(client) -> None:  # type: ignore[no-unt
     text = client.get("/metrics").text
     assert "netsentry_predictions_total" in text
     assert "netsentry_attack_probability" in text
+
+
+@pytest.mark.slow
+def test_health_reports_a_passing_canary(client) -> None:  # type: ignore[no-untyped-def]
+    body = client.get("/health").json()
+    # The freshly built bundle embeds canaries; the same runtime must reproduce them.
+    assert body["canary"] is not None
+    assert body["canary"]["ok"] is True
+    assert body["canary"]["n"] > 0
+    assert body["canary"]["max_delta"] <= body["canary"]["tolerance"]
+    assert body["status"] == "ok"

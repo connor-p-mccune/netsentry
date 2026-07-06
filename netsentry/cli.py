@@ -386,6 +386,40 @@ def verify(
     logger.info("Bundle integrity verified", extra={"manifest": str(manifest_path)})
 
 
+@app.command()
+def canary(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    bundle: Annotated[
+        Path | None, typer.Option(help="Bundle to check (default: the served bundle).")
+    ] = None,
+) -> None:
+    """Replay the bundle's behavioral canaries; non-zero exit if this runtime skews them."""
+    from netsentry.models.registry import latest_bundle, load_bundle
+    from netsentry.serving.canary import run_canary
+
+    settings = _load(config, override)
+    path = bundle or settings.serving.artifact_path or latest_bundle(settings)
+    if path is None or not Path(path).exists():
+        logger.error("No model bundle found; build one first (train / serve).")
+        raise typer.Exit(code=2)
+    result = run_canary(load_bundle(Path(path)))
+    logger.info(
+        "Canary check",
+        extra={
+            "bundle": Path(path).name,
+            "present": result.present,
+            "ok": result.ok,
+            "max_delta": result.max_delta,
+            "message": result.message,
+        },
+    )
+    if not result.present:
+        raise typer.Exit(code=2)  # distinct from behavioral failure: nothing to check
+    if not result.ok:
+        raise typer.Exit(code=1)
+
+
 @app.command("modelcard")
 def modelcard_cmd(
     config: ConfigOpt = None,

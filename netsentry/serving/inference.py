@@ -23,6 +23,7 @@ from netsentry.intel.attack_mapping import mitre_payload
 from netsentry.log import get_logger
 from netsentry.models.registry import latest_bundle, load_bundle
 from netsentry.monitoring.monitor import DriftMonitor
+from netsentry.serving.canary import CanaryResult, run_canary
 from netsentry.serving.schemas import FeatureContribution, PredictionResponse
 
 if TYPE_CHECKING:
@@ -83,11 +84,29 @@ class InferenceEngine:
         conformal = meta.get("conformal")
         self.conformal: dict[str, float] | None = conformal if isinstance(conformal, dict) else None
         self.drift = self._build_monitor(settings)
+        self.canary = self._run_canary(settings)
         self.loaded_at = datetime.now(UTC).isoformat()
         logger.info(
             "Loaded model bundle",
             extra={"path": str(path), "version": self.version, "classes": len(self.bundle.classes)},
         )
+
+    def _run_canary(self, settings: Settings) -> CanaryResult:
+        """Replay the bundle's behavioral canaries in this runtime, at load time.
+
+        A failing canary means this environment does not reproduce the scores the
+        bundle produced when it was validated (env skew, partial load). Strict mode
+        refuses to serve — the fail-fast a deployment wants; otherwise the failure
+        is loud in logs and visible on /health so probes can pull the pod.
+        """
+        result = run_canary(self.bundle)
+        if result.present and not result.ok:
+            logger.error("Model canary FAILED: %s", result.message)
+            if settings.serving.canary_strict:
+                raise RuntimeError(f"refusing to serve: {result.message}")
+        else:
+            logger.info("Model canary: %s", result.message)
+        return result
 
     def _build_monitor(self, settings: Settings) -> DriftMonitor | None:
         """Reconstruct the drift monitor from the bundle's reference, if it carries one."""

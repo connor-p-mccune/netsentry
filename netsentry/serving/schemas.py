@@ -73,7 +73,19 @@ class BatchResponse(BaseModel):
     predictions: list[PredictionResponse]
 
 
+class CanaryStatus(BaseModel):
+    """Behavioral self-test result: does this runtime reproduce the built model?"""
+
+    ok: bool
+    n: int
+    max_delta: float
+    tolerance: float
+
+
 class HealthResponse(BaseModel):
     status: str
     model_version: str
     loaded_at: str
+    # None when the bundle predates canaries; otherwise the load-time replay result,
+    # so readiness probes can pull a pod whose runtime skews the model's behavior.
+    canary: CanaryStatus | None = None

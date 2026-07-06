@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import numpy as np
+import pandas as pd
 
 from netsentry.data.clean import MULTICLASS_TARGET
 from netsentry.data.schema import DESTINATION_PORT
@@ -29,8 +30,6 @@ from netsentry.monitoring.monitor import reference_summary
 from netsentry.training.train_supervised import fit_supervised
 
 if TYPE_CHECKING:
-    import pandas as pd
-
     from netsentry.config import Settings
 
 logger = get_logger(__name__)
@@ -84,10 +83,38 @@ def build_serving_bundle(settings: Settings) -> Path:
         reference, feature_cols, bins=variant.monitoring.psi_bins
     )
 
+    _attach_canary(bundle, variant, val)
+
     path = settings.paths.models_dir / SERVING_BUNDLE_NAME
     bundle.save(path)
     logger.info("Built serving bundle", extra={"path": str(path), "classes": len(result.classes)})
     return path
+
+
+def _attach_canary(bundle: ModelBundle, settings: Settings, val: pd.DataFrame) -> None:
+    """Embed a class-mixed sample of validation flows as behavioral canaries.
+
+    Half benign, half attack (deterministic head-of-split selection), so the canary
+    exercises both score regimes. Additive: a failure to embed must never break the
+    bundle build.
+    """
+    try:
+        from netsentry.serving.canary import embed_canary
+
+        benign = settings.labels.benign_label
+        half = max(settings.serving.canary_rows // 2, 1)
+        sample = pd.concat(
+            [
+                val[val[MULTICLASS_TARGET] == benign].head(half),
+                val[val[MULTICLASS_TARGET] != benign].head(half),
+            ]
+        )
+        if sample.empty:
+            logger.warning("Canary skipped (no validation rows to sample)")
+            return
+        embed_canary(bundle, sample, settings)
+    except Exception as exc:  # canaries are additive; never fatal
+        logger.warning("Canary skipped (%s)", exc)
 
 
 def _attach_operating_profiles(

@@ -644,6 +644,13 @@ class ServingConfig(BaseModel):
     # Unset -> open (dev default); set via NETSENTRY_SERVING__API_KEY in production.
     api_key: str | None = None
     rate_limit_per_minute: int = 0  # 0 disables the per-client fixed-window rate limit
+    # Behavioral canaries: validation flows embedded in the bundle with their
+    # build-time scores, replayed at load (and via `netsentry canary`) to prove this
+    # runtime reproduces the model that was validated. `verify` checks the bytes;
+    # the canary checks the behavior — env skew moves scores without moving a byte.
+    canary_rows: int = 8  # validation flows embedded at bundle build (class-mixed)
+    canary_tolerance: float = 1e-6  # max |score now - score at build| before failing
+    canary_strict: bool = False  # refuse to start serving on canary failure (prod: true)
 
 
 class Settings(BaseSettings):
