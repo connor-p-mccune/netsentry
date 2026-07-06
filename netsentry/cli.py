@@ -192,6 +192,19 @@ def streaming(
     logger.info("Streaming report ready", extra={"path": str(out)})
 
 
+@app.command("retrainpolicy")
+def retrain_policy_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price retrain triggers on the stream: never / periodic / drift-triggered / every batch."""
+    from netsentry.monitoring.retrain_policy import run_retrain_policy_report
+
+    settings = _load(config, override)
+    out = run_retrain_policy_report(settings)
+    logger.info("Retrain-policy report ready", extra={"path": str(out)})
+
+
 @app.command()
 def drift(
     config: ConfigOpt = None,

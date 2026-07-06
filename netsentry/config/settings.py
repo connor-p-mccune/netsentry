@@ -525,6 +525,24 @@ class RulesConfig(BaseModel):
     definitions: list[RuleDefinition] = Field(default_factory=_default_rules)
 
 
+class RetrainPolicyConfig(BaseModel):
+    """Retrain-trigger policy study: when should the drift signal pull the lever?
+
+    The streaming study shows retraining recovers what drift costs; this prices
+    *when*. Four policies ride the same prequential stream — never (floor), every
+    batch (ceiling), periodic (the calendar default), and drift-triggered (retrain
+    when the deployed model's own score-PSI breaches the major-drift line, with a
+    cooldown) — and the report is the efficiency frontier: mean batch PR-AUC vs
+    number of retrains. The trigger threshold defaults to ``monitoring.psi_major``,
+    the same line the Prometheus alert fires on, so measurement, alert, and action
+    share one number."""
+
+    n_batches: int = 8  # finer than the streaming study so triggers have room to differ
+    periodic_every: int = 3  # the calendar baseline: retrain every k-th batch
+    psi_trigger: float | None = None  # score-PSI retrain trigger; None -> psi_major
+    cooldown_batches: int = 2  # min batches between drift-triggered retrains
+
+
 class StreamingConfig(BaseModel):
     """Prequential streaming simulation: does retraining recover from drift?
 
@@ -668,6 +686,7 @@ class Settings(BaseSettings):
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
+    retrain_policy: RetrainPolicyConfig = Field(default_factory=RetrainPolicyConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)

@@ -36,6 +36,7 @@ from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
+from netsentry.monitoring.retrain_policy import run_retrain_policy_report
 from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.hardening import run_hardening_report
 from netsentry.robustness.poisoning import run_poisoning_report
@@ -112,6 +113,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "static vs retrained model on the later-day stream",
         "streaming.md",
         run_streaming_report,
+    ),
+    (
+        "Retrain-trigger policy",
+        "when to retrain: never / periodic / drift-triggered / every batch",
+        "retrain_policy.md",
+        run_retrain_policy_report,
     ),
     (
         "Per-class detection",

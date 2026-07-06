@@ -155,6 +155,18 @@ def test_streaming_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_retrain_policy_report_is_written(prepared: Settings) -> None:
+    from netsentry.monitoring.retrain_policy import run_retrain_policy_report
+
+    prepared.retrain_policy.n_batches = 3
+    prepared.retrain_policy.periodic_every = 2
+    prepared.retrain_policy.cooldown_batches = 1
+    out = run_retrain_policy_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "frontier" in text and "drift-triggered" in text
+
+
+@pytest.mark.slow
 def test_poisoning_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.poisoning import run_poisoning_report
 
