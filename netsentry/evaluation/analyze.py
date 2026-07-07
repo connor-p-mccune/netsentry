@@ -30,6 +30,7 @@ from netsentry.evaluation.seed_variance import run_seed_variance_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.subgroups import run_subgroups_report
 from netsentry.explain.counterfactual import run_recourse_report
+from netsentry.explain.distill import run_distill_report
 from netsentry.explain.importance_stability import run_importance_stability_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
@@ -167,6 +168,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "are the shipped explanations stable across refits",
         "importance_stability.md",
         run_importance_stability_report,
+    ),
+    (
+        "Surrogate distillation",
+        "the model's closest auditable imitation, with fidelity priced",
+        "distill.md",
+        run_distill_report,
     ),
     (
         "Active learning",

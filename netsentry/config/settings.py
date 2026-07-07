@@ -261,6 +261,21 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class DistillConfig(BaseModel):
+    """Surrogate distillation: the model's closest small, auditable imitation.
+
+    A depth-limited decision tree is trained to imitate the teacher's calibrated
+    attack score (classic model distillation) and judged on fidelity (Spearman +
+    decision agreement at matched alert volume) and on its own detection — so the
+    price of auditability is a measured number per depth, not a vibe. The chosen
+    ``report_depth`` tree is rendered into the report in full."""
+
+    depths: list[int] = Field(default_factory=lambda: [2, 3, 4, 5, 6])
+    report_depth: int = 4  # the depth whose rules are rendered in the report
+    min_samples_leaf: int = 50  # leaf support floor: rules must describe real traffic
+    max_rule_lines: int = 80  # cap the rendered rule text in the report
+
+
 class ImportanceStabilityConfig(BaseModel):
     """Explanation-trust audit: are the model's feature importances stable across refits?
 
@@ -694,6 +709,7 @@ class Settings(BaseSettings):
     importance_stability: ImportanceStabilityConfig = Field(
         default_factory=ImportanceStabilityConfig
     )
+    distill: DistillConfig = Field(default_factory=DistillConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)

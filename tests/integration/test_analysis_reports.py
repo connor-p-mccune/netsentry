@@ -178,6 +178,18 @@ def test_poisoning_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_distill_report_is_written(prepared: Settings) -> None:
+    from netsentry.explain.distill import run_distill_report
+
+    prepared.distill.depths = [2, 3]
+    prepared.distill.report_depth = 3
+    prepared.distill.min_samples_leaf = 20
+    out = run_distill_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "fidelity" in text and "leaves" in text
+
+
+@pytest.mark.slow
 def test_seed_variance_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.seed_variance import run_seed_variance_report
 

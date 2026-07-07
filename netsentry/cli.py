@@ -472,6 +472,19 @@ def ablation(
     logger.info("Ablation report ready", extra={"path": str(out)})
 
 
+@app.command()
+def distill(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Distill the model into an auditable tree; report fidelity and its cost."""
+    from netsentry.explain.distill import run_distill_report
+
+    settings = _load(config, override)
+    out = run_distill_report(settings)
+    logger.info("Distillation report ready", extra={"path": str(out)})
+
+
 @app.command("importance")
 def importance_stability_cmd(
     config: ConfigOpt = None,
