@@ -107,6 +107,15 @@ threshold profile; benchmarked.
   with a reason, so SHAP attributions are returned per prediction.
 - **Config-driven + MLflow-tracked.** Every result is reproducible from a logged
   config + seed.
+- **A lifecycle layer, not just a leaderboard.** Training is followed by decisions,
+  each an exit-coded command: the seed-noise floor calibrates the promotion margins
+  (`seeds`), a release gate re-asserts the honesty invariants on the artifact that
+  ships and fails a too-good score (`gate`), champion/challenger promotion is a
+  paired-bootstrap comparison behind a SHA-256-pinned registry (`promote`), every
+  persisted bundle carries behavioral canaries the serving runtime must reproduce
+  (`canary`), an optional shadow challenger gathers live disagreement evidence, and
+  retrain triggers are priced against calendar retraining (`retrainpolicy`) before
+  anyone wires the drift alarm to the lever.
 
 ## Tech stack
 
@@ -123,7 +132,8 @@ response {class, prob, anomaly_score, is_anomaly, top_features, version}`.
 ## Out of scope (and honestly stated as such in the model card)
 
 Live packet capture / NetFlow extraction (the model consumes pre-computed flow
-features); production-grade retraining/serving infra; *adversarial-evasion
-hardening* (evasion is now measured — see `docs/reports/robustness.md` — but the
-model is not yet hardened against it). NetSentry is a rigorous reference
+features) and multi-node production serving infrastructure. Adversarial evasion is
+measured (`docs/reports/robustness.md`) *and* acted on (`docs/reports/hardening.md`
+— adversarial training recovers full-mimicry detection, defending only the
+perturbation it trains on, as the report states). NetSentry is a rigorous reference
 implementation and demo, not a drop-in enterprise NIDS — and the model card says so.

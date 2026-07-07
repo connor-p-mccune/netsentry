@@ -787,6 +787,90 @@ smaller dev-run numbers noted in earlier phases:
   tests against hand-built matrices (identical -> 1.0; reversed -> negative Spearman,
   zero Jaccard) without training anything.
 
+## Seed sensitivity (the error bar bootstrap CIs cannot see)
+
+- First cut computed PR-AUC on the *calibrated* test scores and got 0.514 where the
+  headline says 0.529 — isotonic calibration creates ties, and ties change average
+  precision. Not a bug in either number, but a report whose rows don't line up with
+  the eval report invites exactly the wrong kind of doubt, so the audit now mirrors
+  eval's conventions (raw ranking for PR-AUC; thresholds re-chosen on each run's own
+  raw validation scores). Seed 42's row now reproduces the headline exactly.
+- The measured floor is small (PR-AUC sd 0.0017 across seeds 42-46) and data noise
+  dominates (bootstrap half-width 0.0116) — worth knowing *before* choosing promotion
+  margins, which is the point: the margins are evidence, not taste.
+- Reproducibility and stability are asserted separately: same-seed refits are
+  bit-identical (max score delta 0.0), different seeds move metrics by the floor.
+
+## Release gate (the definition of done, as an exit code)
+
+- The gate failed its own first run: I set `max_ece: 0.10` from taste, and the
+  measured post-calibration ECE on the temporal test is 0.1057 — a validation-fit
+  calibrator honestly degrades under temporal shift (raw is 0.1206). The bar moved
+  to 0.15 with the reasoning written into the config docstring. Exactly the loop the
+  gate exists to force: a bar you can't justify is a bar you tune with evidence.
+- The inverted ceiling (PR-AUC > 0.999 **fails**) is the project's too-good-is-a-bug
+  habit as machinery. The leakage firewall is re-checked on the *fitted artifact* at
+  release, not only in unit tests — a config drift (e.g. shipping an experiment with
+  the port encoded) passes every unit test and fails this gate.
+- Hygiene stated in the report: a release gate touches the frozen test split, so it
+  runs at release cadence, not per-commit; production runs the bars on a fresh window.
+
+## Champion/challenger promotion (and the HOLD that earned its keep)
+
+- The margins come from the seed audit (~3x sd for PR-AUC, ~2.5x for TPR), and the
+  comparison is a *paired* bootstrap — one resample scores both models, so shared
+  sampling noise cancels; the CI is several times tighter than the independent one.
+  Detection is compared at each bundle's own validation-chosen threshold, because
+  that is what each model would actually ship.
+- The first real decision was a **HOLD**, and it is the best possible demo: a routine
+  seed-43 retrain is PR-AUC-equivalent (+0.0001, CI [-0.0022, +0.0025]) yet credibly
+  worse at the 0.1%-FPR operating point (-0.0149, CI [-0.0188, -0.0117], p = 1.000).
+  A ranking metric said "same model"; the operating point said "ships 1.5pp less
+  detection". The gate held the champion. That is the evaluation thesis (ranking vs
+  operating point) resurfacing at the deployment layer, unprompted.
+- Two policies because two questions: `non_inferiority` rolls routine retrains
+  forward (freshness has measured value under drift — the streaming study);
+  `superiority` demands the CI exclude zero for risky swaps. The champion is a
+  SHA-256-pinned *snapshot*, so a later retrain overwriting the working bundle path
+  cannot silently rewrite it; every decision appends to a JSONL history.
+
+## Retrain triggers (the PSI alarm pulls the lever - and under-delivers)
+
+- The drift-triggered policy captured essentially none of the retraining headroom
+  (mean batch PR-AUC 0.413 vs the 0.534 every-batch ceiling; even the calendar
+  periodic-3 hit 0.474 with the same two retrains) - and that is the finding, kept,
+  not smoothed over. The trigger fires when later-day traffic first arrives, the
+  redeploy resets its reference, PSI goes quiet, and it never fires again - while
+  labeled retraining keeps buying quality for five more batches.
+- The lesson generalises: PSI watches the score *distribution*, and a distribution
+  can settle while quality is still being bought. An unsupervised trigger is a
+  cost-saver against covariate shift, not a substitute for labels; the honest
+  deployment pairs it with a periodic labeled cadence. My first render assumed the
+  trigger would win and the text contradicted the numbers - rewritten with branches
+  for win / partial / under-delivery so the report can never gaslight its own table.
+- Faithfulness details that made the simulation defensible: prequential scoring,
+  one validation-chosen threshold for every policy, and each policy's drift signal
+  from its *own* deployed model with a reference that resets on redeploy (the same
+  mechanics as the bundle-embedded serving reference).
+
+## Behavioral canaries + shadow challenger (assurance at the serving edge)
+
+- `verify` proves the artifact's bytes; nothing proved the *runtime*. Canaries close
+  that: the bundle embeds a class-mixed handful of raw validation flows with its
+  build-time calibrated scores, and load-time (plus `netsentry canary`, exit-coded)
+  must reproduce them. NaN feature values round-trip as None. A missing canary exits
+  2, distinct from a failing one - a check you didn't run is not a check you passed.
+- Caught by my own CI wiring: the champion snapshot is a copy of the *training*
+  bundle, which didn't embed canaries - so the deploy gate would have exit-2'd on
+  the exact artifact promotion ships. Fixed by embedding canaries in every persisted
+  training bundle (persist path only; the report generators' fit path pays nothing).
+- The shadow challenger is `promote`'s evidence source moved to live traffic: a
+  second bundle scores every request silently (champion answers, shadow is
+  measured), emitting a score-delta histogram and a decision-disagreement counter,
+  each model at its own threshold. Failure isolation is explicit - a broken shadow
+  disables itself rather than taxing the champion. The integration test uses an
+  identical-copy shadow and asserts the disagreement counter provably stays zero.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

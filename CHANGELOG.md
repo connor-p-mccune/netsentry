@@ -7,6 +7,67 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Shadow-challenger scoring in serving (`serving.shadow_artifact_path`): a second
+  bundle scores every request through the identical path and never touches the
+  response — the champion answers, the shadow is measured. Prometheus gains the
+  paired evidence a promotion wants from live traffic: a |champion − shadow|
+  calibrated-probability delta histogram and a decision-disagreement counter, each
+  model judged at its own threshold for the active profile. `/health` reports the
+  shadow's version. Failure isolation is explicit: a shadow that fails to load is
+  skipped, one that fails mid-request disables itself. Integration-tested with an
+  identical-copy shadow (delta histogram fills; disagreements provably zero).
+- Behavioral canaries (`netsentry canary`, `netsentry/serving/canary.py`): every
+  persisted bundle (serving *and* training — the artifact promotion snapshots)
+  embeds a class-mixed handful of raw validation flows with the exact calibrated
+  scores it produced at build; the serving runtime replays them at load and must
+  reproduce them. `verify` checks the artifact's bytes, the canary checks its
+  behavior — env skew (library/BLAS changes) moves scores without moving a byte.
+  Surfaced on `/health` (status flips to "degraded"), exit-coded as a deploy gate
+  (1 = behavioral drift, 2 = no canary present — a missing check is not a passing
+  check), and `serving.canary_strict` refuses to serve on mismatch. NaN feature
+  values round-trip as None. Unit-tested against a stub bundle; end-to-end in the
+  serving integration suite.
+- Retrain-trigger policy study (`netsentry retrainpolicy`,
+  `netsentry/monitoring/retrain_policy.py`): the streaming study shows retraining
+  recovers what drift costs; this prices *when*. Never / periodic / drift-triggered
+  (the deployed model's own score-PSI vs the same `psi_major` line the Prometheus
+  alert fires on, with cooldown) / every-batch policies ride the prequential stream,
+  each with its own reference that resets on redeploy. The stand-in result is kept
+  as a finding: the PSI trigger fires early, goes quiet after the redeploy, and
+  captures ~none of the headroom (0.413 vs 0.534 mean batch PR-AUC) while the
+  calendar cadence lands at 0.474 — a score distribution can settle while labeled
+  quality is still being bought, so an unsupervised trigger is a cost-saver, not a
+  substitute for labels. Trigger logic pure + unit-tested; in the analysis suite.
+- Champion/challenger promotion (`netsentry promote`,
+  `netsentry/models/promotion.py` + `confidence.paired_diff`): the decision layer
+  between training and serving. Challenger and champion are scored on the same
+  frozen temporal test rows; deltas are paired-bootstrap (one resample scores both
+  models, cancelling shared sampling noise), detection is compared at each bundle's
+  own validation-chosen threshold, and the non-inferiority margins sit just above
+  the seed audit's measured noise floor. Two policies (`non_inferiority` for routine
+  retrains under drift; `superiority` for risky swaps); on promotion the challenger
+  is snapshotted to a SHA-256-pinned champion and every decision appends to a JSONL
+  history; non-zero exit on HOLD for pipeline branching. First real decision: HOLD —
+  a seed-43 retrain was PR-AUC-equivalent (+0.0001) but credibly worse at the
+  0.1%-FPR operating point (−1.5pp, CI excludes zero), the ranking-vs-operating-
+  point thesis at the deployment layer.
+- Release quality gate (`netsentry gate`, `netsentry/evaluation/gate.py`): the
+  definition of done as an exit code. Structural honesty checks on the artifact
+  that would ship — the leakage firewall re-verified on the fitted feature space,
+  calibrator attached, every configured FPR profile present, an end-to-end scoring
+  smoke — plus configurable floors (PR-AUC as a multiple of prevalence, TPR at the
+  primary FP budget, ECE of the calibrated score) and one deliberate ceiling:
+  PR-AUC > 0.999 fails as suspected leakage. The gate failed its own first run
+  (ECE bar set from taste at 0.10 vs the measured temporal-shift 0.1057) and the
+  bar was reset with the reasoning documented. In the analysis suite.
+- Seed-sensitivity audit (`netsentry seeds`, `netsentry/evaluation/seed_variance.py`):
+  the error bar bootstrap CIs cannot see. The honest temporal model is refit at
+  consecutive seeds with thresholds re-chosen per run (the full deployment
+  pipeline); reproducibility (same seed ⇒ bit-identical, asserted every run) is
+  separated from stability (PR-AUC sd 0.0017, TPR@0.1%FPR sd 0.0063 on the
+  stand-in). Data noise dominates training noise here (bootstrap half-width 0.0116)
+  — stated, and used: the promotion margins are calibrated against this floor. In
+  the analysis suite.
 - Feature-importance stability audit (`netsentry importance`,
   `netsentry/explain/importance_stability.py`): the honesty check behind treating
   explainability as a contract. The model is refit on bootstrap resamples of the
@@ -289,6 +350,14 @@ semantic versioning once released.
   in middleware so `/health` and `/metrics` stay open for probes. 401/429 on violation.
 
 ### Changed
+- CI now exercises the model-lifecycle layer on every push (seeds → gate → promote →
+  retrainpolicy on the tiny synthetic workspace) and attests the promoted champion
+  both ways: `verify` for the bytes, `canary` for the behavior. `configs/ci.yaml`
+  trims the new studies to CI scale; `make lifecycle` mirrors the sequence locally.
+- `netsentry train supervised` now embeds behavioral canaries in the bundle it
+  persists (the artifact promotion snapshots as champion), so `netsentry canary`
+  can attest any deployable bundle — not only the serving one. Embedding lives in
+  the persist path; the analysis suite's refits pay nothing.
 - CI now runs the rules and ablation reports in the analysis-suite smoke and adds a
   model-integrity gate (`netsentry provenance` then `netsentry verify`) so a corrupted
   or swapped bundle fails the build; a `make verify` target mirrors it locally.

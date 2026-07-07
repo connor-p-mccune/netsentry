@@ -15,6 +15,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
 | Statistical drift | per-feature KS+FDR, online Page-Hinkley/DDM | [open](drift_tests.md) |
 | Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
+| Retrain-trigger policy | when to retrain: never / periodic / drift-triggered / every batch | [open](retrain_policy.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
 | Per-service parity | detection/false-alarm equity across services | [open](subgroups.md) |
 | Novelty distance | detection vs distance-to-training; the split gap decomposed | [open](novelty.md) |
@@ -24,6 +25,9 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
 | Importance stability | are the shipped explanations stable across refits | [open](importance_stability.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
+| Seed sensitivity | the training-noise floor under every reported metric | [open](seed_variance.md) |
+| Release gate | honesty invariants + metric floors the candidate must clear | [open](gate.md) |
+| Promotion decision | champion vs challenger, paired-bootstrap deltas (via `netsentry promote`) | [open](promotion.md) |
 | MITRE ATT&CK coverage | attack class -> tactic/technique | [open](mitre.md) |
 | ATT&CK Navigator layer | detection coverage as a loadable Navigator layer | [open](attack_navigator_layer.json) |
 | Provenance & supply chain | CycloneDX SBOM + model-integrity manifest | [open](provenance.md) |

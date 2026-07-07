@@ -18,8 +18,10 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **275 passing tests**), and the full `download → prep → train → eval →
-serve` pipeline runs end-to-end on the bundled synthetic data.
+type-check + **312 passing tests**), and the full `download → prep → train → eval →
+serve` pipeline runs end-to-end on the bundled synthetic data, followed by a
+**model-lifecycle layer** (noise floor → release gate → promotion → canaries →
+shadow → retrain policy) that governs what actually ships.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -71,6 +73,12 @@ serve` pipeline runs end-to-end on the bundled synthetic data.
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
+| Seed sensitivity | same-seed reproducibility asserted + the cross-seed noise floor | ✅ Done |
+| Release gate | executable definition of done; a *too-good* PR-AUC **fails** it | ✅ Done |
+| Champion/challenger | paired-bootstrap promotion; margins from the measured noise | ✅ Done |
+| Retrain triggers | never / periodic / drift-triggered, priced on the stream | ✅ Done |
+| Behavioral canaries | the bundle must reproduce its build-time scores at load | ✅ Done |
+| Shadow challenger | a second model scored silently; live disagreement metrics | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -202,6 +210,11 @@ netsentry alertqueue                # detection vs analyst budget (lift over ran
 netsentry driftscan                 # KS+FDR + online Page-Hinkley/DDM drift detection
 netsentry navigator                 # export ATT&CK Navigator layer (colored by detection)
 netsentry provenance && netsentry verify   # SBOM + model manifest, then integrity gate
+netsentry seeds                     # training-noise floor: reproducibility + stability
+netsentry gate                      # release bars incl. the too-good ceiling (exit code)
+netsentry promote                   # champion/challenger promotion decision (exit code)
+netsentry retrainpolicy             # when to retrain: triggers priced on the stream
+netsentry canary                    # replay the bundle's embedded flows (behavioral attest)
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
@@ -246,6 +259,39 @@ headline report and figures. MLflow holds params, metrics, artifacts, and the
 environment for each run. Splits are persisted with content hashes so the same rows
 never drift between train and test. Engineering decisions and self-audits are logged
 in [`NOTES.md`](NOTES.md).
+
+## Model lifecycle (what happens after the metrics table)
+
+Most ML projects end at evaluation. NetSentry also ships the **decision layer**
+between training and production — every stage is a command with an exit code a
+pipeline can branch on:
+
+| stage | command | what it decides |
+|---|---|---|
+| Noise floor | `netsentry seeds` | how much of any metric is training luck: same-seed refits are **bit-identical** (asserted), different seeds move PR-AUC by sd 0.0017 — the margin evidence for promotion. [Report](docs/reports/seed_variance.md) |
+| Release gate | `netsentry gate` | absolute bars on the candidate: the leakage firewall **re-checked on the fitted artifact**, calibrator + threshold profiles present, a scoring smoke, metric floors — and a *ceiling*: PR-AUC > 0.999 **fails** (too good = suspected leakage). [Report](docs/reports/gate.md) |
+| Promotion | `netsentry promote` | challenger vs champion on the same frozen rows, **paired bootstrap** (shared noise cancels), non-inferiority margins set just above the measured seed noise; the champion is a SHA-256-pinned snapshot and every decision lands in a JSONL history. [Report](docs/reports/promotion.md) |
+| Behavioral attest | `netsentry canary` | `verify` proves the artifact's *bytes*; canaries prove its *behavior*: every persisted bundle embeds validation flows + its build-time scores, and the serving runtime must reproduce them (surfaced on `/health`, strict mode refuses to serve). |
+| Live evidence | `serving.shadow_artifact_path` | a shadow challenger scores every request silently — never touching the response — and exports the score-delta histogram + decision disagreements to Prometheus: the promote comparison, gathered on live traffic. |
+| Retrain policy | `netsentry retrainpolicy` | when drift should pull the retraining lever: never / periodic / PSI-triggered / every batch, priced prequentially on the later-day stream. [Report](docs/reports/retrain_policy.md) |
+
+Two findings from building this layer are kept, not smoothed over:
+
+- **The first real promotion decision was a HOLD.** A routine seed-43 retrain came
+  back PR-AUC-equivalent (+0.0001, paired 95% CI [-0.0022, +0.0025]) but credibly
+  worse at the 0.1%-FPR operating point (**-1.5pp detection**, CI excludes zero,
+  p = 1.000). A ranking metric said "same model"; the operating point said "ships
+  less detection" — the project's evaluation thesis resurfacing at the deployment
+  layer, and the gate held the champion.
+- **The PSI retrain trigger under-delivers, and the report says so.** It fires when
+  later-day traffic first arrives, the redeploy resets its reference, and it never
+  fires again — while labeled retraining keeps buying quality (mean batch PR-AUC
+  0.413 vs the 0.534 every-batch ceiling). Score distributions can settle while
+  quality is still being bought: a drift trigger is a cost-saver, not a substitute
+  for labels.
+
+`make lifecycle` runs the full sequence; CI runs it on every push and additionally
+attests the promoted champion both ways (bytes via `verify`, behavior via `canary`).
 
 ## Demo dashboard
 
