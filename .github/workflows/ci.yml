@@ -75,10 +75,17 @@ jobs:
           python -m netsentry.cli alertqueue -o configs/ci.yaml
           python -m netsentry.cli driftscan -o configs/ci.yaml
           python -m netsentry.cli navigator -o configs/ci.yaml
-      - name: Model-integrity gate (SBOM + manifest, then verify)
+      - name: Model lifecycle (seeds · gate · promote · retrainpolicy)
+        run: |
+          python -m netsentry.cli seeds -o configs/ci.yaml
+          python -m netsentry.cli gate -o configs/ci.yaml
+          python -m netsentry.cli promote -o configs/ci.yaml
+          python -m netsentry.cli retrainpolicy -o configs/ci.yaml
+      - name: Model-integrity gate (SBOM + manifest, verify bytes, replay canaries)
         run: |
           python -m netsentry.cli provenance -o configs/ci.yaml
           python -m netsentry.cli verify -o configs/ci.yaml
+          python -m netsentry.cli canary -o configs/ci.yaml --bundle models/champion.joblib
       - name: Slow integration tests
         run: python -m pytest -m slow
 

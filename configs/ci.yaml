@@ -6,5 +6,12 @@ supervised:
 anomaly:
   detectors: [iforest]   # no Torch in the CI image
   loao_min_samples: 30
+seed_variance:
+  n_seeds: 3             # 4 refits total (incl. the same-seed repro check) is plenty for CI
+retrain_policy:
+  n_batches: 4           # the tiny stream still exercises every trigger path
+gate:
+  min_tpr_at_primary_fpr: 0.0  # the 5k-row smoke is about the structural checks
+  max_ece: 1.0
 mlflow:
   enabled: false         # use the local file logger in CI

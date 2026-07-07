@@ -3,7 +3,7 @@
 PY ?= python
 
 .PHONY: help install install-all lint format typecheck test test-fast check clean \
-	smoke analysis verify docker-serve docker-train docker-up docker-monitor docker-down
+	smoke analysis verify lifecycle docker-serve docker-train docker-up docker-monitor docker-down
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -49,6 +49,13 @@ analysis: ## Regenerate every analysis report + the index (needs prep first)
 verify: ## Attest the deployed bundle: write SBOM + manifest, then check integrity
 	$(PY) -m netsentry.cli provenance
 	$(PY) -m netsentry.cli verify
+
+lifecycle: ## Model-lifecycle gates: seed noise, release gate, promotion, retrain policy, canary
+	$(PY) -m netsentry.cli seeds
+	$(PY) -m netsentry.cli gate
+	$(PY) -m netsentry.cli promote
+	$(PY) -m netsentry.cli retrainpolicy
+	$(PY) -m netsentry.cli canary
 
 docker-serve: ## Build the serving image
 	docker build -f docker/Dockerfile.serve -t netsentry-serve .
