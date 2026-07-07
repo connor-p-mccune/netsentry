@@ -9,6 +9,10 @@ with explainable predictions.**
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 
+> **Reviewing this repo?** [`docs/TOUR.md`](docs/TOUR.md) is the ten-minute guided
+> path: each claim, paired with the code that implements it, the test that enforces
+> it, and the report it produced.
+
 ---
 
 ## Project status
