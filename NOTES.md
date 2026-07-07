@@ -871,6 +871,27 @@ smaller dev-run numbers noted in earlier phases:
   disables itself rather than taxing the champion. The integration test uses an
   identical-copy shadow and asserts the disagreement counter provably stays zero.
 
+## Surrogate distillation (behavior compresses; the ranking does not)
+
+- First cut distilled the *calibrated* score and the teacher row read 0.514 — the
+  same isotonic-ties trap the seed audit hit. Switched the target to the raw
+  ranking: the calibrator is monotone, so `calibrator(surrogate)` serves identical
+  semantics, rank fidelity is well-behaved (no tie plateaus), and the teacher row
+  now matches the headline 0.529 on sight. Same lesson twice, now a memoried rule:
+  any new report's teacher/benchmark numbers must be computed on the scale the
+  evaluation report uses.
+- The stand-in result splits cleanly and honestly: decision agreement at matched
+  alert volume climbs to 97.5% by 49 leaves while Spearman stalls at 0.61 and
+  PR-AUC pays 0.529 -> 0.451. Read: the model's coarse alert/no-alert behavior fits
+  in a page of rules; its fine ranking - which is what PR-AUC and tight budgets
+  price - does not. Both numbers are needed to say that; either alone misleads.
+- The visibly non-monotone surrogate TPR column (16.6% at depth 4 between 21.1%
+  and 24.7%) is leaf-score quantization at a 1% budget, not noise - a K-leaf tree
+  emits K scores, so operating points move in jumps. Stated in the report so nobody
+  ships "the interpretable version" expecting the teacher's threshold granularity.
+- Rendered rules strip the `numeric__` transformer prefixes; an auditor reads
+  `Total Fwd Packets <= 0.28` (standardized units, said so), not pipeline plumbing.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

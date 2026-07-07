@@ -7,6 +7,17 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Surrogate distillation (`netsentry distill`, `netsentry/explain/distill.py`): the
+  inverse of the rules baseline — how much of the *learned* model survives
+  translation into an auditable form? A depth-limited decision tree imitates the
+  teacher's attack ranking (raw score, so the teacher row matches the headline
+  evaluation; the monotone calibrator applies identically on top), swept across
+  depths and judged on fidelity (Spearman + decision agreement at matched alert
+  volume) and on its own detection. Stand-in: 49 rules reproduce 97.5% of
+  volume-matched decisions but only 0.61 of the fine ranking (PR-AUC 0.529 → 0.451)
+  — coarse behavior compresses, the ranking does not. Quantization (K leaves = K
+  scores) and the behavior-not-mechanism scope are stated in the report; the chosen
+  tree is rendered in full. Fidelity math pure + unit-tested; in the analysis suite.
 - Shadow-challenger scoring in serving (`serving.shadow_artifact_path`): a second
   bundle scores every request through the identical path and never touches the
   response — the champion answers, the shadow is measured. Prometheus gains the

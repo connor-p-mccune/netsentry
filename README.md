@@ -22,7 +22,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **312 passing tests**), and the full `download → prep → train → eval →
+type-check + **319 passing tests**), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data, followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
 shadow → retrain policy) that governs what actually ships.
@@ -83,6 +83,7 @@ shadow → retrain policy) that governs what actually ships.
 | Retrain triggers | never / periodic / drift-triggered, priced on the stream | ✅ Done |
 | Behavioral canaries | the bundle must reproduce its build-time scores at load | ✅ Done |
 | Shadow challenger | a second model scored silently; live disagreement metrics | ✅ Done |
+| Surrogate distillation | the model's closest auditable imitation, fidelity priced | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -207,6 +208,7 @@ netsentry labelaudit                # find likely label errors (self-validated)
 netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
+netsentry distill                   # the model's closest auditable tree, fidelity priced
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
@@ -511,6 +513,21 @@ the head, not the tail*, which is exactly why the API returns only the top few f
 It's the companion to the SHAP global summary (which explains one model) and the
 ablation (which measures each family's causal value). See
 [`docs/reports/importance_stability.md`](docs/reports/importance_stability.md).
+
+## Surrogate distillation (the auditable approximation)
+
+SHAP explains one prediction; the ablation explains one feature family; `netsentry
+distill` asks how much of the *whole model* survives translation into a form an
+auditor can read end-to-end. A depth-limited decision tree imitates the model's
+attack ranking, swept across depths, and each depth is priced two ways: **fidelity**
+(Spearman of the rankings, plus decision agreement at a matched alert volume) and
+**its own detection**. On the stand-in the split is instructive — 49 rules reproduce
+**97.5%** of the model's volume-matched decisions while tracking only **0.61** of its
+fine ranking, and PR-AUC pays 0.529 → 0.451: the coarse behavior compresses well, the
+ranking does not. The report renders the chosen tree in full and states the scoped
+claims plainly: a K-leaf tree emits K distinct scores (tight FP budgets are
+unreachable by construction), and a surrogate explains *behavior*, not mechanism.
+See [`docs/reports/distill.md`](docs/reports/distill.md).
 
 ## Per-service detection parity
 
