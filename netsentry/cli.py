@@ -772,6 +772,44 @@ def score(
 
 
 @app.command()
+def pcap(
+    input: Annotated[
+        Path | None, typer.Option("--input", "-i", help="Packet capture (classic libpcap format).")
+    ] = None,
+    output: Annotated[Path, typer.Option("--output", help="Where to write scored flows.")] = Path(
+        "pcap_scored.csv"
+    ),
+    flows_out: Annotated[
+        Path | None, typer.Option(help="Also write the extracted CIC feature rows (CSV/Parquet).")
+    ] = None,
+    profile: Annotated[str | None, typer.Option(help="Threshold profile.")] = None,
+    demo: Annotated[
+        bool, typer.Option(help="Generate and score the synthetic demo capture.")
+    ] = False,
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Score a raw packet capture: parse packets, assemble CIC flows, run the model."""
+    from netsentry.capture.score import score_capture
+    from netsentry.models.registry import latest_bundle
+    from netsentry.serving.bundle import build_serving_bundle
+
+    settings = _load(config, override)
+    if demo:
+        from netsentry.capture.demo import write_demo_pcap
+
+        input = write_demo_pcap(input or Path("examples/demo_capture.pcap"), seed=settings.seed)
+    if input is None:
+        logger.error("Provide a capture with --input, or use --demo.")
+        raise typer.Exit(code=2)
+    if settings.serving.artifact_path is None and latest_bundle(settings) is None:
+        logger.info("No model bundle found; building a serving bundle (requires `prep`).")
+        build_serving_bundle(settings)
+    summary = score_capture(settings, input, output, flows_out=flows_out, profile=profile)
+    logger.info("Capture scored", extra={**summary, "output": str(output)})
+
+
+@app.command()
 def benchmark(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

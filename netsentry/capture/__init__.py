@@ -10,3 +10,4 @@ synthetic capture writer for demos and tests (:mod:`netsentry.capture.demo`).
 from netsentry.capture.demo import write_demo_pcap
 from netsentry.capture.flows import FlowAssembler, extract_flows
 from netsentry.capture.pcap import PacketRecord, PcapReadError, PcapStats, read_pcap
+from netsentry.capture.score import score_capture
