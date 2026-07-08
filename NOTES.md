@@ -892,6 +892,34 @@ smaller dev-run numbers noted in earlier phases:
 - Rendered rules strip the `numeric__` transformer prefixes; an auditor reads
   `Total Fwd Packets <= 0.28` (standardized units, said so), not pipeline plumbing.
 
+## Packet ingestion (the wire, without a capture dependency)
+
+- The whole capture stack is stdlib `struct` on purpose. scapy/dpkt would parse
+  more protocols, but classic pcap + Ethernet/IPv4/TCP/UDP covers what the CIC
+  features can express, and a zero-dependency reader keeps the core install
+  promise ("runs anywhere") intact. pcapng raises a clear "convert first" error
+  rather than a parse failure; per-packet garbage is counted and skipped — a NIDS
+  ingest that dies on a malformed frame would be an irony too far.
+- Feature fidelity is anchored to `data/schema.py`, not to a hand-kept list: the
+  assembler asserts its row covers `FEATURE_COLUMNS` exactly, so schema drift
+  breaks loudly in tests. Departures from CICFlowMeter are chosen, not accidental:
+  bulk features emit 0 (they are ~always 0 upstream), zero-duration rates emit NaN
+  to match cleaning's Inf policy (the *fitted pipeline* imputes them — reusing the
+  train medians, no new statistics computed at serve time), and flows end on idle
+  timeout or TCP close.
+- The demo capture is built frame-by-frame with the same builders the tests use,
+  so the parser is asserted against known on-wire values rather than against
+  itself, and no binary fixture lands in git. Scoring the demo against the
+  stand-in model gave the honest wrinkle worth keeping: the flood is flagged at
+  the 1% budget, but the SYN sweep sails through — PortScan lives on Friday and
+  the temporal model has never seen one, which is the slices report's finding
+  resurfacing at the packet layer. The README says "mechanics, not detection
+  claim" for exactly that reason.
+- Scoring the capture output surfaced a real contract bug: `top_features` leaked
+  `numeric__` pipeline prefixes to the analyst. Fixed centrally (the explainer,
+  distill, and evasion now share one `display_feature_name`), with the test
+  asserting no `__` ever reaches the response.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

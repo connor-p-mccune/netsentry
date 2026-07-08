@@ -7,6 +7,28 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Packet-capture ingestion (`netsentry pcap`, `netsentry/capture/`): raw PCAP →
+  CIC flows → verdicts, with no capture-library dependency. A pure-stdlib
+  classic-libpcap reader (both byte orders, µs/ns timestamps, Ethernet/VLAN/raw-IP
+  link layers; malformed and non-IP frames counted and skipped, never fatal) feeds
+  a bidirectional flow assembler that reimplements the CICFlowMeter aggregation
+  over the canonical schema module — the output is exactly the 78 training
+  columns, and scoring runs through the same `InferenceEngine` as the API, so
+  there is no re-implemented preprocessing to skew. Departures from CICFlowMeter
+  are deliberate and documented (bulk features 0, zero-duration rates NaN →
+  imputed by the fitted pipeline, flows end on idle timeout or TCP close).
+  `--demo` writes a deterministic synthetic capture (benign web/DNS sessions, a
+  SYN sweep, a flood) from struct-packed frames — no binary fixture in the repo —
+  which doubles as the parser's ground-truth test harness and the CI smoke.
+
+### Fixed
+- Explanations return analyst-readable feature names: the API `top_features` and
+  batch `top_feature` no longer leak the fitted ColumnTransformer's `numeric__`
+  branch prefix. One shared `display_feature_name` helper now serves the
+  explainer, the distilled rules, and the evasion tables (surfaced by the capture
+  path, whose scored output an analyst reads directly).
+
+### Added
 - Surrogate distillation (`netsentry distill`, `netsentry/explain/distill.py`): the
   inverse of the rules baseline — how much of the *learned* model survives
   translation into an auditable form? A depth-limited decision tree imitates the

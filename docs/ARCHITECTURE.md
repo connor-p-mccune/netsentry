@@ -47,6 +47,14 @@ API, and reproducible MLOps.
 leaky columns, labels), cleaning (whitespace/Inf/dupes/sentinels/label
 consolidation → binary + multiclass targets), and the three split strategies.
 
+**Capture (`netsentry/capture`)** — packet-to-verdict ingestion: a pure-stdlib
+classic-libpcap reader (both byte orders, µs/ns timestamps, Ethernet/VLAN/raw-IP)
+and a bidirectional flow assembler that reimplements the CICFlowMeter aggregation
+against the canonical schema module, so a raw capture yields the exact training
+columns and is scored by the same engine the API uses (no re-implemented
+preprocessing, no skew). A deterministic synthetic-capture writer powers the demo,
+the CI smoke, and the parser tests.
+
 **Features (`netsentry/features`)** — one fitted `sklearn` Pipeline /
 ColumnTransformer that drops identifiers, imputes (train-fit median), scales, and
 optionally encodes `Destination Port`. This is the leakage firewall: fit on train
@@ -131,8 +139,9 @@ response {class, prob, anomaly_score, is_anomaly, top_features, version}`.
 
 ## Out of scope (and honestly stated as such in the model card)
 
-Live packet capture / NetFlow extraction (the model consumes pre-computed flow
-features) and multi-node production serving infrastructure. Adversarial evasion is
+Live/streaming packet capture, pcapng, and IPv6 (offline classic-pcap ingestion is
+in scope via `netsentry pcap`; NetFlow extraction is not) and multi-node production
+serving infrastructure. Adversarial evasion is
 measured (`docs/reports/robustness.md`) *and* acted on (`docs/reports/hardening.md`
 — adversarial training recovers full-mimicry detection, defending only the
 perturbation it trains on, as the report states). NetSentry is a rigorous reference

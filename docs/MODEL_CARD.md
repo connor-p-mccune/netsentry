@@ -9,8 +9,9 @@
 - **Type:** Supervised gradient-boosted classifier (LightGBM, with a scikit-learn
   `HistGradientBoosting` fallback) + an unsupervised anomaly stack (Isolation
   Forest and a benign-only PyTorch autoencoder).
-- **Input:** pre-computed CICFlowMeter network-flow features (CIC-IDS2017 schema,
-  identifier columns removed).
+- **Input:** CICFlowMeter network-flow features (CIC-IDS2017 schema, identifier
+  columns removed) — pre-computed, or extracted from a classic-pcap capture by
+  `netsentry pcap`.
 - **Output:** attack class + attack probability, an is-attack decision at a
   selectable false-positive-budget threshold, an anomaly score, and SHAP top
   contributing features.
@@ -18,8 +19,9 @@
 ## Intended use
 - **Intended:** education, research, and demonstration of ML-based intrusion
   detection on flow data; a reference for honest evaluation methodology.
-- **Out of scope:** a drop-in production NIDS; live packet/NetFlow capture;
-  adversarial-evasion-robust deployment; any safety-critical sole control.
+- **Out of scope:** a drop-in production NIDS; live/streaming capture, pcapng, and
+  IPv6 (offline classic-pcap ingestion is supported); adversarial-evasion-robust
+  deployment; any safety-critical sole control.
 
 ## Training data
 - CIC-IDS2017 (see [`DATA_CARD.md`](DATA_CARD.md)), or the bundled synthetic
@@ -72,7 +74,9 @@
   ~83% to ~0% at the 1%-FPR operating point). This is expected for a tabular tree
   model and is the explicit case for pairing it with the benign-only anomaly
   detector and not relying on it as a sole control.
-- **Flow features, not packets.** It consumes pre-computed flow statistics, so it
-  inherits any bias or error in the flow-extraction step.
+- **Flow features, not packets.** The model consumes flow statistics, so it
+  inherits any bias or error in the flow-extraction step — including NetSentry's
+  own capture stack, whose documented departures from CICFlowMeter (bulk
+  features, zero-duration rates, close semantics) apply to `netsentry pcap` input.
 - **Explanations are local approximations.** SHAP values explain the model, not
   ground-truth causation; treat top features as investigative leads.

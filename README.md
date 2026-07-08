@@ -84,6 +84,7 @@ shadow → retrain policy) that governs what actually ships.
 | Behavioral canaries | the bundle must reproduce its build-time scores at load | ✅ Done |
 | Shadow challenger | a second model scored silently; live disagreement metrics | ✅ Done |
 | Surrogate distillation | the model's closest auditable imitation, fidelity priced | ✅ Done |
+| Packet ingestion | raw PCAP → CIC flows → verdicts, pure-stdlib capture stack | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -223,6 +224,7 @@ netsentry retrainpolicy             # when to retrain: triggers priced on the st
 netsentry canary                    # replay the bundle's embedded flows (behavioral attest)
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
+netsentry pcap -i capture.pcap      # raw packets → CIC flows → verdicts (--demo to try it)
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
@@ -305,6 +307,26 @@ attests the promoted champion both ways (bytes via `verify`, behavior via `canar
 verdict, attack probability, anomaly score, and SHAP explanation update live — the
 inference engine and explanations behind the API, made tangible for a non-curl
 audience. Install with `pip install '.[demo]'`.
+
+## From packets to verdicts (PCAP ingestion)
+
+The rest of the project consumes pre-computed flow features; `netsentry pcap`
+closes the gap to the wire. A **pure-stdlib capture stack** — a classic-libpcap
+reader (both byte orders, µs/ns timestamps, Ethernet/VLAN/raw-IP) and a
+bidirectional flow assembler that reimplements the CICFlowMeter aggregation over
+the project's canonical schema module — turns a `.pcap` into exactly the 78
+feature columns the model trained on, then scores them through the same
+`InferenceEngine` the API uses: **zero serving skew by construction**, and the
+flow identity (IPs, ports, protocol) rides along as output metadata without ever
+entering the model. Known departures from CICFlowMeter (bulk features, NaN rates
+on zero-duration flows, close semantics) are deliberate and documented in the
+module. `netsentry pcap --demo` builds a deterministic synthetic capture — benign
+web/DNS sessions, a SYN port sweep, a flood — and scores it; on the stand-in
+model the DoS-shaped flood is flagged at the 1%-FPR profile while the SYN sweep
+is missed (PortScan is a later-day class the Mon–Wed model never saw — the same
+finding the per-class slices report), an honest demonstration of the mechanics
+rather than a detection claim. Malformed or non-IP traffic is counted and
+skipped, never fatal; pcapng and IPv6 are stated limitations.
 
 ## Monitoring & drift
 
@@ -612,10 +634,11 @@ See [`docs/reports/onnx.md`](docs/reports/onnx.md). Optional `onnx` extra.
 
 ## Limitations
 
-See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md). NetSentry consumes pre-computed
-flow features (not raw packets), is trained/evaluated on a 2017 dataset (here a
-synthetic stand-in), and is a rigorous reference implementation and demo — not a
-drop-in production NIDS.
+See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md). NetSentry consumes flow features
+(computed offline by CICFlowMeter, or from a classic-pcap capture via `netsentry
+pcap`; live/streaming capture, pcapng, and IPv6 are out of scope), is
+trained/evaluated on a 2017 dataset (here a synthetic stand-in), and is a rigorous
+reference implementation and demo — not a drop-in production NIDS.
 
 ## License
 
