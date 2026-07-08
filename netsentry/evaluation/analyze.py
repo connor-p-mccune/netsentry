@@ -42,6 +42,7 @@ from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.hardening import run_hardening_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
+from netsentry.training.selftrain import run_selftrain_report
 
 if TYPE_CHECKING:
     from netsentry.config import Settings
@@ -120,6 +121,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "when to retrain: never / periodic / drift-triggered / every batch",
         "retrain_policy.md",
         run_retrain_policy_report,
+    ),
+    (
+        "Self-training",
+        "pseudo-labels on the unlabeled stream vs the labeled ceiling",
+        "selftrain.md",
+        run_selftrain_report,
     ),
     (
         "Per-class detection",

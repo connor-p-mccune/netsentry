@@ -167,6 +167,17 @@ def test_retrain_policy_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_selftrain_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.selftrain import run_selftrain_report
+
+    out = run_selftrain_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "pseudo-label audit" in text and "oracle" in text
+    # The three-model comparison table is present with the operating columns.
+    assert "self-trained (pseudo-labels)" in text and "detection @ threshold" in text
+
+
+@pytest.mark.slow
 def test_poisoning_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.poisoning import run_poisoning_report
 

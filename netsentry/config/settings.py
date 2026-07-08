@@ -601,6 +601,21 @@ class ActiveLearningConfig(BaseModel):
     strategies: list[str] = Field(default_factory=lambda: ["uncertainty", "random"])
 
 
+class SelfTrainConfig(BaseModel):
+    """Self-training (pseudo-labeling) study on the unlabeled later-day stream.
+
+    The streaming study prices labeled retraining; this prices the label-free
+    shortcut — retrain on the model's own confident scores over the unlabeled
+    adaptation window. Taus are on the raw score scale; flows between them are
+    abstentions. The known risk under drift, which the report audits directly, is
+    novel attacks scoring confidently benign and being learned as benign."""
+
+    adaptation_fraction: float = 0.5  # leading share of the test stream seen unlabeled
+    tau_attack: float = 0.98  # raw score at/above which a flow is pseudo-labeled attack
+    tau_benign: float = 0.02  # raw score at/below which a flow is pseudo-labeled benign
+    max_pseudo_per_class: int = 20000  # cap per side, most confident first
+
+
 class PoisoningConfig(BaseModel):
     """Training-set poisoning study: how detection degrades as labels are corrupted.
 
@@ -728,6 +743,7 @@ class Settings(BaseSettings):
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     retrain_policy: RetrainPolicyConfig = Field(default_factory=RetrainPolicyConfig)
+    selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)

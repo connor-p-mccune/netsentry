@@ -192,6 +192,19 @@ def streaming(
     logger.info("Streaming report ready", extra={"path": str(out)})
 
 
+@app.command()
+def selftrain(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Self-training on the unlabeled stream: pseudo-labels vs the labeled ceiling."""
+    from netsentry.training.selftrain import run_selftrain_report
+
+    settings = _load(config, override)
+    out = run_selftrain_report(settings)
+    logger.info("Self-training report ready", extra={"path": str(out)})
+
+
 @app.command("retrainpolicy")
 def retrain_policy_cmd(
     config: ConfigOpt = None,
