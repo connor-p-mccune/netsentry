@@ -189,6 +189,18 @@ class AlertQueueConfig(BaseModel):
     analyst_minutes_per_day: float = 420.0  # ~7 productive hours per analyst per day
 
 
+class CaptureConfig(BaseModel):
+    """Raw packet-capture ingestion (PCAP -> CIC flow features).
+
+    Timeouts mirror CICFlowMeter's flow semantics so features computed from a
+    capture line up with the training data: a flow ends after ``flow_timeout_us``
+    of silence (or a TCP close), and the active/idle features split the packet
+    timeline at gaps longer than ``activity_timeout_us``."""
+
+    flow_timeout_us: int = 120_000_000  # idle time (us) after which a 5-tuple starts a new flow
+    activity_timeout_us: int = 5_000_000  # gap (us) separating active periods (Active/Idle stats)
+
+
 class ValidationConfig(BaseModel):
     """Thresholds for the input data-quality gates (fail loudly on bad input)."""
 
@@ -696,6 +708,7 @@ class Settings(BaseSettings):
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     cost: CostConfig = Field(default_factory=CostConfig)
     alert_queue: AlertQueueConfig = Field(default_factory=AlertQueueConfig)
+    capture: CaptureConfig = Field(default_factory=CaptureConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
     gate: GateConfig = Field(default_factory=GateConfig)

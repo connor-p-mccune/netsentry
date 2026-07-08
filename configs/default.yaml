@@ -95,6 +95,10 @@ thresholds:
   calibrate: true
   calibration_method: isotonic
 
+capture:                      # raw PCAP -> CIC flow features (netsentry pcap)
+  flow_timeout_us: 120000000  # idle time before a 5-tuple starts a new flow
+  activity_timeout_us: 5000000  # gap separating active periods (Active/Idle stats)
+
 monitoring:
   psi_bins: 10
   psi_moderate: 0.1           # PSI >= this is a moderate distribution shift
