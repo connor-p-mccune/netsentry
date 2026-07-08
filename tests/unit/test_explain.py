@@ -7,6 +7,7 @@ import pandas as pd
 from netsentry.config import Settings
 from netsentry.data.clean import BINARY_TARGET
 from netsentry.explain.shap_explainer import ShapExplainer, top_feature_contributions
+from netsentry.features.feature_sets import display_feature_name
 from netsentry.features.pipeline import build_pipeline
 from netsentry.models.registry import ModelBundle
 from netsentry.models.supervised import SupervisedClassifier
@@ -27,9 +28,12 @@ def test_explain_row_returns_ranked_topk(clean_synth: pd.DataFrame, settings: Se
     contributions = explainer.explain_row(clean_synth.head(1), k=5)
 
     assert len(contributions) == 5
-    names = bundle.feature_names()
+    # The contract returns analyst-readable names: the pipeline's numeric__
+    # branch prefix is stripped, and every name maps back to a real column.
+    readable = {display_feature_name(n) for n in bundle.feature_names()}
     for feature, value in contributions:
-        assert feature in names
+        assert feature in readable
+        assert "__" not in feature
         assert isinstance(value, float)
     # Ranked by absolute contribution (descending).
     magnitudes = [abs(v) for _, v in contributions]

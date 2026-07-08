@@ -57,6 +57,16 @@ def get_feature_set(name: str, *, include_destination_port: bool = False) -> lis
     raise KeyError(f"Unknown feature set {name!r}; choose from {sorted(FEATURE_SETS)} or 'full'.")
 
 
+def display_feature_name(name: str) -> str:
+    """Strip a ColumnTransformer branch prefix for human-facing output.
+
+    The fitted pipeline names its outputs ``numeric__Flow Duration``; every
+    surface an analyst reads (API ``top_features``, distilled rules, evasion
+    tables) should say ``Flow Duration``. One helper so they all agree.
+    """
+    return name.split("__", 1)[1] if "__" in name else name
+
+
 def numeric_features() -> list[str]:
     """The numeric feature columns (never includes the borderline port)."""
     return schema.feature_columns(include_destination_port=False)

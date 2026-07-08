@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
+from netsentry.features.feature_sets import display_feature_name
 from netsentry.log import get_logger
 from netsentry.utils.optional import is_available
 
@@ -41,7 +42,8 @@ class ShapExplainer:
 
     def __init__(self, bundle: ModelBundle) -> None:
         self.bundle = bundle
-        self.feature_names = bundle.feature_names()
+        # Analyst-facing names: the pipeline's numeric__ branch prefix is plumbing.
+        self.feature_names = [display_feature_name(n) for n in bundle.feature_names()]
         # The raw tree estimator lives on the wrapper's `.model`; fall back to the
         # wrapper itself for estimators without one.
         self._estimator: Any = getattr(bundle.model, "model", bundle.model)

@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from netsentry.evaluation.metrics import attack_probability
+from netsentry.features.feature_sets import display_feature_name
 from netsentry.log import get_logger
 
 if TYPE_CHECKING:
@@ -39,7 +40,7 @@ logger = get_logger(__name__)
 
 def base_feature_name(name: str) -> str:
     """Strip a ColumnTransformer branch prefix (``numeric__Flow Duration``)."""
-    return name.split("__", 1)[1] if "__" in name else name
+    return display_feature_name(name)
 
 
 def controllable_indices(feature_names: list[str], controllable: list[str]) -> np.ndarray:

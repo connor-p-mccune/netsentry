@@ -37,6 +37,7 @@ from netsentry.data.split import load_split
 from netsentry.evaluation import plots
 from netsentry.evaluation.confidence import pr_auc
 from netsentry.evaluation.metrics import positive_scores, rates_at_threshold, threshold_at_fpr
+from netsentry.features.feature_sets import display_feature_name
 from netsentry.log import get_logger
 from netsentry.seed import seed_everything
 from netsentry.training.tracking import track_run
@@ -168,7 +169,7 @@ def run_distill_report(settings: Settings) -> Path:
         )
         if depth == cfg.report_depth:
             # Strip the ColumnTransformer prefix (numeric__...) for the human reader.
-            names = [str(n).split("__", 1)[-1] for n in bundle.feature_names()]
+            names = [display_feature_name(str(n)) for n in bundle.feature_names()]
             lines = export_text(surrogate, feature_names=names).splitlines()
             if len(lines) > cfg.max_rule_lines:
                 lines = [*lines[: cfg.max_rule_lines], "... (truncated)"]
