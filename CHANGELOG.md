@@ -21,6 +21,17 @@ semantic versioning once released.
   SYN sweep, a flood) from struct-packed frames — no binary fixture in the repo —
   which doubles as the parser's ground-truth test harness and the CI smoke.
 
+- Self-training study (`netsentry selftrain`, `netsentry/training/selftrain.py`):
+  the pseudo-label shortcut priced against the labeled ceiling. The temporal test
+  stream splits in time order into an unlabeled adaptation window and an untouched
+  evaluation window; static vs self-trained (confident raw scores folded in under
+  their pseudo-labels) vs oracle retrain (true labels) meet the future at their own
+  validation-chosen thresholds, and the study audits the pseudo-labels against the
+  truth the models were blinded to. Stand-in: −0.003 of a +0.190 labeled headroom
+  recovered; 12.9% of the window's attacks confidently absorbed as benign while
+  per-side pseudo-label precision reads ~92% — the confirmation-bias loop measured,
+  not asserted. Selection/audit helpers pure + unit-tested; in the analysis suite.
+
 ### Fixed
 - Explanations return analyst-readable feature names: the API `top_features` and
   batch `top_feature` no longer leak the fitted ColumnTransformer's `numeric__`

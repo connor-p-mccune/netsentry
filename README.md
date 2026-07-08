@@ -65,6 +65,7 @@ shadow → retrain policy) that governs what actually ships.
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
 | Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
+| Self-training | the pseudo-label shortcut priced against the labeled ceiling | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
 | Detection parity | per-service TPR/FPR audit (Wilson CIs) → served `per_service` profile | ✅ Done |
 | Novelty distance | the split gap decomposed: composition vs at-distance shift | ✅ Done |
@@ -211,6 +212,7 @@ netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
 netsentry distill                   # the model's closest auditable tree, fidelity priced
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
+netsentry selftrain                 # pseudo-labels on the unlabeled stream vs the labeled ceiling
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
 netsentry alertqueue                # detection vs analyst budget (lift over random triage)
@@ -603,6 +605,25 @@ concentration**, framed as a multiplier, not an oracle. Intrinsic flags on the
 clean-by-construction synthetic labels are reported as the method's ambiguity
 floor, and they coincide with the families the per-class slices show being missed.
 See [`docs/reports/label_audit.md`](docs/reports/label_audit.md).
+
+## Self-training (the pseudo-label shortcut, priced)
+
+If labeled retraining recovers what drift costs (the streaming study) and labels
+are the expensive input (the active-learning study), the shortcut every team
+eventually proposes is **self-training**: retrain on the model's own confident
+scores over the unlabeled stream, for free. `netsentry selftrain` prices it
+honestly — the later-day stream is cut in time order into an unlabeled adaptation
+window and an untouched evaluation window, and a static model, a self-trained
+model, and an **oracle retrain** (true labels — the ceiling) all meet the future
+at their own validation-chosen thresholds. On the stand-in the shortcut recovers
+essentially **none of the +0.190 PR-AUC** that true labels buy, and the
+pseudo-label audit shows the mechanism in one number: **12.9% of the window's
+attacks score confidently benign and are learned as benign**, while pseudo-label
+precision reads a comfortable ~92% on both sides. Confidence concentrates exactly
+on the model's blind spots — novel attacks — so self-training sharpens the
+boundary it has and cannot teach the boundary it lacks. That is why the analyst
+labels the active-learning study budgets for are not replaceable by confidence.
+See [`docs/reports/selftrain.md`](docs/reports/selftrain.md).
 
 ## Active learning (label efficiency)
 

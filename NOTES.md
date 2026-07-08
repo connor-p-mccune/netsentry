@@ -920,6 +920,28 @@ smaller dev-run numbers noted in earlier phases:
   distill, and evasion now share one `display_feature_name`), with the test
   asserting no `__` ever reaches the response.
 
+## Self-training (precision that lies, measured)
+
+- The subtlest number in the study is the one that looks reassuring: pseudo-label
+  precision is ~92% on *both* sides, and a practitioner monitoring only precision
+  would call the pseudo-labels healthy. The damage lives in the composition of the
+  8%: the benign-side errors are not random benign-ish flows, they are
+  specifically the novel later-day attacks the model already scores lowest — 12.9%
+  of the window's attacks, absorbed as training-set benign. Aggregate precision is
+  the wrong lens for the same reason accuracy is: the errors are concentrated
+  where the cost is.
+- Design choices that keep the study honest: the eval window is the untouched
+  *end* of the stream (a random holdout would let the adaptation window leak its
+  own regime); each model gets its own validation-chosen threshold (a shared
+  threshold flatters whichever model happens to match the static calibration); and
+  the adaptation truth exists only inside the audit function — no model, pipeline,
+  or threshold ever touches it.
+- The oracle gap (0.653 → 0.844 eval-window PR-AUC) is deliberately reported on
+  the eval window, not the full test split, so all three rows share one yardstick;
+  it will not match the headline 0.529 and should not.
+- Same-scale rule held again: pseudo-label taus and the reported thresholds are on
+  the raw score scale the models emit, stated in the report header.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

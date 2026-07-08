@@ -16,6 +16,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Statistical drift | per-feature KS+FDR, online Page-Hinkley/DDM | [open](drift_tests.md) |
 | Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
 | Retrain-trigger policy | when to retrain: never / periodic / drift-triggered / every batch | [open](retrain_policy.md) |
+| Self-training | pseudo-labels on the unlabeled stream vs the labeled ceiling | [open](selftrain.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
 | Per-service parity | detection/false-alarm equity across services | [open](subgroups.md) |
 | Novelty distance | detection vs distance-to-training; the split gap decomposed | [open](novelty.md) |
