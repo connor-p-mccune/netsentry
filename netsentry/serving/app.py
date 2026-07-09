@@ -143,24 +143,34 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             shadow_model_version=engine.shadow_version,
         )
 
+    explain_query = Query(
+        default=True,
+        description="Include SHAP top_features (the expensive step); "
+        "false returns an empty list for throughput-bound callers.",
+    )
+
     @app.post("/predict", response_model=PredictionResponse)
     def predict(
         request: FlowRequest,
         profile: str | None = Query(default=None, description="Threshold profile."),
+        explain: bool = explain_query,
     ) -> PredictionResponse:
-        return engine.predict([request.flow], profile=_resolve_profile(profile))[0]
+        return engine.predict([request.flow], profile=_resolve_profile(profile), explain=explain)[0]
 
     @app.post("/predict/batch", response_model=BatchResponse)
     def predict_batch(
         request: BatchRequest,
         profile: str | None = Query(default=None, description="Threshold profile."),
+        explain: bool = explain_query,
     ) -> BatchResponse:
         if len(request.flows) > settings.serving.max_batch_size:
             raise HTTPException(
                 status_code=413,
                 detail=f"batch too large: {len(request.flows)} > {settings.serving.max_batch_size}",
             )
-        predictions = engine.predict(request.flows, profile=_resolve_profile(profile))
+        predictions = engine.predict(
+            request.flows, profile=_resolve_profile(profile), explain=explain
+        )
         return BatchResponse(predictions=predictions)
 
     @app.get("/metrics")

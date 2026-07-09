@@ -211,7 +211,15 @@ class InferenceEngine:
         *,
         profile: str | None = None,
         top_k: int | None = None,
+        explain: bool = True,
     ) -> list[PredictionResponse]:
+        """Score flows; ``explain=False`` skips SHAP (the measured majority of latency).
+
+        Explanations are the default because they are part of the product
+        contract; the opt-out exists for throughput-bound callers (bulk scoring,
+        load tests) and returns an empty ``top_features`` rather than a changed
+        schema, so clients need no second response model.
+        """
         profile = profile or self.default_profile
         top_k = top_k or self.settings.serving.top_k_features
         frame = self._frame(flows)
@@ -250,10 +258,14 @@ class InferenceEngine:
             predicted = self._predicted_class(str(argmax[i]), proba[i], classes, attacking)
             pred_set, action = self._conformal_set(attack_prob)
             mitre = mitre_payload(predicted) if attacking else None
-            top = [
-                FeatureContribution(feature=name, contribution=value)
-                for name, value in self.explainer.explain_row(frame.iloc[[i]], top_k)
-            ]
+            top = (
+                [
+                    FeatureContribution(feature=name, contribution=value)
+                    for name, value in self.explainer.explain_row(frame.iloc[[i]], top_k)
+                ]
+                if explain
+                else []
+            )
             responses.append(
                 PredictionResponse(
                     predicted_class=predicted,

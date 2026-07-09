@@ -43,6 +43,13 @@ semantic versioning once released.
   per-side pseudo-label precision reads ~92% — the confirmation-bias loop measured,
   not asserted. Selection/audit helpers pure + unit-tested; in the analysis suite.
 
+- Verdict-only fast path on the prediction endpoints (`?explain=false`): SHAP is
+  the measured majority of request latency (p50 48 → 13 ms, ~22 → ~75 req/s on
+  the stand-in), so throughput-bound callers can skip it per request —
+  `top_features` returns empty, every decision field is byte-identical, and the
+  response model is unchanged. Explanations remain the default (they are the
+  contract). `netsentry benchmark --no-explain` drives and reproduces the
+  comparison; integration-tested that only the explanation is skipped.
 - Campaign-level detection (`netsentry campaigns`,
   `netsentry/evaluation/campaigns.py`): the (day, attack-class) operation as the
   SOC's unit of account. Per campaign and FPR budget: flow-level rate, alerted at

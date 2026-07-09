@@ -76,6 +76,22 @@ def test_predict_returns_full_contract(client) -> None:  # type: ignore[no-untyp
 
 
 @pytest.mark.slow
+def test_explain_opt_out_skips_shap_only(client) -> None:  # type: ignore[no-untyped-def]
+    """?explain=false is the fast path: identical verdict fields, empty top_features."""
+    fast = client.post("/predict?explain=false", json={"flow": SAMPLE_FLOW}).json()
+    full = client.post("/predict", json={"flow": SAMPLE_FLOW}).json()
+    assert fast["top_features"] == []
+    assert full["top_features"]  # the default keeps the explanation contract
+    # Only the explanation is skipped; every decision output is unchanged.
+    assert fast["attack_probability"] == full["attack_probability"]
+    assert fast["is_attack"] == full["is_attack"]
+    assert fast["recommended_action"] == full["recommended_action"]
+
+    batch = client.post("/predict/batch?explain=false", json={"flows": [SAMPLE_FLOW]}).json()
+    assert batch["predictions"][0]["top_features"] == []
+
+
+@pytest.mark.slow
 def test_cost_optimal_profile_is_selectable(client) -> None:  # type: ignore[no-untyped-def]
     # The serving bundle carries a cost-optimal threshold profile alongside the FPR ones.
     response = client.post("/predict?profile=cost_optimal", json={"flow": SAMPLE_FLOW})

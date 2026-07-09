@@ -854,12 +854,15 @@ def benchmark(
     override: OverrideOpt = None,
     url: Annotated[str, typer.Option(help="Base URL of the service.")] = DEFAULT_BENCH_URL,
     requests: Annotated[int, typer.Option(help="Requests to send.")] = 500,
+    explain: Annotated[
+        bool, typer.Option(help="Request SHAP explanations (--no-explain drives the fast path).")
+    ] = True,
 ) -> None:
     """Drive the API and report p50/p95/p99 latency and throughput."""
     from netsentry.serving.benchmark import run_benchmark
 
     settings = _load(config, override)
-    run_benchmark(settings, base_url=url, n_requests=requests)
+    run_benchmark(settings, base_url=url, n_requests=requests, explain=explain)
 
 
 @app.command()

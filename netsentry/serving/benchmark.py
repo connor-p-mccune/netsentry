@@ -32,21 +32,28 @@ def _sample_payload(settings: Settings) -> dict[str, dict[str, float]]:
     return {"flow": flow}
 
 
-def run_benchmark(settings: Settings, *, base_url: str, n_requests: int) -> dict[str, float]:
-    """Send ``n_requests`` to ``base_url`` and return latency/throughput stats."""
+def run_benchmark(
+    settings: Settings, *, base_url: str, n_requests: int, explain: bool = True
+) -> dict[str, float]:
+    """Send ``n_requests`` to ``base_url`` and return latency/throughput stats.
+
+    ``explain=False`` drives the fast path (``?explain=false``), so the SHAP cost
+    per request is a measured delta between two runs rather than a guess.
+    """
     import logging
 
     import httpx
 
     logging.getLogger("httpx").setLevel(logging.WARNING)  # don't log every request
     payload = _sample_payload(settings)
+    url = f"{base_url}/predict" + ("" if explain else "?explain=false")
     latencies_ms: list[float] = []
     with httpx.Client(timeout=30.0) as client:
-        client.post(f"{base_url}/predict", json=payload).raise_for_status()  # warm up
+        client.post(url, json=payload).raise_for_status()  # warm up
         start = time.perf_counter()
         for _ in range(n_requests):
             t0 = time.perf_counter()
-            response = client.post(f"{base_url}/predict", json=payload)
+            response = client.post(url, json=payload)
             response.raise_for_status()
             latencies_ms.append((time.perf_counter() - t0) * 1e3)
         total = time.perf_counter() - start

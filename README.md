@@ -144,8 +144,8 @@ NetSentry is built to be the project that does it right:
 | Detection rate @ 0.1% FPR / @ 1% FPR (temporal) | 9.1% / 21.0% |
 | Anomaly detector — avg detection of held-out attacks @ 1% FPR | 8.5% (autoencoder), 4.3% (iForest) |
 | Ensemble vs best single scorer (temporal PR-AUC) | 0.537 vs 0.529 |
-| Inference latency p50 / p95 (single flow, local) | ~47 / ~56 ms |
-| Throughput (single process, SHAP per request) | ~21 req/s |
+| Inference latency p50 / p95 (single flow, local) | ~48 / ~53 ms (**13 / 15 ms** with `?explain=false`) |
+| Throughput (single process) | ~22 req/s with SHAP per request; **~75 req/s** without |
 
 ![Precision–Recall: temporal vs stratified](docs/figures/pr_curve.png)
 
@@ -263,7 +263,12 @@ selective-prediction outputs — `auto_alert`, `auto_clear`, or `review` (ambigu
 novel) — so the API tells a SOC not just *what* but *whether to trust it*. The
 prediction endpoints support optional API-key auth (`X-API-Key`) and a per-client
 rate limit, both config-gated (`serving.api_key`, `serving.rate_limit_per_minute`),
-while `/health` and `/metrics` stay open for probes.
+while `/health` and `/metrics` stay open for probes. Explanations are the default
+because they are part of the contract, and their cost is measured, not guessed:
+SHAP is ~73% of request latency on the stand-in (p50 48 → 13 ms, ~22 → ~75 req/s),
+so `?explain=false` gives throughput-bound callers the verdict-only fast path
+(`top_features` comes back empty; every decision field is identical) —
+`netsentry benchmark --no-explain` reproduces the comparison.
 
 ## Reproducibility
 
