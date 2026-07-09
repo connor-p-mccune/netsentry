@@ -984,6 +984,24 @@ smaller dev-run numbers noted in earlier phases:
   generator reuses the quirky-fixture defects so the generalization is of the
   known failure modes, not random noise.
 
+## Campaign-level detection (two true statistics, one deployment)
+
+- The flow-level and campaign-level numbers are *both* honest and they disagree
+  by construction: 21% of hostile flows vs 5/5 operations alerted at the same
+  threshold. The failure mode this report exists to prevent is quoting either
+  one alone — the flow number undersells sustained attacks, the campaign number
+  hides that PortScan ran 687 probes before the pager went off and that alert
+  cost didn't move (benign traffic has no campaigns).
+- First-alert latency counts the campaign's *own* flows, not stream position:
+  an interleaved benign flow must not advance the counter, which is exactly the
+  off-by-context bug a naive `np.where(alerts)[0]` over the whole stream would
+  produce. The unit test plants a high-scoring benign flow between campaign
+  flows to pin it.
+- k_confirm exists because "one alert = detected" assumes an analyst (or a
+  correlation layer) connects that alert to a campaign; on the stand-in the
+  k=5 column drops Infiltration (2 alerts over 42 flows), which is the right
+  conservative read of a signal that thin.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

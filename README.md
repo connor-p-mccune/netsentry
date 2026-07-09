@@ -69,6 +69,7 @@ shadow → retrain policy) that governs what actually ships.
 | Self-training | the pseudo-label shortcut priced against the labeled ceiling | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
 | Detection parity | per-service TPR/FPR audit (Wilson CIs) → served `per_service` profile | ✅ Done |
+| Campaign detection | (day, class) operations: first-alert latency, silent campaigns | ✅ Done |
 | Novelty distance | the split gap decomposed: composition vs at-distance shift | ✅ Done |
 | Temporal sensitivity | leave-one-day-out: every day takes a turn as the future | ✅ Done |
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
@@ -206,6 +207,7 @@ netsentry train anomaly             # benign-only anomaly detector + leave-one-a
 netsentry eval                      # operational metrics report + figures (+ bootstrap CIs)
 netsentry learningcurve             # PR-AUC vs training size (does more data help?)
 netsentry slices                    # per-attack-class detection (known vs novel)
+netsentry campaigns                 # campaign-level detection + first-alert latency
 netsentry subgroups                 # per-service detection/false-alarm parity audit
 netsentry novelty                   # detection vs distance-to-training (split gap decomposed)
 netsentry lodo                      # leave-one-day-out temporal sensitivity
@@ -573,6 +575,22 @@ ranking does not. The report renders the chosen tree in full and states the scop
 claims plainly: a K-leaf tree emits K distinct scores (tight FP budgets are
 unreachable by construction), and a surrogate explains *behavior*, not mechanism.
 See [`docs/reports/distill.md`](docs/reports/distill.md).
+
+## Campaign-level detection (the SOC's unit of account)
+
+The headline TPR@FPR counts flows, but an analyst experiences **campaigns** — on
+CIC-IDS2017 each attack class runs as one (day, class) operation, and it is
+operationally detected when its *first* flow crosses the threshold. `netsentry
+campaigns` reports both readings side by side, and on the stand-in they diverge
+sharply: at the 1%-FPR budget a **21% flow-level rate is actually 5/5 campaigns
+alerted** — but DDoS pages on its very first flow while PortScan runs **687
+hostile probes** before its first alert, so "detected" and "detected in time"
+separate only in the first-alert latency column. The report states what the
+reframing does *not* buy: benign traffic has no campaign structure (alert volume
+is still priced per flow), the framing assumes something correlates a campaign's
+alerts (the k=5 column is the conservative reading), and small campaigns get few
+draws — the classes the slices report shows missed stay missed. See
+[`docs/reports/campaigns.md`](docs/reports/campaigns.md).
 
 ## Per-service detection parity
 

@@ -19,6 +19,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Self-training | pseudo-labels on the unlabeled stream vs the labeled ceiling | [open](selftrain.md) |
 | Model-family leaderboard | every family through one honest protocol; the gap replicates | [open](leaderboard.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
+| Campaign detection | the (day, class) operation as the unit: first alerts and silent campaigns | [open](campaigns.md) |
 | Per-service parity | detection/false-alarm equity across services | [open](subgroups.md) |
 | Novelty distance | detection vs distance-to-training; the split gap decomposed | [open](novelty.md) |
 | Leave-one-day-out | temporal sensitivity: every day takes a turn as the future | [open](lodo.md) |

@@ -43,6 +43,16 @@ semantic versioning once released.
   per-side pseudo-label precision reads ~92% — the confirmation-bias loop measured,
   not asserted. Selection/audit helpers pure + unit-tested; in the analysis suite.
 
+- Campaign-level detection (`netsentry campaigns`,
+  `netsentry/evaluation/campaigns.py`): the (day, attack-class) operation as the
+  SOC's unit of account. Per campaign and FPR budget: flow-level rate, alerted at
+  k=1 / confirmed at k, and first-alert latency in the campaign's own hostile
+  flows (stream order; benign interleavings do not advance the counter — tested).
+  Stand-in: 21% flow-level at the 1% budget is 5/5 campaigns alerted, but
+  first-alert latency spans flow 1 (DDoS) to flow 687 (PortScan) — "detected"
+  vs "detected in time". The report states what the framing does not buy: alert
+  volume is still priced per flow, alert correlation is assumed (k_confirm is
+  the conservative column), and small campaigns get few draws.
 - Property-based invariant suite (`tests/unit/test_properties.py`, hypothesis):
   the contracts the results stand on, asserted for arbitrary inputs — the FPR
   budget is never exceeded on the selecting set, detection is monotone in the
