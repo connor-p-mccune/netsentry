@@ -71,6 +71,7 @@ shadow → retrain policy) that governs what actually ships.
 | Novelty distance | the split gap decomposed: composition vs at-distance shift | ✅ Done |
 | Temporal sensitivity | leave-one-day-out: every day takes a turn as the future | ✅ Done |
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
+| Model leaderboard | every family, one honest protocol; the split picks the winner | ✅ Done |
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
 | Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
@@ -208,6 +209,7 @@ netsentry novelty                   # detection vs distance-to-training (split g
 netsentry lodo                      # leave-one-day-out temporal sensitivity
 netsentry labelaudit                # find likely label errors (self-validated)
 netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
+netsentry leaderboard               # every model family under the identical honest protocol
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
 netsentry distill                   # the model's closest auditable tree, fidelity priced
@@ -512,6 +514,23 @@ patterns they encode, and PortScan is novel to the Mon–Wed model) while having
 recall on every class without a rule; the **hybrid** (rules OR model) beats both.
 Complements, not rivals — stated with the numbers either way. See
 [`docs/reports/rules.md`](docs/reports/rules.md).
+
+## Model-family leaderboard (the protocol is the product)
+
+`netsentry leaderboard` runs a spectrum of model families — majority prior, naive
+Bayes, logistic regression, random forest, the deployed LightGBM — through the
+**identical** honest harness (same persisted splits, same leakage-safe pipeline,
+same validation-chosen thresholds), on both splits. Two findings on the stand-in.
+First, every family pays a stratified-minus-temporal gap **larger than the entire
+spread between families on the honest split** — the over-optimism is a property
+of the evaluation, not of any model, so no architecture upgrade would close it.
+Second, and sharper: **the two splits crown different winners.** The flexible
+models dominate the optimistic table (LightGBM 0.786) but the *simple* models win
+the honest one (naive Bayes 0.571 / logistic 0.569 vs LightGBM 0.529), with the
+gap growing monotonically with capacity — flexible models fit the training-day
+regime tightly and pay for it on later days. A team selecting its model on the
+shuffled split would ship the wrong model. See
+[`docs/reports/leaderboard.md`](docs/reports/leaderboard.md).
 
 ## Feature-group ablation
 

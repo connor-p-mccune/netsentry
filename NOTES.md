@@ -942,6 +942,29 @@ smaller dev-run numbers noted in earlier phases:
 - Same-scale rule held again: pseudo-label taus and the reported thresholds are on
   the raw score scale the models emit, stated in the report header.
 
+## Model-family leaderboard (the split picks the winner)
+
+- The result I did not plan for: the honest split *inverts the ranking*. Naive
+  Bayes (0.571) and logistic (0.569) beat the tuned LightGBM (0.529) temporally,
+  while the optimistic split shows the familiar deep-leaderboard shape (LightGBM
+  0.786 on top). The gap column is monotone in capacity — NB +0.067, LR +0.128,
+  RF +0.243, GBDT +0.257 — which is the textbook bias/variance trade surfacing as
+  an *evaluation* artifact: flexible models memorise the Mon–Wed regime and pay
+  on Thu–Fri. The uncomfortable implication is stated in the report: model
+  selection on the shuffled split ships the wrong model.
+- Kept LightGBM as the deployed model anyway, and the reasoning belongs here: the
+  headline number is the temporal PR-AUC *with* the rest of the system attached —
+  calibration, thresholds, SHAP contracts, distillation — and the seed study +
+  promotion gate price change on those terms. Swapping the family because one
+  study's point estimate favors it would be tuning on the test split with extra
+  steps; the leaderboard is a selection-protocol finding, not a promotion.
+- The inversion sentence renders only when the two splits actually crown
+  different winners (same discipline as the streaming/retrain branches: the text
+  can never contradict the table it sits under).
+- Baselines run at library defaults on purpose, and the scope section says the
+  comparison *favors* the tuned deployed model — which makes the fact that it
+  still loses the honest table more informative, not less.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

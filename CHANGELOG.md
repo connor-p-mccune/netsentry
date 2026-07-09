@@ -21,6 +21,17 @@ semantic versioning once released.
   SYN sweep, a flood) from struct-packed frames — no binary fixture in the repo —
   which doubles as the parser's ground-truth test harness and the CI smoke.
 
+- Model-family leaderboard (`netsentry leaderboard`,
+  `netsentry/evaluation/leaderboard.py`): majority prior, Gaussian naive Bayes,
+  logistic regression, random forest, and the deployed LightGBM through the
+  identical honest harness on both splits — same persisted splits, same
+  leakage-safe pipeline, per-model validation-chosen thresholds, raw-score PR-AUC.
+  Stand-in findings: the split gap replicates across every family and exceeds the
+  whole between-family spread on the honest split, and the two splits crown
+  different winners (simple models lead temporally, flexible ones optimistically;
+  the gap grows with capacity) — model selection on the shuffled split ships the
+  wrong model. The render states the ranking inversion only when the data shows
+  it. Family builder + evaluator unit-tested; in the analysis suite.
 - Self-training study (`netsentry selftrain`, `netsentry/training/selftrain.py`):
   the pseudo-label shortcut priced against the labeled ceiling. The temporal test
   stream splits in time order into an unlabeled adaptation window and an untouched
