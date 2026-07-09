@@ -10,6 +10,10 @@ seed_variance:
   n_seeds: 3             # 4 refits total (incl. the same-seed repro check) is plenty for CI
 retrain_policy:
   n_batches: 4           # the tiny stream still exercises every trigger path
+leaderboard:
+  families: [majority, logistic, gbdt]  # one linear + the deployed family is enough smoke
+selftrain:
+  max_pseudo_per_class: 2000
 gate:
   min_tpr_at_primary_fpr: 0.0  # the 5k-row smoke is about the structural checks
   max_ece: 1.0

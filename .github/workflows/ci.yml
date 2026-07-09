@@ -77,6 +77,11 @@ jobs:
           python -m netsentry.cli alertqueue -o configs/ci.yaml
           python -m netsentry.cli driftscan -o configs/ci.yaml
           python -m netsentry.cli navigator -o configs/ci.yaml
+      - name: Honest-protocol studies (leaderboard · selftrain · campaigns)
+        run: |
+          python -m netsentry.cli leaderboard -o configs/ci.yaml
+          python -m netsentry.cli selftrain -o configs/ci.yaml
+          python -m netsentry.cli campaigns -o configs/ci.yaml
       - name: Model lifecycle (seeds · gate · promote · retrainpolicy)
         run: |
           python -m netsentry.cli seeds -o configs/ci.yaml
