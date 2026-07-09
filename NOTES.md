@@ -965,6 +965,25 @@ smaller dev-run numbers noted in earlier phases:
   comparison *favors* the tuned deployed model — which makes the fact that it
   still loses the honest table more informative, not less.
 
+## Property-based tests (and the drift blind spot they caught immediately)
+
+- The suite is written around *contracts*, not functions: "the threshold chosen
+  at an FPR budget never exceeds that budget on the selecting set" is the
+  sentence the whole TPR@FPR story rests on, so it gets asserted for every
+  labels/scores vector hypothesis can construct, not for three examples.
+- It earned its keep before it was committed: the total-migration invariant
+  ("shift everything off the reference support → PSI must read major") failed
+  instantly on a constant reference. Root cause: overwriting the outer quantile
+  edges with ±inf collapses a constant or two-valued feature into one bin —
+  and CIC has such features *by construction* (bulk columns are ~always 0, flag
+  counts are near-binary), so the deployed drift monitor had lanes it could
+  never see. An example-based test would only have caught this if someone had
+  already thought of it, which is precisely the case for property testing.
+- Kept the suite honest about cost: bounded sizes, `deadline=None` (Windows CI
+  timing), 30 examples for the pandas-heavy cleaning property, and the frames
+  generator reuses the quirky-fixture defects so the generalization is of the
+  known failure modes, not random noise.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

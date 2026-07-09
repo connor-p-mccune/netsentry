@@ -43,7 +43,24 @@ semantic versioning once released.
   per-side pseudo-label precision reads ~92% — the confirmation-bias loop measured,
   not asserted. Selection/audit helpers pure + unit-tested; in the analysis suite.
 
+- Property-based invariant suite (`tests/unit/test_properties.py`, hypothesis):
+  the contracts the results stand on, asserted for arbitrary inputs — the FPR
+  budget is never exceeded on the selecting set, detection is monotone in the
+  budget, confusion rates stay coherent, `attack_probability` is a probability
+  in every shape, PSI is a nonnegative divergence (zero on identity, major on
+  total migration), and cleaning's guarantees survive generated adversarial
+  frames. `hypothesis` joins the dev extras.
+
 ### Fixed
+- PSI is no longer blind on degenerate reference features: a constant or
+  two-valued reference (always-zero bulk columns, near-binary flag counts) had
+  its histogram collapsed to one open bin, so a total migration off the
+  reference support read PSI = 0 — silently exempting those features from the
+  serving gauges, the Prometheus drift alert, and the drift-triggered retrain
+  trigger. Degenerate references now keep each observed value as its own bin.
+  Found by the property suite's total-migration invariant; regression-tested in
+  both directions. Committed drift reports are unaffected (their degenerate
+  features are identical in reference and current, which reads 0 either way).
 - Explanations return analyst-readable feature names: the API `top_features` and
   batch `top_feature` no longer leak the fitted ColumnTransformer's `numeric__`
   branch prefix. One shared `display_feature_name` helper now serves the

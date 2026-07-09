@@ -22,8 +22,9 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **319 passing tests**), and the full `download → prep → train → eval →
-serve` pipeline runs end-to-end on the bundled synthetic data, followed by a
+type-check + **355 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
+serve` pipeline runs end-to-end on the bundled synthetic data (raw packet
+captures included, via `netsentry pcap`), followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
 shadow → retrain policy) that governs what actually ships.
 
@@ -75,6 +76,7 @@ shadow → retrain policy) that governs what actually ships.
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
 | Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
+| Testing rigor | property-based invariants (hypothesis) over metrics, drift, cleaning | ✅ Done |
 | Batch inference | offline `score` a CSV/Parquet of flows to predictions | ✅ Done |
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
