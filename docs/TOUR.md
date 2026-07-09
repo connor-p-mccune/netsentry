@@ -14,6 +14,9 @@ temporal split**, reported next to the optimistic shuffled number (0.786) so the
 
 - Claim & numbers: [`README.md`](../README.md#headline-results), full report
   [`reports/evaluation.md`](reports/evaluation.md)
+- The gap is model-agnostic — and it flips the podium: every family from naive
+  Bayes to LightGBM pays it, and the honest split crowns a *different winner*
+  than the optimistic one ([`reports/leaderboard.md`](reports/leaderboard.md))
 - Split machinery: `netsentry/data/split.py` (temporal / stratified /
   leave-one-attack-out, content-hashed persistence)
 - Enforced by: `tests/unit/test_split.py` (disjointness, temporal ordering)
@@ -80,7 +83,10 @@ contract (422s tested), operator-selectable threshold profiles including
 `recommended_action` per prediction, SHAP top-features as part of the contract,
 API-key auth + rate limiting, Prometheus metrics with bounded label cardinality,
 and an optional shadow challenger whose disagreement metrics are integration-tested
-to be *provably zero* against an identical copy.
+to be *provably zero* against an identical copy. The input side goes all the way to
+the wire: `netsentry pcap --demo` parses a raw packet capture with a pure-stdlib
+reader, assembles the exact 78 training columns (`netsentry/capture/`), and scores
+them through the same engine — no re-implemented preprocessing to skew.
 
 ## Stop 7 — Where the bodies are buried, on purpose
 
@@ -96,7 +102,8 @@ file is probably the fastest signal in the repo.
 make install
 netsentry download && netsentry prep   # synthetic stand-in, out of the box
 make lifecycle                         # seeds → gate → promote → retrainpolicy → canary
-netsentry analyze                      # regenerate all 26 reports + the index
+netsentry analyze                      # regenerate all 29 reports + the index
+netsentry pcap --demo                  # raw packets → CIC flows → verdicts
 ```
 
 Skeptical pokes that should behave exactly as documented:
