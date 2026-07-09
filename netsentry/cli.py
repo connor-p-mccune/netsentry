@@ -573,6 +573,19 @@ def seeds(
 
 
 @app.command()
+def leaderboard(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Benchmark model families under the identical honest protocol (both splits)."""
+    from netsentry.evaluation.leaderboard import run_leaderboard_report
+
+    settings = _load(config, override)
+    out = run_leaderboard_report(settings)
+    logger.info("Leaderboard report ready", extra={"path": str(out)})
+
+
+@app.command()
 def slices(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

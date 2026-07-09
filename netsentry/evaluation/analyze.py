@@ -22,6 +22,7 @@ from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.label_audit import run_label_audit_report
+from netsentry.evaluation.leaderboard import run_leaderboard_report
 from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.report import run_evaluation
@@ -127,6 +128,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "pseudo-labels on the unlabeled stream vs the labeled ceiling",
         "selftrain.md",
         run_selftrain_report,
+    ),
+    (
+        "Model-family leaderboard",
+        "every family through one honest protocol; the gap replicates",
+        "leaderboard.md",
+        run_leaderboard_report,
     ),
     (
         "Per-class detection",

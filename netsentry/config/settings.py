@@ -601,6 +601,21 @@ class ActiveLearningConfig(BaseModel):
     strategies: list[str] = Field(default_factory=lambda: ["uncertainty", "random"])
 
 
+class LeaderboardConfig(BaseModel):
+    """Model-family leaderboard: every family through one shared honest protocol.
+
+    The claim under test is not "which model wins" but whether the
+    stratified-minus-temporal gap replicates across families — if it does, the
+    gap is a property of the evaluation, not of any single model. Baselines run
+    at sensible defaults on purpose (only the deployed model is tuned), and the
+    report says so."""
+
+    families: list[str] = Field(
+        default_factory=lambda: ["majority", "naive_bayes", "logistic", "random_forest", "gbdt"]
+    )
+    rf_n_estimators: int = 200
+
+
 class SelfTrainConfig(BaseModel):
     """Self-training (pseudo-labeling) study on the unlabeled later-day stream.
 
@@ -743,6 +758,7 @@ class Settings(BaseSettings):
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
     retrain_policy: RetrainPolicyConfig = Field(default_factory=RetrainPolicyConfig)
+    leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

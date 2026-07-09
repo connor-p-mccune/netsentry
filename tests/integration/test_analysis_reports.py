@@ -167,6 +167,17 @@ def test_retrain_policy_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_leaderboard_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.leaderboard import run_leaderboard_report
+
+    prepared.leaderboard.families = ["majority", "logistic", "gbdt"]
+    out = run_leaderboard_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "temporal split" in text and "stratified split" in text
+    assert "logistic regression" in text and "gap" in text
+
+
+@pytest.mark.slow
 def test_selftrain_report_is_written(prepared: Settings) -> None:
     from netsentry.training.selftrain import run_selftrain_report
 
