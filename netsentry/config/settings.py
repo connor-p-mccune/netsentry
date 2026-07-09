@@ -231,6 +231,18 @@ class SubgroupsConfig(BaseModel):
     min_support: int = 100  # flows a service needs before its rates are reported
 
 
+class CampaignsConfig(BaseModel):
+    """Campaign-level detection: the (day, attack-class) operation as the unit.
+
+    A campaign counts as alerted when >= 1 flow crosses the operating threshold;
+    ``k_confirm`` is the conservative reading (a single hit may not start an
+    investigation if nothing correlates the alerts). The framing changes the
+    numerator only — benign flows have no campaign structure, so alert volume is
+    still priced per flow by the FPR budget."""
+
+    k_confirm: int = 5  # alerts a campaign needs to count as confidently detected
+
+
 class NoveltyConfig(BaseModel):
     """Novelty-distance study: detection as a function of distance to the training set.
 
@@ -745,6 +757,7 @@ class Settings(BaseSettings):
     promotion: PromotionConfig = Field(default_factory=PromotionConfig)
     seed_variance: SeedVarianceConfig = Field(default_factory=SeedVarianceConfig)
     subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)
+    campaigns: CampaignsConfig = Field(default_factory=CampaignsConfig)
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)

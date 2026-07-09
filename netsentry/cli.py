@@ -599,6 +599,19 @@ def slices(
 
 
 @app.command()
+def campaigns(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Campaign-level detection: which (day, class) operations raise an alert, and when."""
+    from netsentry.evaluation.campaigns import run_campaigns_report
+
+    settings = _load(config, override)
+    out = run_campaigns_report(settings)
+    logger.info("Campaigns report ready", extra={"path": str(out)})
+
+
+@app.command()
 def subgroups(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.alert_queue import run_alert_queue_report
+from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.gate import run_gate
@@ -140,6 +141,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "which temporal-split attacks are caught",
         "slices.md",
         run_slices_report,
+    ),
+    (
+        "Campaign detection",
+        "the (day, class) operation as the unit: first alerts and silent campaigns",
+        "campaigns.md",
+        run_campaigns_report,
     ),
     (
         "Per-service parity",

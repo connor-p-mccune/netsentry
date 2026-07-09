@@ -167,6 +167,15 @@ def test_retrain_policy_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_campaigns_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.campaigns import run_campaigns_report
+
+    out = run_campaigns_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "campaign" in text and "first alert" in text
+
+
+@pytest.mark.slow
 def test_leaderboard_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.leaderboard import run_leaderboard_report
 
