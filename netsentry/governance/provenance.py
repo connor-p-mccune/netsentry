@@ -31,6 +31,7 @@ from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from netsentry import __version__
 from netsentry.log import get_logger
 
 if TYPE_CHECKING:
@@ -143,12 +144,14 @@ def build_sbom(settings: Settings, pyproject_path: Path) -> dict[str, Any]:
         "version": 1,
         "metadata": {
             "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "tools": [{"vendor": "NetSentry", "name": "netsentry-provenance", "version": "0.1.0"}],
+            "tools": [
+                {"vendor": "NetSentry", "name": "netsentry-provenance", "version": __version__}
+            ],
             "component": {
                 "type": "application",
                 "name": "netsentry",
-                "version": "0.1.0",
-                "purl": "pkg:pypi/netsentry@0.1.0",
+                "version": __version__,
+                "purl": f"pkg:pypi/netsentry@{__version__}",
             },
             "properties": [
                 {"name": "netsentry:sbom-scope", "value": "declared-dependencies"},

@@ -9,6 +9,6 @@ from __future__ import annotations
 
 from netsentry.log import configure_logging, get_logger
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["__version__", "configure_logging", "get_logger"]

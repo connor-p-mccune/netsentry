@@ -5,7 +5,7 @@
 > methodology, not real-world performance.
 
 ## Model details
-- **Name / version:** NetSentry v0.1.0
+- **Name / version:** NetSentry v0.2.0
 - **Type:** Supervised gradient-boosted classifier (LightGBM, with a scikit-learn
   `HistGradientBoosting` fallback) + an unsupervised anomaly stack (Isolation
   Forest and a benign-only PyTorch autoencoder).

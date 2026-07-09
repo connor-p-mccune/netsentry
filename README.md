@@ -17,7 +17,7 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.1.0`, and extended since.** The build plan in
+**Released `v0.2.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,

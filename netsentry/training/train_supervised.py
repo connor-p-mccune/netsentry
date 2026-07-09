@@ -17,6 +17,7 @@ import numpy as np
 from sklearn.metrics import average_precision_score, balanced_accuracy_score, f1_score
 from sklearn.preprocessing import label_binarize
 
+from netsentry import __version__
 from netsentry.data.clean import BINARY_TARGET, MULTICLASS_TARGET
 from netsentry.data.split import load_split
 from netsentry.evaluation.metrics import attack_probability, threshold_at_fpr
@@ -149,7 +150,7 @@ def fit_supervised(settings: Settings) -> FitResult:
         pipeline=pipeline,
         model=model,
         metadata={
-            "version": "0.1.0",
+            "version": __version__,
             "task": task,
             "split_strategy": strategy,
             "backend": model.backend,

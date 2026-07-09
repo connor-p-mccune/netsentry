@@ -6,6 +6,17 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.2.0] — 2026-07-09
+
+Everything from packets to policy, shipped since `v0.1.0`: raw-capture ingestion,
+the honest-protocol studies (model leaderboard, self-training, campaign-level
+detection) alongside the earlier post-release wave, a property-based invariant
+layer that immediately caught a drift-monitor blind spot, a measured serving fast
+path, and the model-lifecycle machinery (noise floor → release gate → promotion →
+behavioral canaries → shadow challenger → retrain policy).
+
 ### Added
 - Packet-capture ingestion (`netsentry pcap`, `netsentry/capture/`): raw PCAP →
   CIC flows → verdicts, with no capture-library dependency. A pure-stdlib
