@@ -55,6 +55,27 @@ def test_quantile_bin_edges_open_outer_and_constant_feature() -> None:
     assert const[0] == -np.inf and const[-1] == np.inf and const.size >= 2
 
 
+def test_constant_reference_feature_still_registers_drift() -> None:
+    """Regression (found by the property suite): a constant reference feature —
+    e.g. the always-zero bulk columns — must not be drift-blind. Total migration
+    off the constant reads as major drift, in either direction; staying on it
+    reads as zero."""
+    const = np.full(200, 0.0)
+    assert population_stability_index(const, const) == 0.0
+    assert population_stability_index(const, const + 5.0) >= 0.25
+    assert population_stability_index(const, const - 5.0) >= 0.25
+
+
+def test_two_valued_reference_feature_still_registers_drift() -> None:
+    """Near-binary features (flag counts) collapse to two quantile values; a
+    migration to a third value must still register."""
+    ref = np.array([0.0, 1.0] * 100)
+    assert population_stability_index(ref, ref) == 0.0
+    assert population_stability_index(ref, np.full(200, 7.0)) >= 0.25
+    # Mass shifting between the two observed values also registers.
+    assert population_stability_index(ref, np.full(200, 1.0)) >= 0.25
+
+
 def test_feature_drift_only_shared_columns() -> None:
     rng = _rng()
     ref = pd.DataFrame({"a": rng.normal(size=2000), "b": rng.normal(size=2000)})

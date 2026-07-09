@@ -30,8 +30,15 @@ def quantile_bin_edges(reference: np.ndarray, bins: int) -> np.ndarray:
     if ref.size == 0:
         return np.array([-np.inf, np.inf])
     edges = np.unique(np.quantile(ref, np.linspace(0.0, 1.0, bins + 1))).astype(float)
-    if edges.size < 2:  # constant feature
-        edges = np.array([edges[0], edges[0] + 1.0])
+    if edges.size < 3:
+        # Degenerate reference (constant or two-valued: the always-zero bulk
+        # features, near-binary flag counts). Overwriting the outer edges with
+        # +/-inf would collapse everything into one bin and make the feature
+        # permanently drift-blind — a total migration would read PSI = 0. Keep
+        # each observed value as its own [v, nextafter(v)) bin instead, so mass
+        # moving anywhere off the reference support registers.
+        cuts = np.concatenate([[v, np.nextafter(v, np.inf)] for v in edges])
+        return np.concatenate([[-np.inf], np.unique(cuts), [np.inf]])
     edges[0], edges[-1] = -np.inf, np.inf
     return edges
 
