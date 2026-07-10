@@ -312,6 +312,19 @@ def cost(
     logger.info("Cost report ready", extra={"path": str(out)})
 
 
+@app.command()
+def baserate(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Sweep the operating points across production base rates (the base-rate fallacy)."""
+    from netsentry.evaluation.baserate import run_base_rate_report
+
+    settings = _load(config, override)
+    out = run_base_rate_report(settings)
+    logger.info("Base-rate report ready", extra={"path": str(out)})
+
+
 @app.command("alertqueue")
 def alert_queue_cmd(
     config: ConfigOpt = None,

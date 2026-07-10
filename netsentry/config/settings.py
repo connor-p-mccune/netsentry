@@ -189,6 +189,19 @@ class AlertQueueConfig(BaseModel):
     analyst_minutes_per_day: float = 420.0  # ~7 productive hours per analyst per day
 
 
+class BaseRateConfig(BaseModel):
+    """Base-rate stress test: the operating points re-read at deployment prevalences.
+
+    Axelsson's base-rate fallacy (1999): alert precision is governed by the attack
+    prevalence at least as much as by the detector's conditional rates, so an FPR
+    budget that looks strict on a ~22% test mix can still bury analysts at a
+    1-in-10,000 production base rate. The priors sweep should span the orders of
+    magnitude a deployment could plausibly sit at."""
+
+    priors: list[float] = Field(default_factory=lambda: [0.00001, 0.0001, 0.001, 0.01, 0.1])
+    precision_target: float = 0.9  # queue precision used for the required-FPR inversion
+
+
 class CaptureConfig(BaseModel):
     """Raw packet-capture ingestion (PCAP -> CIC flow features).
 
@@ -750,6 +763,7 @@ class Settings(BaseSettings):
     thresholds: ThresholdConfig = Field(default_factory=ThresholdConfig)
     cost: CostConfig = Field(default_factory=CostConfig)
     alert_queue: AlertQueueConfig = Field(default_factory=AlertQueueConfig)
+    base_rate: BaseRateConfig = Field(default_factory=BaseRateConfig)
     capture: CaptureConfig = Field(default_factory=CaptureConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)

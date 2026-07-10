@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.alert_queue import run_alert_queue_report
+from netsentry.evaluation.baserate import run_base_rate_report
 from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
@@ -74,6 +75,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection vs analyst budget; lift over random triage",
         "alert_queue.md",
         run_alert_queue_report,
+    ),
+    (
+        "Base-rate stress test",
+        "alert precision vs production prevalence (Axelsson 1999)",
+        "base_rate.md",
+        run_base_rate_report,
     ),
     (
         "Conformal prediction",
