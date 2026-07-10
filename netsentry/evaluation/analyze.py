@@ -40,6 +40,7 @@ from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
 from netsentry.log import get_logger
+from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
 from netsentry.monitoring.streaming import run_streaming_report
@@ -137,6 +138,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "when to retrain: never / periodic / drift-triggered / every batch",
         "retrain_policy.md",
         run_retrain_policy_report,
+    ),
+    (
+        "Threshold refresh",
+        "the label-cheap lever vs retraining; budget compliance under drift",
+        "refresh.md",
+        run_refresh_report,
     ),
     (
         "Self-training",

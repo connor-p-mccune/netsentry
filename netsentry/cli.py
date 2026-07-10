@@ -205,6 +205,19 @@ def selftrain(
     logger.info("Self-training report ready", extra={"path": str(out)})
 
 
+@app.command()
+def refresh(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price threshold refresh (frozen model, re-chosen cut) against retraining."""
+    from netsentry.monitoring.refresh import run_refresh_report
+
+    settings = _load(config, override)
+    out = run_refresh_report(settings)
+    logger.info("Refresh report ready", extra={"path": str(out)})
+
+
 @app.command("retrainpolicy")
 def retrain_policy_cmd(
     config: ConfigOpt = None,

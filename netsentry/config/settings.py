@@ -611,6 +611,21 @@ class RetrainPolicyConfig(BaseModel):
     cooldown_batches: int = 2  # min batches between drift-triggered retrains
 
 
+class RefreshConfig(BaseModel):
+    """Threshold-refresh study: the label-cheap adaptation lever, priced.
+
+    Between a frozen deployment and a full retrain sits re-choosing only the
+    decision threshold on a trailing window of recently labeled flows, at the same
+    FPR budget. The study decomposes drift's cost into operating-point drift (the
+    score distribution moved — a refresh fixes it) and ranking drift (the model is
+    blind to new attack types — only retraining fixes it). Refreshed cuts are
+    chosen on the prequentially *emitted* scores, so no model picks its threshold
+    on flows it trained on."""
+
+    n_batches: int = 8  # matches the retrain-policy stream so results compare
+    window_batches: int = 2  # trailing labeled batches the refreshed cut is chosen on
+
+
 class StreamingConfig(BaseModel):
     """Prequential streaming simulation: does retraining recover from drift?
 
@@ -801,6 +816,7 @@ class Settings(BaseSettings):
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
+    refresh: RefreshConfig = Field(default_factory=RefreshConfig)
     retrain_policy: RetrainPolicyConfig = Field(default_factory=RetrainPolicyConfig)
     leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
