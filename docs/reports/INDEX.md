@@ -30,6 +30,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Feature-group ablation | which behavioural families carry detection | [open](ablation.md) |
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
 | Importance stability | are the shipped explanations stable across refits | [open](importance_stability.md) |
+| Exemplar explanations | do the nearest known training flows vouch for the alerts | [open](exemplars.md) |
 | Surrogate distillation | the model's closest auditable imitation, with fidelity priced | [open](distill.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
 | Seed sensitivity | the training-noise floor under every reported metric | [open](seed_variance.md) |

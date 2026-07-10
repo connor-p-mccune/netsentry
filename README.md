@@ -22,7 +22,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **379 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
+type-check + **386 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet
 captures included, via `netsentry pcap`), followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
@@ -82,6 +82,7 @@ shadow → retrain policy) that governs what actually ships.
 | Testing rigor | property-based invariants (hypothesis) over metrics, drift, cleaning | ✅ Done |
 | Batch inference | offline `score` a CSV/Parquet of flows to predictions | ✅ Done |
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
+| Exemplar explanations | nearest known training flows per prediction, audited then served | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
 | Seed sensitivity | same-seed reproducibility asserted + the cross-seed noise floor | ✅ Done |
@@ -219,6 +220,7 @@ netsentry rules                     # ML vs a signature ruleset at a matched FPR
 netsentry leaderboard               # every model family under the identical honest protocol
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
+netsentry exemplars                 # case-based explanations: do known cases vouch for alerts?
 netsentry distill                   # the model's closest auditable tree, fidelity priced
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
 netsentry selftrain                 # pseudo-labels on the unlabeled stream vs the labeled ceiling
@@ -612,6 +614,25 @@ the head, not the tail*, which is exactly why the API returns only the top few f
 It's the companion to the SHAP global summary (which explains one model) and the
 ablation (which measures each family's causal value). See
 [`docs/reports/importance_stability.md`](docs/reports/importance_stability.md).
+
+## Exemplar explanations (the case-based *have we seen this?*)
+
+SHAP says which features drove a score; an analyst's next question is whether
+the flow resembles anything actually seen before. `netsentry exemplars` answers
+with **precedent**: the k nearest training flows in the model's own standardized
+feature space, with labels, capture days, and distances — checkable evidence, in
+a way a bare probability is not. The audit runs before the API ships it:
+exemplar-supported alerts are 89% precise vs 82% unsupported (reported with the
+bucket sizes, 1,428 vs 44, so a small-n gap reads as triage-ordering evidence,
+not a calibrated re-ranker), and nearest-neighbour distance does *not* separate
+caught from missed attacks on the stand-in — the novelty study's
+hard-attacks-hug-the-benign-manifold geometry, restated per flow. The payoff is
+visible in the examples table: novel DDoS alerts retrieve **DoS Hulk** training
+cases — the known cousin an analyst can pull and compare. The retrieval then
+ships in the API: the serving bundle embeds a class-balanced float32 case base,
+and `?exemplars=true` adds `similar_flows` to any prediction — opt-in,
+evidence-only, never touching a decision field. See
+[`docs/reports/exemplars.md`](docs/reports/exemplars.md).
 
 ## Surrogate distillation (the auditable approximation)
 

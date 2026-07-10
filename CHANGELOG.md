@@ -7,6 +7,20 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Exemplar (case-based) explanations (`netsentry exemplars`,
+  `netsentry/explain/exemplars.py` + `similar_flows` in the API): the nearest
+  known training flows per prediction — label, capture day, and distance in the
+  fitted pipeline's standardized space — audited before being served. The audit:
+  exemplar-supported alerts are 89% precise vs 82% unsupported on the stand-in
+  (bucket sizes 1,428 vs 44 reported alongside, so the gap reads as
+  triage-ordering evidence, not a calibrated re-ranker), and NN distance does
+  not separate caught from missed attacks (the novelty study's geometry,
+  restated per flow — said plainly). The index is a class-balanced, seeded
+  float32 subsample (rare classes represented, not drowned), exact brute-force
+  k-NN. Serving embeds it in the bundle and `?exemplars=true` opts in on both
+  prediction endpoints — evidence-only (decision fields untouched), best-effort
+  (can never break a build or a prediction), and integration-tested for both.
+  In the analysis suite.
 - Threshold-refresh study (`netsentry refresh`, `netsentry/monitoring/refresh.py`):
   the label-cheap adaptation lever priced against full retraining. Static /
   refresh / retrain / retrain+refresh policies ride the prequential later-day

@@ -1081,6 +1081,30 @@ smaller dev-run numbers noted in earlier phases:
   had just trained on would be the quiet leak — realized FPR on trained-on rows
   is optimistic, and the threshold would inherit that optimism.
 
+## Exemplar explanations (precedent as evidence, with its own audit)
+
+- The design rule was *audit before serve*: the retrieval only became an API
+  field after the report measured whether neighbour agreement means anything.
+  It points the right way (89% vs 82% alert precision) but the disagreeing
+  bucket is 44 alerts, so the render prints the bucket sizes ahead of the
+  percentages and scopes the claim to triage ordering. Selling a 44-row gap as
+  a re-ranker would be the base-rate mistake in miniature.
+- The distance finding *failed* the intuitive expectation and matched the
+  measured one: missed attacks are not farther from training than caught ones
+  (7.8 vs 9.7 mean NN distance — backwards from the naive story), which is the
+  novelty study's detection-rises-with-distance geometry showing up per flow.
+  Two studies computing the same geometry from different directions and
+  agreeing is worth more than either alone; the render branches so real
+  burst-structured data can tell the opposite story.
+- The examples table earned the feature its keep: the top novel-DDoS alerts
+  retrieve Wednesday's DoS Hulk as nearest cases — cross-family precedent an
+  analyst can actually pull, on a class the model never trained on.
+- Serving decisions: class-balanced index (a proportional sample would be ~80%
+  benign and rare classes would have no cases to match), float32 in bundle
+  metadata (~1.4k rows), retrieval shares the anomaly scorer's pipeline
+  transform, and the whole path is opt-in + best-effort — the explanation can
+  vanish; the verdict cannot change.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
