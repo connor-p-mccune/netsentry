@@ -22,7 +22,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **360 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
+type-check + **368 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet
 captures included, via `netsentry pcap`), followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
@@ -56,6 +56,7 @@ shadow → retrain policy) that governs what actually ships.
 | Adversarial hardening | adversarial training vs mimicry, re-measured (measure → fix → re-measure) | ✅ Done |
 | Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
 | Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |
+| Base-rate stress test | alert precision vs production prevalence (Axelsson 1999) | ✅ Done |
 | Conformal prediction | distribution-free coverage + selective alerting | ✅ Done |
 | Hyperparameter search | leakage-safe Optuna HPO (`train tune`) | ✅ Done |
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
@@ -222,6 +223,7 @@ netsentry selftrain                 # pseudo-labels on the unlabeled stream vs t
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
 netsentry alertqueue                # detection vs analyst budget (lift over random triage)
+netsentry baserate                  # alert precision vs production base rate (Axelsson's fallacy)
 netsentry driftscan                 # KS+FDR + online Page-Hinkley/DDM drift detection
 netsentry navigator                 # export ATT&CK Navigator layer (colored by detection)
 netsentry provenance && netsentry verify   # SBOM + model manifest, then integrity gate
@@ -469,6 +471,22 @@ triage: ~12 analysts (500 alerts/day) catch 2.5% of attacks at ~83% queue precis
 rising to 8.2% at 2,500/day, with detection flattening as staffing climbs — the
 capacity-planning knee PR-AUC alone can't show. See
 [`docs/reports/alert_queue.md`](docs/reports/alert_queue.md).
+
+## The base-rate fallacy, measured
+
+The oldest hard result in intrusion detection (Axelsson, 1999) is that alert
+precision is governed by the attack **prevalence** at least as much as by the
+detector — and most IDS write-ups quietly evaluate at a test mix orders of
+magnitude richer than production. `netsentry baserate` re-reads the measured
+temporal operating points at deployment prevalences: at the 0.1%-FPR point the
+queue is majority-false below a **0.64% prevalence**, at a 1-in-10⁵ base rate a
+90%-precision queue would need an FPR **~5,800× tighter** than the measured one,
+and the per-prior tables show exactly what an analyst's day looks like at each
+assumption (at 0.01% prevalence: ~597 alerts/day of which 588 are false). No
+threshold choice closes a gap that size — which is the quantitative case for the
+layers that change what a queue item *is*: score ranking (alert-queue study),
+campaign aggregation, and explicit cost trade-offs. See
+[`docs/reports/base_rate.md`](docs/reports/base_rate.md).
 
 ## Adversarial robustness
 

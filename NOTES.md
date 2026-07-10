@@ -1002,6 +1002,30 @@ smaller dev-run numbers noted in earlier phases:
   k=5 column drops Infiltration (2 alerts over 42 flows), which is the right
   conservative read of a signal that thin.
 
+## Base-rate stress test (the fallacy cited by every IDS paper, finally computed)
+
+- The study is deliberately cheap — one model fit, then pure Bayes arithmetic —
+  because the point is not new measurement but a re-reading: the conditional
+  TPR/FPR the evaluation report already establishes are prevalence-invariant, so
+  the entire prevalence sweep is a closed form on two measured numbers. The
+  interesting engineering was deciding what *not* to recompute.
+- Used the **realized** test FPR (0.059% at the 0.1% budget), not the nominal
+  budget, for every derived number. The val-chosen threshold undershoots its
+  budget on later-day traffic — the same val→test threshold drift the cost report
+  documents — and computing the fallacy on the nominal 0.1% would have made the
+  queue look ~1.7x worse than the deployed system actually is. Honesty cuts both
+  ways: this time the honest number is the *more* favorable one.
+- The two inversions carry the report. Break-even prevalence (pi* = FPR/(TPR+FPR)
+  = 0.64%) says where the queue flips majority-false, and the required-FPR
+  inversion says the gap is ~5,800x at a 1e-5 prevalence — unclosable by
+  thresholding, which is precisely why the suite's answer lives elsewhere
+  (ranking, campaign aggregation, costs). The report ends by naming those layers
+  rather than pretending a better model fixes arithmetic.
+- Kept the assumed production rate (1%) *above* the computed break-even on the
+  stand-in and said so, instead of quietly picking a prior that makes the
+  dramatic majority-false story render. The prose branches on the comparison, so
+  on real data it tells whichever story the numbers support.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

@@ -6,7 +6,19 @@ semantic versioning once released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- Base-rate stress test (`netsentry baserate`, `netsentry/evaluation/baserate.py`):
+  Axelsson's base-rate fallacy (1999) measured against the deployed operating
+  points rather than cited. Thresholds are chosen on validation at each FPR
+  budget, conditional TPR/FPR are measured on the honest temporal test split, and
+  Bayes' rule sweeps the production attack prevalence across orders of magnitude:
+  per-prior queue composition (alerts/day, false share, precision, attacks
+  caught), the break-even prevalence below which most alerts are false (0.64% at
+  the tight budget on the stand-in), and the inverted question — the FPR a
+  90%-precision queue would need at a 1e-5 base rate (~5,800x tighter than the
+  measured point). The report ties the fallacy to the layers that already answer
+  it (score ranking, campaign aggregation, explicit costs). Bayes arithmetic pure
+  + unit-tested; in the analysis suite.
 
 ## [0.2.0] — 2026-07-09
 
