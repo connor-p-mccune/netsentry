@@ -22,7 +22,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **396 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
+type-check + **402 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet
 captures included, via `netsentry pcap`), followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
@@ -81,6 +81,7 @@ shadow → retrain policy) that governs what actually ships.
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
 | Testing rigor | property-based invariants (hypothesis) over metrics, drift, cleaning | ✅ Done |
 | Batch inference | offline `score` a CSV/Parquet of flows to predictions | ✅ Done |
+| Incident reports | alerts folded into analyst-ready incidents with ATT&CK context | ✅ Done |
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
 | Exemplar explanations | nearest known training flows per prediction, audited then served | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
@@ -240,7 +241,8 @@ netsentry refresh                   # threshold refresh vs retraining (the cheap
 netsentry canary                    # replay the bundle's embedded flows (behavioral attest)
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
-netsentry pcap -i capture.pcap      # raw packets → CIC flows → verdicts (--demo to try it)
+netsentry incident -i flows.csv     # fold the alerts into an analyst-ready incident report
+netsentry pcap -i capture.pcap      # raw packets (pcap/pcapng) → CIC flows → verdicts (--demo to try it)
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
@@ -351,6 +353,23 @@ skipped, never fatal. The same posture holds for the **pcapng** container,
 which is parsed natively (both byte orders, per-interface `if_tsresol`
 timestamp resolutions, concatenated sections; unknown block types skipped by
 length) — IPv6 remains a stated limitation.
+
+## Incident reports (from verdicts to a response artifact)
+
+Per-flow verdicts are the model's output; an analyst works *incidents*.
+`netsentry incident -i flows.csv` scores a flow file through the same engine the
+API serves and folds the alerts into incidents — consecutive same-class alerts,
+small benign gaps bridged — each rendered with the context a responder starts
+from: flow count and span, peak calibrated probability, the **MITRE ATT&CK**
+technique link, the services involved, source/target talkers when capture
+metadata rides along (the `netsentry pcap --flows-out` columns), the conformal
+action mix, and the most-cited SHAP feature as the behavioural tell. The
+committed demo ([`docs/reports/incident_demo.md`](docs/reports/incident_demo.md))
+runs the synthetic capture end-to-end: raw packets → flows → two **PortScan**
+incidents (T1046, `auto_alert`, sources and targets named) and a **DoS Hulk**
+incident (T1499). The report states its own limit: incident grouping is a
+contiguity heuristic — the campaigns study's correlation assumption — and adds
+no detection.
 
 ## Monitoring & drift
 

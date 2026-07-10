@@ -7,6 +7,19 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Incident reports (`netsentry incident`, `netsentry/intel/incident.py`): scored
+  flows folded into the artifact an analyst actually reads. Consecutive
+  same-class alerts (small benign gaps bridged, `incident.gap_tolerance`) become
+  incidents rendered with flow count/span, peak and mean calibrated probability,
+  the ATT&CK tactic/technique link, services via `Destination Port` routing
+  metadata, source/target talkers when capture metadata is present, the conformal
+  action mix, and the most-cited SHAP feature. The committed demo artifact
+  (`docs/reports/incident_demo.md`) runs the synthetic capture end-to-end into
+  two PortScan incidents and a DoS Hulk incident with T1046/T1499 links. The
+  grouping is a stated contiguity heuristic (the campaigns study's correlation
+  assumption) and creates no detection — every number is a re-reading of the
+  same engine verdicts the API serves. Grouping pure + unit-tested; end-to-end
+  slow test on a fresh bundle.
 - Native pcapng ingestion (`netsentry/capture/pcap.py`): the capture stack's
   "convert with tshark first" limitation, closed. A pure-stdlib pcapng reader
   parses Section Header / Interface Description / Enhanced Packet / Simple

@@ -1128,6 +1128,31 @@ smaller dev-run numbers noted in earlier phases:
   with one wifi NIC should still yield the Ethernet flows. And SPBs parse with a
   note that time features degrade, rather than inventing timestamps.
 
+## Incident reports (the last mile from verdicts to a response artifact)
+
+- Deliberately thin by design: `incident` computes nothing new — no model, no
+  threshold, no metric. It re-reads the engine's own verdicts into the unit an
+  analyst works, which is exactly why it can be trusted: there is no second
+  scoring path to skew. The one algorithmic piece (contiguity grouping with a
+  bridged-gap tolerance) is pure and tested on hand-built sequences, including
+  the case that matters — a bridged benign row is *skipped over*, never absorbed
+  into the incident.
+- The first generated demo artifact was quietly embarrassing in a useful way:
+  the stale local bundle predated the serving upgrades, so the report showed
+  class "attack", no ATT&CK link, and "n/a" actions. Regenerating the bundle
+  from current code fixed all three — and is a live demonstration of why the
+  canary/verify machinery exists: an old artifact serves old behavior without
+  erroring, and only the surrounding contract surfaces it.
+- A CLI paper cut worth remembering: the incident command's `-o` short flag for
+  `--output` collided with the global `-o/--override` option, and typer bound
+  the output path as a config override (FileNotFoundError on a .md 'config').
+  `score` had avoided the collision by convention (long flag only); now both do
+  it deliberately.
+- Fresh-bundle detail that improved the demo: the serving bundle is stratified/
+  multiclass (it has seen PortScan), so the demo SYN sweep that the *temporal*
+  stand-in misses is caught and named here — the same capture reads differently
+  through the two models, which is the temporal story told from one more angle.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
