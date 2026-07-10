@@ -288,6 +288,22 @@ class ConformalConfig(BaseModel):
     alphas_grid: list[float] = Field(default_factory=lambda: [0.01, 0.05, 0.1, 0.2])
 
 
+class AdaptiveConformalConfig(BaseModel):
+    """Adaptive conformal inference (Gibbs & Candes 2021) on the labeled stream.
+
+    Static split-conformal loses its guarantee when drift breaks exchangeability
+    (the conformal report's temporal finding); ACI steers alpha online from the
+    realized coverage errors — alpha_(t+1) = alpha_t + gamma (alpha - err_t) —
+    which restores a long-run coverage guarantee under *arbitrary* shift, at the
+    price of label feedback and wider (more often human-reviewed) sets. ``gamma``
+    trades reaction speed against set-size stability; ``label_delay`` models the
+    triage lag before ground truth arrives."""
+
+    gamma: float = 0.005  # ACI step size
+    window: int = 2000  # trailing-window size for the rolling-coverage figure
+    label_delay: int = 0  # flows between a decision and its label feeding back
+
+
 class MonitoringConfig(BaseModel):
     """Data-drift monitoring (PSI) — the production-decay early-warning system."""
 
@@ -774,6 +790,7 @@ class Settings(BaseSettings):
     campaigns: CampaignsConfig = Field(default_factory=CampaignsConfig)
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
+    adaptive_conformal: AdaptiveConformalConfig = Field(default_factory=AdaptiveConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     drift_detectors: DriftDetectorConfig = Field(default_factory=DriftDetectorConfig)
     importance_stability: ImportanceStabilityConfig = Field(

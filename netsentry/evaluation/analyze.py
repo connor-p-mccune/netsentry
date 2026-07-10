@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
+from netsentry.evaluation.adaptive_conformal import run_adaptive_conformal_report
 from netsentry.evaluation.alert_queue import run_alert_queue_report
 from netsentry.evaluation.baserate import run_base_rate_report
 from netsentry.evaluation.campaigns import run_campaigns_report
@@ -87,6 +88,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "coverage guarantee + selective alerting",
         "conformal.md",
         run_conformal_report,
+    ),
+    (
+        "Adaptive conformal",
+        "coverage restored online under drift (ACI)",
+        "adaptive_conformal.md",
+        run_adaptive_conformal_report,
     ),
     (
         "Adversarial robustness",

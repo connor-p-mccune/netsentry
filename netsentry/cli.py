@@ -351,6 +351,19 @@ def conformal(
     logger.info("Conformal report ready", extra={"path": str(out)})
 
 
+@app.command("adaptiveconformal")
+def adaptive_conformal_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Restore conformal coverage online under drift (adaptive alpha, ACI)."""
+    from netsentry.evaluation.adaptive_conformal import run_adaptive_conformal_report
+
+    settings = _load(config, override)
+    out = run_adaptive_conformal_report(settings)
+    logger.info("Adaptive-conformal report ready", extra={"path": str(out)})
+
+
 @app.command()
 def recourse(
     config: ConfigOpt = None,
