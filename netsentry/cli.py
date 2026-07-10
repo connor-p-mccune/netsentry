@@ -537,6 +537,19 @@ def distill(
     logger.info("Distillation report ready", extra={"path": str(out)})
 
 
+@app.command()
+def exemplars(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit case-based explanations: do the nearest known flows vouch for alerts?"""
+    from netsentry.explain.exemplars import run_exemplars_report
+
+    settings = _load(config, override)
+    out = run_exemplars_report(settings)
+    logger.info("Exemplars report ready", extra={"path": str(out)})
+
+
 @app.command("importance")
 def importance_stability_cmd(
     config: ConfigOpt = None,

@@ -35,6 +35,7 @@ from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.subgroups import run_subgroups_report
 from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.explain.distill import run_distill_report
+from netsentry.explain.exemplars import run_exemplars_report
 from netsentry.explain.importance_stability import run_importance_stability_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
@@ -210,6 +211,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "are the shipped explanations stable across refits",
         "importance_stability.md",
         run_importance_stability_report,
+    ),
+    (
+        "Exemplar explanations",
+        "do the nearest known training flows vouch for the alerts",
+        "exemplars.md",
+        run_exemplars_report,
     ),
     (
         "Surrogate distillation",

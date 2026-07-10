@@ -345,6 +345,20 @@ class ImportanceStabilityConfig(BaseModel):
     max_val_rows: int = 4000  # cap validation rows for the permutation fallback (speed)
 
 
+class ExemplarConfig(BaseModel):
+    """Exemplar (case-based) explanations: nearest known training flows per query.
+
+    A class-balanced sample of the training split (so rare attack classes are
+    represented, not drowned by benign volume) is held in the fitted pipeline's
+    standardized space; retrieval is exact k-NN. The report audits agreement
+    (are exemplar-supported alerts more precise?) and distance-as-novelty before
+    the API ships ``similar_flows``. Sized to stay embeddable in a bundle."""
+
+    per_class: int = 200  # exemplars kept per class label
+    k: int = 5  # neighbours retrieved per query flow
+    examples: int = 5  # example alerts rendered in the report
+
+
 class GateConfig(BaseModel):
     """Release quality gate: the bars a candidate must clear before it ships.
 
@@ -811,6 +825,7 @@ class Settings(BaseSettings):
     importance_stability: ImportanceStabilityConfig = Field(
         default_factory=ImportanceStabilityConfig
     )
+    exemplars: ExemplarConfig = Field(default_factory=ExemplarConfig)
     distill: DistillConfig = Field(default_factory=DistillConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
