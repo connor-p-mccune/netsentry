@@ -9,6 +9,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Alert-queue capacity | detection vs analyst budget; lift over random triage | [open](alert_queue.md) |
 | Base-rate stress test | alert precision vs production prevalence (Axelsson 1999) | [open](base_rate.md) |
 | Conformal prediction | coverage guarantee + selective alerting | [open](conformal.md) |
+| Adaptive conformal | coverage restored online under drift (ACI) | [open](adaptive_conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
 | Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |

@@ -22,7 +22,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **368 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
+type-check + **375 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet
 captures included, via `netsentry pcap`), followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
@@ -58,6 +58,7 @@ shadow → retrain policy) that governs what actually ships.
 | Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |
 | Base-rate stress test | alert precision vs production prevalence (Axelsson 1999) | ✅ Done |
 | Conformal prediction | distribution-free coverage + selective alerting | ✅ Done |
+| Adaptive conformal | coverage restored online under drift (ACI); the review-load price | ✅ Done |
 | Hyperparameter search | leakage-safe Optuna HPO (`train tune`) | ✅ Done |
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
 | Statistical drift | per-feature KS + Benjamini–Hochberg FDR, online Page–Hinkley / DDM | ✅ Done |
@@ -224,6 +225,7 @@ netsentry poisoning                 # detection decay under training-set poisoni
 netsentry harden                    # adversarial training vs mimicry, then re-measure
 netsentry alertqueue                # detection vs analyst budget (lift over random triage)
 netsentry baserate                  # alert precision vs production base rate (Axelsson's fallacy)
+netsentry adaptiveconformal         # conformal coverage restored online under drift (ACI)
 netsentry driftscan                 # KS+FDR + online Page-Hinkley/DDM drift detection
 netsentry navigator                 # export ATT&CK Navigator layer (colored by detection)
 netsentry provenance && netsentry verify   # SBOM + model manifest, then integrity gate
@@ -444,6 +446,17 @@ the guarantee holds on the exchangeable stratified split (≈92% attack coverage
 exchangeability is broken by later-day novel attacks. That shortfall is conformal
 *detecting* drift, a second signal alongside PSI. See
 [`docs/reports/conformal.md`](docs/reports/conformal.md).
+
+`netsentry adaptiveconformal` closes that finding instead of leaving it as a
+caveat: **adaptive conformal inference** (Gibbs & Candès, 2021) treats α as a
+control variable and steers it per class with the realized coverage errors —
+a guarantee that holds under *arbitrary* distribution shift, at the price of
+label feedback. On the stand-in stream the online update restores attack
+coverage from **64.4% to 89.7%** against the 90% target, and the report prices
+what that costs: the human-review share rises from 35% to 69%, because ACI
+widens the sets exactly where the model is blind — converting silent misses
+into explicit review items rather than pretending to improve the detector. See
+[`docs/reports/adaptive_conformal.md`](docs/reports/adaptive_conformal.md).
 
 ## Cost-sensitive thresholds
 

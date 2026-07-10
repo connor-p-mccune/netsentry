@@ -7,6 +7,19 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Adaptive conformal inference (`netsentry adaptiveconformal`,
+  `netsentry/evaluation/adaptive_conformal.py`): the conformal report's broken
+  temporal guarantee, repaired online. The Gibbs-Candes update treats alpha as a
+  control variable steered per class by realized coverage errors — a long-run
+  coverage guarantee that needs no distributional assumption, priced honestly:
+  on the stand-in stream attack coverage recovers 64.4% → 89.7% (90% target)
+  while the human-review share rises 35% → 69%, because ACI widens the sets
+  exactly where the model is blind rather than improving the detector. The
+  quantile lookup reproduces the static module's finite-sample arithmetic (the
+  adaptive run starts from the static thresholds), alpha is deliberately
+  unclamped (the wide-open excursion is what makes the guarantee
+  assumption-free), and a `label_delay` knob models triage lag. Updater and
+  coverage repair unit-tested on constructed streams; in the analysis suite.
 - Base-rate stress test (`netsentry baserate`, `netsentry/evaluation/baserate.py`):
   Axelsson's base-rate fallacy (1999) measured against the deployed operating
   points rather than cited. Thresholds are chosen on validation at each FPR

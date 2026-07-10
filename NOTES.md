@@ -1026,6 +1026,33 @@ smaller dev-run numbers noted in earlier phases:
   dramatic majority-false story render. The prose branches on the comparison, so
   on real data it tells whichever story the numbers support.
 
+## Adaptive conformal (the caveat, closed — and its price tag kept visible)
+
+- The conformal study's best finding was a *shortfall* (attack coverage 64% on
+  the temporal split, guarantee intact on the exchangeable one); leaving it as
+  "conformal detects drift" felt like the per-service and hardening notes all
+  over again — measuring a weakness and stopping one step short of acting on
+  it. ACI is the act: steer alpha with the realized errors and the guarantee
+  holds under arbitrary shift.
+- The subtle correctness decision was the **quantile convention**. My first
+  table used the textbook ceil((n+1)(1-alpha)) order statistic; the existing
+  module computes the same level through `np.quantile(..., method="higher")`,
+  which lands one order statistic higher. Either is defensible alone, but a
+  static-vs-adaptive comparison must start from *identical* thresholds at the
+  target alpha or the delta is partly convention, not adaptation — the unit
+  test asserting table == conformal_quantile caught it. Same lesson as the
+  seed/distill "same scale" rule, now for quantile arithmetic.
+- Deliberately did **not** clamp alpha to [0, 1]. The excursions (alpha <= 0 =>
+  include everything) are what make Gibbs-Candes assumption-free, and clamping
+  quietly reintroduces a failure mode under persistent shift. The set
+  constructor interprets the excursions instead; a test pins the semantics.
+- The result is almost embarrassingly on-target (89.7% vs 90%) — which is what
+  the theory promises for long-run coverage, so for once a clean number is
+  *expected*, not suspicious. The honest cost is in the review column: +33pp of
+  flows routed to a human. The report leads with that trade because "we
+  restored the guarantee" without it would be the exact kind of free-lunch
+  claim this project exists to reject.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
