@@ -865,7 +865,7 @@ def score(
 @app.command()
 def pcap(
     input: Annotated[
-        Path | None, typer.Option("--input", "-i", help="Packet capture (classic libpcap format).")
+        Path | None, typer.Option("--input", "-i", help="Packet capture (pcap or pcapng).")
     ] = None,
     output: Annotated[Path, typer.Option("--output", help="Where to write scored flows.")] = Path(
         "pcap_scored.csv"

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 import pandas as pd
 
 from netsentry.capture.flows import FLOW_META_COLUMNS, extract_flows
-from netsentry.capture.pcap import read_pcap
+from netsentry.capture.pcap import read_capture
 from netsentry.log import get_logger
 from netsentry.serving.batch import OUTPUT_COLUMNS, score_dataframe
 from netsentry.serving.inference import InferenceEngine
@@ -49,7 +49,7 @@ def score_capture(
     extracted feature rows (metadata + CIC columns) for inspection or replay
     through ``netsentry score``.
     """
-    packets, stats = read_pcap(pcap_path)
+    packets, stats = read_capture(pcap_path)
     features, meta = extract_flows(packets, settings)
     if flows_out is not None:
         _write(pd.concat([meta, features], axis=1), flows_out)
