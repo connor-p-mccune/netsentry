@@ -22,7 +22,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **375 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
+type-check + **379 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet
 captures included, via `netsentry pcap`), followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
@@ -88,6 +88,7 @@ shadow → retrain policy) that governs what actually ships.
 | Release gate | executable definition of done; a *too-good* PR-AUC **fails** it | ✅ Done |
 | Champion/challenger | paired-bootstrap promotion; margins from the measured noise | ✅ Done |
 | Retrain triggers | never / periodic / drift-triggered, priced on the stream | ✅ Done |
+| Threshold refresh | the label-cheap lever vs retraining; drift cost decomposed | ✅ Done |
 | Behavioral canaries | the bundle must reproduce its build-time scores at load | ✅ Done |
 | Shadow challenger | a second model scored silently; live disagreement metrics | ✅ Done |
 | Surrogate distillation | the model's closest auditable imitation, fidelity priced | ✅ Done |
@@ -233,6 +234,7 @@ netsentry seeds                     # training-noise floor: reproducibility + st
 netsentry gate                      # release bars incl. the too-good ceiling (exit code)
 netsentry promote                   # champion/challenger promotion decision (exit code)
 netsentry retrainpolicy             # when to retrain: triggers priced on the stream
+netsentry refresh                   # threshold refresh vs retraining (the cheap lever, priced)
 netsentry canary                    # replay the bundle's embedded flows (behavioral attest)
 netsentry serve                     # FastAPI on :8000 (builds a demo model if none)
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
@@ -378,6 +380,20 @@ the deployed model's score stream and **DDM** (Gama et al., 2004) on its error s
 Against a planted reference→current boundary, both alarm within the later-day segment,
 which is what a production monitor needs: not "the batch drifted" but "alert now, at
 flow N." See [`docs/reports/drift_tests.md`](docs/reports/drift_tests.md).
+
+`netsentry refresh` prices the lever every operations team reaches for *before*
+retraining: keep the model frozen and re-choose only the decision threshold on a
+trailing window of recent labels. Four policies ride the same prequential stream
+(static / refresh / retrain / retrain+refresh), decomposing drift's cost into
+**operating-point drift** (a quantile re-estimate fixes it) and **ranking drift**
+(only retraining does). The stand-in verdict is a kept double negative: the
+refresh buys **~1% of the retraining recovery** — the loss is the model's
+blindness to later-day attack types, and no threshold un-blinds a model — and on
+this stable stream it does not even win budget compliance, because the benign
+score distribution barely moves while a small-window quantile carries its own
+noise. Its value case (a material score-distribution shift, where a frozen cut
+runs multiples over budget and the refresh pulls it back) is constructed and
+asserted in the unit tests. See [`docs/reports/refresh.md`](docs/reports/refresh.md).
 
 ## Threat intelligence (MITRE ATT&CK)
 

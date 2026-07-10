@@ -7,6 +7,18 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Threshold-refresh study (`netsentry refresh`, `netsentry/monitoring/refresh.py`):
+  the label-cheap adaptation lever priced against full retraining. Static /
+  refresh / retrain / retrain+refresh policies ride the prequential later-day
+  stream at one FPR budget, decomposing drift's cost into operating-point drift
+  (fixable by re-estimating one quantile on a trailing labeled window) and
+  ranking drift (fixable only by retraining). Refreshed cuts are chosen on the
+  prequentially *emitted* scores, so no model picks its threshold on flows it
+  trained on. The stand-in verdict is a kept double negative: ~1% of the
+  retraining recovery, and no budget-compliance win on a stream whose benign
+  scores barely move — the compliance prose is sign-aware and the lever's value
+  case (a material score shift blowing the frozen cut's budget) is constructed
+  and asserted in unit tests. In the analysis suite.
 - Adaptive conformal inference (`netsentry adaptiveconformal`,
   `netsentry/evaluation/adaptive_conformal.py`): the conformal report's broken
   temporal guarantee, repaired online. The Gibbs-Candes update treats alpha as a

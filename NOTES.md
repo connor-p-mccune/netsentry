@@ -1053,6 +1053,34 @@ smaller dev-run numbers noted in earlier phases:
   restored the guarantee" without it would be the exact kind of free-lunch
   claim this project exists to reject.
 
+## Threshold refresh (the study that answered "no" twice, usefully)
+
+- I built this expecting the textbook story: the frozen threshold's realized
+  FPR drifts off budget, the refresh pulls it back, and some detection comes
+  along free. The stream said no twice. Detection: +0.1% (the drift cost is
+  ranking — the model literally cannot score Friday's attack types, and no cut
+  fixes blindness). Compliance: the frozen cut sits *closer* to the 1% budget
+  (0.109%) than the refreshed one (0.156%), because the benign score
+  distribution barely moves across these days while a 2-batch quantile estimate
+  carries real sampling noise. My first compliance paragraph asserted the
+  design intent ("the refresh keeps the promise honest"); the generated numbers
+  contradicted it, so the paragraph is now branched on the measured distances —
+  the same never-gaslight-the-table rule the retrain-policy and novelty renders
+  learned.
+- The value case still exists, and rather than manufacture it on the stand-in,
+  it lives in the unit tests: a constructed benign-score shift where the frozen
+  cut's realized FPR runs 50x over budget and the trailing-window refresh
+  returns it under 5x. First version of that fixture failed for a great reason:
+  perfectly separable toy scores park the FPR threshold at the *lowest attack
+  score* (roc_curve collapses the collinear stretch), so no benign drift can
+  ever spend the budget — the class overlap isn't test decoration, it is what
+  makes an operating point a real object.
+- Design rule that kept the study honest: refreshed cuts are chosen on the
+  prequentially *emitted* scores (what the deployed model said before learning
+  from the batch). Letting the retrained model re-pick its threshold on flows it
+  had just trained on would be the quiet leak — realized FPR on trained-on rows
+  is optimistic, and the threshold would inherit that optimism.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
