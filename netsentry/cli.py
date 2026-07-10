@@ -863,6 +863,29 @@ def score(
 
 
 @app.command()
+def incident(
+    input: Annotated[Path, typer.Option("--input", "-i", help="Flow file (CSV/Parquet).")],
+    output: Annotated[
+        Path, typer.Option("--output", help="Where to write the incident report.")
+    ] = Path("incident_report.md"),
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    profile: Annotated[str | None, typer.Option(help="Threshold profile.")] = None,
+) -> None:
+    """Score a flow file and fold the alerts into an analyst-ready incident report."""
+    from netsentry.intel.incident import build_incident_report
+    from netsentry.models.registry import latest_bundle
+    from netsentry.serving.bundle import build_serving_bundle
+
+    settings = _load(config, override)
+    if settings.serving.artifact_path is None and latest_bundle(settings) is None:
+        logger.info("No model bundle found; building a serving bundle (requires `prep`).")
+        build_serving_bundle(settings)
+    stats = build_incident_report(settings, input, output, profile=profile)
+    logger.info("Incident report ready", extra={**stats, "output": str(output)})
+
+
+@app.command()
 def pcap(
     input: Annotated[
         Path | None, typer.Option("--input", "-i", help="Packet capture (pcap or pcapng).")

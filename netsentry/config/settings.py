@@ -738,6 +738,18 @@ class CrossDatasetConfig(BaseModel):
     name: str = "synthetic-netflow"
 
 
+class IncidentConfig(BaseModel):
+    """Incident-report generation from scored flows (`netsentry incident`).
+
+    Consecutive same-class alerts are one incident; up to ``gap_tolerance``
+    non-alert rows in between are bridged, because real attack traffic
+    interleaves with background. A contiguity heuristic, stated as such in the
+    report — it re-reads per-flow verdicts, it does not create detection."""
+
+    gap_tolerance: int = 3  # non-alert rows an incident may bridge before closing
+    top_talkers: int = 5  # sources/targets/services listed per incident
+
+
 class TriageConfig(BaseModel):
     """Weights for fusing CVE severity with NetSentry's live-traffic risk signals."""
 
@@ -839,6 +851,7 @@ class Settings(BaseSettings):
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
+    incident: IncidentConfig = Field(default_factory=IncidentConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
     serving: ServingConfig = Field(default_factory=ServingConfig)
