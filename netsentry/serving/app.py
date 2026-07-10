@@ -148,20 +148,32 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         description="Include SHAP top_features (the expensive step); "
         "false returns an empty list for throughput-bound callers.",
     )
+    exemplars_query = Query(
+        default=False,
+        description="Include similar_flows: the nearest known training flows "
+        "(case-based evidence), when the bundle carries an exemplar index.",
+    )
 
     @app.post("/predict", response_model=PredictionResponse)
     def predict(
         request: FlowRequest,
         profile: str | None = Query(default=None, description="Threshold profile."),
         explain: bool = explain_query,
+        exemplars: bool = exemplars_query,
     ) -> PredictionResponse:
-        return engine.predict([request.flow], profile=_resolve_profile(profile), explain=explain)[0]
+        return engine.predict(
+            [request.flow],
+            profile=_resolve_profile(profile),
+            explain=explain,
+            exemplars=exemplars,
+        )[0]
 
     @app.post("/predict/batch", response_model=BatchResponse)
     def predict_batch(
         request: BatchRequest,
         profile: str | None = Query(default=None, description="Threshold profile."),
         explain: bool = explain_query,
+        exemplars: bool = exemplars_query,
     ) -> BatchResponse:
         if len(request.flows) > settings.serving.max_batch_size:
             raise HTTPException(
@@ -169,7 +181,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 detail=f"batch too large: {len(request.flows)} > {settings.serving.max_batch_size}",
             )
         predictions = engine.predict(
-            request.flows, profile=_resolve_profile(profile), explain=explain
+            request.flows, profile=_resolve_profile(profile), explain=explain, exemplars=exemplars
         )
         return BatchResponse(predictions=predictions)
 

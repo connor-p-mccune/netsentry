@@ -52,6 +52,14 @@ class FeatureContribution(BaseModel):
     contribution: float
 
 
+class SimilarFlow(BaseModel):
+    """A nearest known training flow — case-based evidence behind a verdict."""
+
+    label: str
+    day: str | None = None
+    distance: float  # Euclidean, in the pipeline's standardized units
+
+
 class PredictionResponse(BaseModel):
     predicted_class: str
     is_attack: bool
@@ -67,6 +75,9 @@ class PredictionResponse(BaseModel):
     recommended_action: str | None = None
     # MITRE ATT&CK technique for the predicted attack class (None when benign).
     mitre: dict[str, str] | None = None
+    # Nearest known training flows (case-based explanation). Opt-in via
+    # ?exemplars=true; None when not requested or the bundle carries no index.
+    similar_flows: list[SimilarFlow] | None = None
 
 
 class BatchResponse(BaseModel):

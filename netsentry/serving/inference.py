@@ -17,6 +17,7 @@ import pandas as pd
 from netsentry.data.schema import DESTINATION_PORT
 from netsentry.data.services import PER_SERVICE_PROFILE, service_of
 from netsentry.evaluation.metrics import attack_probability
+from netsentry.explain.exemplars import ExemplarIndex
 from netsentry.explain.shap_explainer import ShapExplainer
 from netsentry.features.feature_sets import model_features
 from netsentry.intel.attack_mapping import mitre_payload
@@ -24,7 +25,7 @@ from netsentry.log import get_logger
 from netsentry.models.registry import latest_bundle, load_bundle
 from netsentry.monitoring.monitor import DriftMonitor
 from netsentry.serving.canary import CanaryResult, run_canary
-from netsentry.serving.schemas import FeatureContribution, PredictionResponse
+from netsentry.serving.schemas import FeatureContribution, PredictionResponse, SimilarFlow
 
 if TYPE_CHECKING:
     from netsentry.config import Settings
@@ -85,6 +86,7 @@ class InferenceEngine:
         conformal = meta.get("conformal")
         self.conformal: dict[str, float] | None = conformal if isinstance(conformal, dict) else None
         self.drift = self._build_monitor(settings)
+        self.exemplar_index = self._load_exemplars()
         self.canary = self._run_canary(settings)
         self.shadow, self.shadow_version = self._load_shadow(settings)
         self.loaded_at = datetime.now(UTC).isoformat()
@@ -156,6 +158,39 @@ class InferenceEngine:
             logger.warning("Shadow scoring disabled after failure (%s)", exc)
             self.shadow = None
 
+    def _load_exemplars(self) -> ExemplarIndex | None:
+        """Reconstruct the bundle's case base, if it carries one (best-effort)."""
+        payload = self.bundle.metadata.get("exemplars")
+        if not isinstance(payload, dict):
+            return None
+        try:
+            return ExemplarIndex.from_payload(payload)
+        except Exception as exc:  # exemplars are additive; never fatal
+            logger.warning("Exemplar index disabled (%s)", exc)
+            return None
+
+    def _similar_flows(self, transformed: np.ndarray) -> list[list[SimilarFlow]] | None:
+        """Nearest known training flows per row — case-based evidence, best-effort."""
+        if self.exemplar_index is None:
+            return None
+        try:
+            index = self.exemplar_index
+            distances, idx = index.query(np.asarray(transformed), self.settings.exemplars.k)
+            return [
+                [
+                    SimilarFlow(
+                        label=str(index.labels[j]),
+                        day=str(index.days[j]),
+                        distance=round(float(d), 4),
+                    )
+                    for d, j in zip(distances[i], idx[i], strict=True)
+                ]
+                for i in range(distances.shape[0])
+            ]
+        except Exception as exc:  # retrieval must never break a prediction
+            logger.warning("Exemplar retrieval skipped (%s)", exc)
+            return None
+
     def _build_monitor(self, settings: Settings) -> DriftMonitor | None:
         """Reconstruct the drift monitor from the bundle's reference, if it carries one."""
         summary = self.bundle.metadata.get("drift_reference")
@@ -212,13 +247,16 @@ class InferenceEngine:
         profile: str | None = None,
         top_k: int | None = None,
         explain: bool = True,
+        exemplars: bool = False,
     ) -> list[PredictionResponse]:
         """Score flows; ``explain=False`` skips SHAP (the measured majority of latency).
 
         Explanations are the default because they are part of the product
         contract; the opt-out exists for throughput-bound callers (bulk scoring,
         load tests) and returns an empty ``top_features`` rather than a changed
-        schema, so clients need no second response model.
+        schema, so clients need no second response model. ``exemplars=True``
+        opts *in* to case-based evidence (``similar_flows``: the nearest known
+        training flows) when the bundle carries an exemplar index.
         """
         profile = profile or self.default_profile
         top_k = top_k or self.settings.serving.top_k_features
@@ -244,10 +282,17 @@ class InferenceEngine:
         argmax = classes[proba.argmax(axis=1)]
 
         anomaly_scores = is_anomaly = None
-        if self.bundle.anomaly_detector is not None:
+        transformed = None
+        if self.bundle.anomaly_detector is not None or (
+            exemplars and self.exemplar_index is not None
+        ):
             transformed = self.bundle.pipeline.transform(frame)
+        if self.bundle.anomaly_detector is not None and transformed is not None:
             anomaly_scores = self.bundle.anomaly_detector.score(transformed)
             is_anomaly = anomaly_scores >= (self.bundle.anomaly_threshold or float("inf"))
+        similar = (
+            self._similar_flows(transformed) if exemplars and transformed is not None else None
+        )
 
         responses: list[PredictionResponse] = []
         for i in range(len(flows)):
@@ -279,6 +324,7 @@ class InferenceEngine:
                     prediction_set=pred_set,
                     recommended_action=action,
                     mitre=mitre,
+                    similar_flows=similar[i] if similar is not None else None,
                 )
             )
         return responses

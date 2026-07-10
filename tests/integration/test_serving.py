@@ -92,6 +92,26 @@ def test_explain_opt_out_skips_shap_only(client) -> None:  # type: ignore[no-unt
 
 
 @pytest.mark.slow
+def test_exemplars_opt_in_returns_similar_flows(client) -> None:  # type: ignore[no-untyped-def]
+    default = client.post("/predict", json={"flow": SAMPLE_FLOW}).json()
+    assert default["similar_flows"] is None  # opt-in: absent unless requested
+
+    body = client.post("/predict?exemplars=true", json={"flow": SAMPLE_FLOW}).json()
+    assert body["similar_flows"]  # the freshly built bundle embeds an index
+    case = body["similar_flows"][0]
+    assert set(case) == {"label", "day", "distance"}
+    assert case["distance"] >= 0.0
+    distances = [c["distance"] for c in body["similar_flows"]]
+    assert distances == sorted(distances)  # nearest first
+    # Retrieval is evidence, not a decision input: verdict fields are unchanged.
+    assert body["is_attack"] == default["is_attack"]
+    assert body["attack_probability"] == default["attack_probability"]
+
+    batch = client.post("/predict/batch?exemplars=true", json={"flows": [SAMPLE_FLOW]}).json()
+    assert batch["predictions"][0]["similar_flows"]
+
+
+@pytest.mark.slow
 def test_cost_optimal_profile_is_selectable(client) -> None:  # type: ignore[no-untyped-def]
     # The serving bundle carries a cost-optimal threshold profile alongside the FPR ones.
     response = client.post("/predict?profile=cost_optimal", json={"flow": SAMPLE_FLOW})

@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 
 from netsentry.data.clean import MULTICLASS_TARGET
-from netsentry.data.schema import DESTINATION_PORT
+from netsentry.data.schema import DAY_COLUMN, DESTINATION_PORT
 from netsentry.data.services import PER_SERVICE_PROFILE, service_of
 from netsentry.data.split import load_split
 from netsentry.evaluation.conformal import class_conditional_thresholds
@@ -83,12 +83,42 @@ def build_serving_bundle(settings: Settings) -> Path:
         reference, feature_cols, bins=variant.monitoring.psi_bins
     )
 
+    _attach_exemplars(bundle, variant, train)
     _attach_canary(bundle, variant, val)
 
     path = settings.paths.models_dir / SERVING_BUNDLE_NAME
     bundle.save(path)
     logger.info("Built serving bundle", extra={"path": str(path), "classes": len(result.classes)})
     return path
+
+
+def _attach_exemplars(bundle: ModelBundle, settings: Settings, train: pd.DataFrame) -> None:
+    """Embed a compact, class-balanced case base for ``?exemplars=true`` responses.
+
+    The index lives in the fitted pipeline's standardized space (the same
+    transform every prediction already runs through), so retrieval at serve time
+    is a matrix product against a few hundred float32 rows per class. Additive:
+    a failure to embed must never break the bundle build.
+    """
+    try:
+        from netsentry.explain.exemplars import build_exemplar_index
+
+        days = (
+            train[DAY_COLUMN].to_numpy()
+            if DAY_COLUMN in train.columns
+            else np.full(len(train), "?")
+        )
+        index = build_exemplar_index(
+            bundle.pipeline.transform(train),
+            train[MULTICLASS_TARGET].to_numpy(),
+            days,
+            settings.exemplars.per_class,
+            settings.seed,
+        )
+        bundle.metadata["exemplars"] = index.to_payload()
+        logger.info("Attached exemplar index", extra={"exemplars": len(index.labels)})
+    except Exception as exc:  # exemplars are additive; never fatal
+        logger.warning("Exemplar index skipped (%s)", exc)
 
 
 def _attach_canary(bundle: ModelBundle, settings: Settings, val: pd.DataFrame) -> None:
