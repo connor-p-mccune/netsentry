@@ -139,7 +139,7 @@ response {class, prob, anomaly_score, is_anomaly, top_features, version}`.
 
 ## Out of scope (and honestly stated as such in the model card)
 
-Live/streaming packet capture, pcapng, and IPv6 (offline classic-pcap ingestion is
+Live/streaming packet capture and IPv6 (offline pcap/pcapng ingestion is
 in scope via `netsentry pcap`; NetFlow extraction is not) and multi-node production
 serving infrastructure. Adversarial evasion is
 measured (`docs/reports/robustness.md`) *and* acted on (`docs/reports/hardening.md`

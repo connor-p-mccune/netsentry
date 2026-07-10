@@ -19,8 +19,8 @@
 ## Intended use
 - **Intended:** education, research, and demonstration of ML-based intrusion
   detection on flow data; a reference for honest evaluation methodology.
-- **Out of scope:** a drop-in production NIDS; live/streaming capture, pcapng, and
-  IPv6 (offline classic-pcap ingestion is supported); adversarial-evasion-robust
+- **Out of scope:** a drop-in production NIDS; live/streaming capture and
+  IPv6 (offline pcap/pcapng ingestion is supported); adversarial-evasion-robust
   deployment; any safety-critical sole control.
 
 ## Training data

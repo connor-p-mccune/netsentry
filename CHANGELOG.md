@@ -7,6 +7,18 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Native pcapng ingestion (`netsentry/capture/pcap.py`): the capture stack's
+  "convert with tshark first" limitation, closed. A pure-stdlib pcapng reader
+  parses Section Header / Interface Description / Enhanced Packet / Simple
+  Packet blocks in either byte order, converts per-interface `if_tsresol`
+  resolutions (10^-v and 2^-v encodings) to the microsecond timeline the flow
+  assembler expects, and supports concatenated sections with section-scoped
+  interface numbering. The skip-don't-die posture extends to the block level:
+  unknown block types skip by declared length, packets on unsupported-linktype
+  interfaces are counted per interface, SPBs parse with a "no timestamps" note.
+  `read_capture()` sniffs the container by magic; `netsentry pcap` accepts
+  either format transparently. Tests build every block field-by-field with
+  struct, checking the parser against known on-wire values.
 - Exemplar (case-based) explanations (`netsentry exemplars`,
   `netsentry/explain/exemplars.py` + `similar_flows` in the API): the nearest
   known training flows per prediction — label, capture day, and distance in the

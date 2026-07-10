@@ -1105,6 +1105,29 @@ smaller dev-run numbers noted in earlier phases:
   transform, and the whole path is opt-in + best-effort — the explanation can
   vanish; the verdict cannot change.
 
+## pcapng (closing a stated limitation without importing a parser)
+
+- The original capture phase drew the line at classic pcap and made pcapng a
+  documented error; Wireshark has defaulted to pcapng for years, so the "convert
+  first" caveat was the stack's most-hit rough edge. The container is just
+  length-prefixed blocks, so the stdlib-`struct` promise holds: the whole reader
+  is one loop and two helpers.
+- The two spec details that actually carry risk got the test attention:
+  **byte order is per section** (the SHB type value is a palindrome precisely so
+  it parses before the byte-order magic is known — the loop re-derives the order
+  at every SHB and resets interface numbering, covered by a two-section test),
+  and **timestamps are per interface** (`if_tsresol` has both a decimal and a
+  binary encoding; both are converted to one ticks-per-second integer so the
+  packet loop stays a single division — 10^-9 and 2^-10 fixtures pin it).
+- Reused the classic reader's link-layer decode by factoring `_decode_frame`
+  rather than copying it, so pcapng inherited the tested Ethernet/VLAN/raw-IP
+  handling instead of re-implementing it — the same no-second-copy discipline as
+  the services map and the ATT&CK tactic names.
+- Judgement call: an interface with an unsupported link type skips *its* packets
+  (counted, noted once) instead of failing the file — a multi-interface capture
+  with one wifi NIC should still yield the Ethernet flows. And SPBs parse with a
+  note that time features degrade, rather than inventing timestamps.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

@@ -22,7 +22,7 @@ with explainable predictions.**
 tested, and committed, and a set of post-release capabilities (calibration,
 adversarial robustness, cost-sensitive thresholds, conformal prediction, Optuna HPO,
 and a Prometheus/Grafana stack) build on top. `make check` is green (lint +
-type-check + **386 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
+type-check + **396 passing tests**, property-based invariants included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet
 captures included, via `netsentry pcap`), followed by a
 **model-lifecycle layer** (noise floor → release gate → promotion → canaries →
@@ -93,7 +93,7 @@ shadow → retrain policy) that governs what actually ships.
 | Behavioral canaries | the bundle must reproduce its build-time scores at load | ✅ Done |
 | Shadow challenger | a second model scored silently; live disagreement metrics | ✅ Done |
 | Surrogate distillation | the model's closest auditable imitation, fidelity priced | ✅ Done |
-| Packet ingestion | raw PCAP → CIC flows → verdicts, pure-stdlib capture stack | ✅ Done |
+| Packet ingestion | raw pcap/pcapng → CIC flows → verdicts, pure-stdlib capture stack | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -347,7 +347,10 @@ model the DoS-shaped flood is flagged at the 1%-FPR profile while the SYN sweep
 is missed (PortScan is a later-day class the Mon–Wed model never saw — the same
 finding the per-class slices report), an honest demonstration of the mechanics
 rather than a detection claim. Malformed or non-IP traffic is counted and
-skipped, never fatal; pcapng and IPv6 are stated limitations.
+skipped, never fatal. The same posture holds for the **pcapng** container,
+which is parsed natively (both byte orders, per-interface `if_tsresol`
+timestamp resolutions, concatenated sections; unknown block types skipped by
+length) — IPv6 remains a stated limitation.
 
 ## Monitoring & drift
 
@@ -769,7 +772,8 @@ See [`docs/reports/onnx.md`](docs/reports/onnx.md). Optional `onnx` extra.
 
 See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md). NetSentry consumes flow features
 (computed offline by CICFlowMeter, or from a classic-pcap capture via `netsentry
-pcap`; live/streaming capture, pcapng, and IPv6 are out of scope), is
+pcap`, in classic pcap or pcapng form; live/streaming capture and IPv6 are out
+of scope), is
 trained/evaluated on a 2017 dataset (here a synthetic stand-in), and is a rigorous
 reference implementation and demo — not a drop-in production NIDS.
 
