@@ -42,7 +42,11 @@ A wrong metric implementation silently invalidates every number downstream, so
 PR-AUC, TPR-at-fixed-FPR, and the per-class report are unit-tested against
 hand-computed confusion matrices (`tests/unit/test_metrics.py` over
 `netsentry/evaluation/metrics.py`), and the headline numbers carry
-percentile-bootstrap CIs (`netsentry/evaluation/confidence.py`).
+percentile-bootstrap CIs (`netsentry/evaluation/confidence.py`). The operating
+points are then stress-read at deployment prevalences — Axelsson's base-rate
+fallacy, computed rather than cited: below a 0.64% prevalence the queue is
+majority-false, and a 90%-precision queue at 1-in-10⁵ would need an FPR ~5,800×
+tighter than measured ([`reports/base_rate.md`](reports/base_rate.md)).
 
 ## Stop 4 — The adversary is measured, and so is the fix
 
@@ -74,6 +78,13 @@ Every stage between training and production is an exit-coded command
 - `netsentry retrainpolicy` — drift-triggered retraining priced against calendar
   retraining; the trigger **under-delivers** on this stream and the report keeps
   that finding ([`reports/retrain_policy.md`](reports/retrain_policy.md)).
+- `netsentry refresh` — the label-cheap lever (re-choose only the threshold)
+  priced against retraining: it buys **~1% of the recovery** here and does not
+  even win budget compliance on this stable stream — a kept double negative
+  ([`reports/refresh.md`](reports/refresh.md)). Its counterpart for the
+  *guarantee* layer: adaptive conformal steers alpha online and restores the
+  attack coverage the temporal shift broke (64% → 89.7%), priced in review load
+  ([`reports/adaptive_conformal.md`](reports/adaptive_conformal.md)).
 
 ## Stop 6 — Serving is a product surface, not an afterthought
 
@@ -82,11 +93,17 @@ contract (422s tested), operator-selectable threshold profiles including
 `per_service` (a fairness-audit finding shipped as a feature), conformal
 `recommended_action` per prediction, SHAP top-features as part of the contract,
 API-key auth + rate limiting, Prometheus metrics with bounded label cardinality,
-and an optional shadow challenger whose disagreement metrics are integration-tested
-to be *provably zero* against an identical copy. The input side goes all the way to
-the wire: `netsentry pcap --demo` parses a raw packet capture with a pure-stdlib
-reader, assembles the exact 78 training columns (`netsentry/capture/`), and scores
-them through the same engine — no re-implemented preprocessing to skew.
+an optional shadow challenger whose disagreement metrics are integration-tested
+to be *provably zero* against an identical copy, and opt-in case-based evidence:
+`?exemplars=true` returns the nearest known training flows per prediction, from
+an index that was **audited before it shipped**
+([`reports/exemplars.md`](reports/exemplars.md)). The input side goes all the way
+to the wire: `netsentry pcap --demo` parses a raw packet capture (classic pcap or
+pcapng, both pure-stdlib), assembles the exact 78 training columns
+(`netsentry/capture/`), and scores them through the same engine — no
+re-implemented preprocessing to skew — and `netsentry incident` folds the scored
+flows into an analyst-ready incident report with ATT&CK context
+([`reports/incident_demo.md`](reports/incident_demo.md)).
 
 ## Stop 7 — Where the bodies are buried, on purpose
 
@@ -102,7 +119,7 @@ file is probably the fastest signal in the repo.
 make install
 netsentry download && netsentry prep   # synthetic stand-in, out of the box
 make lifecycle                         # seeds → gate → promote → retrainpolicy → canary
-netsentry analyze                      # regenerate all 29 reports + the index
+netsentry analyze                      # regenerate all 34 reports + the index
 netsentry pcap --demo                  # raw packets → CIC flows → verdicts
 ```
 
