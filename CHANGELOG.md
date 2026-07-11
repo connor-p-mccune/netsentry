@@ -6,6 +6,19 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.3.0] — 2026-07-10
+
+The adaptive-operations wave: the oldest result in the IDS literature computed
+against the deployed operating points (the base-rate fallacy), the two
+self-repairing layers a deployment runs under drift (adaptive conformal for the
+coverage guarantee; threshold refresh for the operating point — with the honest
+finding that the cheap lever buys almost nothing on this stream), case-based
+explanations audited and then shipped in the API, native pcapng ingestion
+closing the capture stack's stated limitation, and analyst-ready incident
+reports as the last mile from per-flow verdicts to a response artifact.
+
 ### Added
 - Incident reports (`netsentry incident`, `netsentry/intel/incident.py`): scored
   flows folded into the artifact an analyst actually reads. Consecutive
