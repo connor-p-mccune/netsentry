@@ -715,6 +715,22 @@ class PoisoningConfig(BaseModel):
     contamination_rates: list[float] = Field(default_factory=lambda: [0.0, 0.01, 0.05, 0.1, 0.2])
 
 
+class SanitizeConfig(BaseModel):
+    """Audit-and-drop defense against poisoned training labels, re-measured.
+
+    The poisoning study prices the training-time attack; this prices the cheapest
+    defense an operator can actually run: the confident-learning audit
+    (``label_audit.folds`` out-of-fold models) over *all* labeled data — train and
+    validation together, because threshold selection is poisoned too — dropping
+    every flagged row in both directions, then refitting. ``flip_rates`` should
+    share its range with ``poisoning.label_flip_rates`` so the two curves read
+    against each other; ``max_rows`` caps the combined labeled pool because every
+    rate costs ``folds + 2`` full model fits."""
+
+    flip_rates: list[float] = Field(default_factory=lambda: [0.0, 0.1, 0.25, 0.5])
+    max_rows: int = 30000  # combined train+val cap (each rate is folds+2 fits)
+
+
 class LabelAuditConfig(BaseModel):
     """Confident-learning-style label-noise audit of the training split.
 
@@ -848,6 +864,7 @@ class Settings(BaseSettings):
     leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
+    sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)

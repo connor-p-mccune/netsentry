@@ -209,6 +209,19 @@ def test_poisoning_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_poisoning_defense_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.sanitize import run_sanitize_report
+
+    prepared.sanitize.flip_rates = [0.0, 0.5]
+    prepared.sanitize.max_rows = 3000
+    prepared.label_audit.folds = 2
+    out = run_sanitize_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "sanitiz" in text and "undefended" in text
+    assert "flips caught" in text and "clean rows lost" in text
+
+
+@pytest.mark.slow
 def test_distill_report_is_written(prepared: Settings) -> None:
     from netsentry.explain.distill import run_distill_report
 

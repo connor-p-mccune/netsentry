@@ -48,6 +48,7 @@ from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.hardening import run_hardening_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
+from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.training.selftrain import run_selftrain_report
 
 if TYPE_CHECKING:
@@ -114,6 +115,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "adversarial training vs mimicry, re-measured",
         "hardening.md",
         run_hardening_report,
+    ),
+    (
+        "Poisoning defense",
+        "audit-and-drop sanitization vs label flips, re-measured",
+        "poisoning_defense.md",
+        run_sanitize_report,
     ),
     (
         "Label-noise audit",

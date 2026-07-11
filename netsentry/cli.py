@@ -313,6 +313,19 @@ def harden(
 
 
 @app.command()
+def sanitize(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit-and-drop poisoned training labels, then re-measure the decay curve."""
+    from netsentry.robustness.sanitize import run_sanitize_report
+
+    settings = _load(config, override)
+    out = run_sanitize_report(settings)
+    logger.info("Poisoning-defense report ready", extra={"path": str(out)})
+
+
+@app.command()
 def cost(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
