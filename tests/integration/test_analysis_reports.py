@@ -222,6 +222,21 @@ def test_poisoning_defense_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_threshold_transfer_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.transfer import run_transfer_report
+    from netsentry.serving.bundle import build_serving_bundle
+
+    build_serving_bundle(prepared)
+    prepared.crossdata.rows = 3000
+    prepared.transfer.label_budgets = [50, 500]
+    prepared.transfer.n_resamples = 5
+    out = run_transfer_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "transplant" in text and "oracle" in text
+    assert "budget held" in text
+
+
+@pytest.mark.slow
 def test_distill_report_is_written(prepared: Settings) -> None:
     from netsentry.explain.distill import run_distill_report
 

@@ -794,6 +794,19 @@ def crosseval(
 
 
 @app.command()
+def transfer(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price re-buying the FPR budget on a foreign dataset: quantile vs k labels vs oracle."""
+    from netsentry.evaluation.transfer import run_transfer_report
+
+    settings = _load(config, override)
+    out = run_transfer_report(settings)
+    logger.info("Threshold-transfer report ready", extra={"path": str(out)})
+
+
+@app.command()
 def triage(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

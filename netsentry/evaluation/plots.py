@@ -49,11 +49,13 @@ def plot_lines(
     out_path: Path,
     vlines: dict[str, float] | None = None,
     xscale: str | None = None,
+    yscale: str | None = None,
 ) -> Path:
     """Generic ``name -> (x, y)`` line chart (robustness/cost/conformal curves).
 
-    ``xscale`` passes through to matplotlib (e.g. ``"log"`` for a prevalence sweep
-    spanning orders of magnitude, where a linear axis would crush the left side).
+    ``xscale``/``yscale`` pass through to matplotlib (e.g. ``"log"`` for a
+    prevalence sweep or a realized-FPR axis spanning orders of magnitude, where a
+    linear axis would crush one end).
     """
     plt = _plt()
     fig, ax = plt.subplots(figsize=(6.5, 5))
@@ -63,6 +65,8 @@ def plot_lines(
         ax.axvline(xpos, color="gray", linestyle=":", alpha=0.8, label=label)
     if xscale is not None:
         ax.set_xscale(xscale)
+    if yscale is not None:
+        ax.set_yscale(yscale)
     ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
     ax.legend()
     ax.grid(alpha=0.3)

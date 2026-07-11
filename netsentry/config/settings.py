@@ -746,6 +746,25 @@ class LabelAuditConfig(BaseModel):
     max_rows: int = 30000  # subsample cap so the k-fold study stays fast
 
 
+class TransferConfig(BaseModel):
+    """Threshold transfer onto a foreign dataset: what re-buys the FPR budget.
+
+    The cross-dataset study's verdict is that the ranking transfers but the
+    operating point does not ("re-choose thresholds on labeled local traffic");
+    this prices that advice. Four policies are compared at the primary FPR
+    budget on the foreign set: the transplanted source threshold, an
+    unsupervised quantile matched on the *unlabeled* target scores (valid only
+    while the stream is benign-dominated — the report measures the violation at
+    the test mix and at a production-like mix), a threshold chosen on ``k``
+    labeled target flows for each ``label_budgets`` entry (redrawn
+    ``n_resamples`` times so small-sample noise is reported, not hidden), and
+    the all-label oracle."""
+
+    label_budgets: list[int] = Field(default_factory=lambda: [50, 100, 250, 500, 1000, 2500])
+    n_resamples: int = 30  # seeded redraws per label budget
+    compliance_factor: float = 2.0  # realized FPR within this factor of budget counts as held
+
+
 class CrossDatasetConfig(BaseModel):
     """Synthetic 'foreign' (NetFlow-schema) dataset for cross-dataset generalization."""
 
@@ -868,6 +887,7 @@ class Settings(BaseSettings):
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
+    transfer: TransferConfig = Field(default_factory=TransferConfig)
     incident: IncidentConfig = Field(default_factory=IncidentConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
