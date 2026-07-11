@@ -24,7 +24,7 @@ ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack) and the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
 threshold refresh, exemplar evidence, pcapng, incident reports). `make check` is
-green (lint + type-check + **402 passing tests**, property-based invariants
+green (lint + type-check + **409 passing tests**, property-based invariants
 included), and the full `download → prep → train → eval → serve` pipeline runs
 end-to-end on the bundled synthetic data (raw packet captures included, via
 `netsentry pcap`), followed by a **model-lifecycle layer** (noise floor → release
@@ -98,6 +98,7 @@ ships.
 | Shadow challenger | a second model scored silently; live disagreement metrics | ✅ Done |
 | Surrogate distillation | the model's closest auditable imitation, fidelity priced | ✅ Done |
 | Packet ingestion | raw pcap/pcapng → CIC flows → verdicts, pure-stdlib capture stack | ✅ Done |
+| Zeek ingestion | conn.log (TSV/JSON) → CIC features → verdicts, limits stated | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -246,6 +247,7 @@ netsentry serve                     # FastAPI on :8000 (builds a demo model if n
 netsentry score -i flows.csv --output scored.csv   # offline batch scoring
 netsentry incident -i flows.csv     # fold the alerts into an analyst-ready incident report
 netsentry pcap -i capture.pcap      # raw packets (pcap/pcapng) → CIC flows → verdicts (--demo to try it)
+netsentry zeek -i conn.log          # score the Zeek logs a network team already collects
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
@@ -465,6 +467,22 @@ operating point degrades sharply (TPR@0.1%FPR **11.9% → 1.2%**): the ranking
 transfers, the calibration does not. Point the adapter at UNSW-NB15 or the NetFlow
 `NF-*-v2` releases for real numbers. See
 [`docs/reports/cross_dataset.md`](docs/reports/cross_dataset.md).
+
+## Zeek ingestion (score the logs you already collect)
+
+Most networks that would evaluate a NIDS already run **Zeek**; `netsentry zeek
+-i conn.log` scores its `conn.log` directly — classic TSV (`#fields` headers,
+`#unset_field` respected) or JSON-lines, sniffed automatically — through the
+same engine the API serves. The mapping is deliberately scoped to what a
+connection record can honestly say: duration, per-direction packets/bytes, the
+derived rates and means, and `history`-based flag counts documented as lower
+bounds; the intra-flow detail conn.log cannot express (IAT timing, per-packet
+sizes, TCP window fields) stays missing and is **imputed from training
+medians** — exactly the regime the cross-dataset study measures, so the module
+states its expectation rather than hiding it: the ranking transfers, a
+fixed-FPR operating point degrades until thresholds are re-chosen on labeled
+local traffic. The Zeek UID rides along in the output for pivoting back into
+other Zeek logs, and the scored CSV feeds `netsentry incident` unchanged.
 
 ## vulnpipe integration
 

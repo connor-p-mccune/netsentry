@@ -6,7 +6,19 @@ semantic versioning once released.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- Zeek conn.log ingestion (`netsentry zeek`, `netsentry/integrations/zeek.py`):
+  score the logs a network team already collects. Parses classic TSV logs
+  (`#separator`/`#fields`/`#unset_field` respected) and JSON-lines output,
+  maps connection totals onto the CIC columns they can honestly speak for
+  (duration, per-direction packets/bytes, derived rates/means, history-derived
+  flag counts as documented lower bounds), and leaves the intra-flow detail
+  conn.log cannot express missing for the fitted pipeline to impute — the
+  cross-dataset study's regime, with its expectation stated (ranking transfers;
+  re-choose thresholds on labeled local traffic before trusting a budget).
+  Zero-duration rates map to NaN per the cleaning policy; the Zeek UID rides as
+  pivot metadata; the scored output feeds `netsentry incident` unchanged.
+  Parsing + mapping unit-tested against a hand-built log; e2e slow test.
 
 ## [0.3.0] — 2026-07-10
 

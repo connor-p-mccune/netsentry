@@ -1153,6 +1153,31 @@ smaller dev-run numbers noted in earlier phases:
   stand-in misses is caught and named here — the same capture reads differently
   through the two models, which is the temporal story told from one more angle.
 
+## Zeek ingestion (meet the data where it already lives)
+
+- The design question was which columns to map, and the discipline was to map
+  *fewer* than possible: only what a connection-total record can honestly say.
+  It is tempting to synthesize IAT means from duration/packet counts (uniform
+  spacing assumptions) — that would hand the model fabricated timing features
+  indistinguishable from real ones. Missing + train-median imputation is the
+  contract the pipeline already has for absent detail, and the cross-dataset
+  study already measured what to expect from it; the module cites that instead
+  of promising CIC-grade behaviour on conn.log input.
+- Zeek's `history` string is event letters, not counters, so the flag-count
+  mapping is labelled a lower bound in both the docstring and the README. A
+  reviewer who knows Zeek would catch an unqualified "SYN Flag Count" mapping
+  immediately — the qualification is the credibility.
+- Parser notes: `#separator \x09` arrives space-separated and escape-encoded
+  (everything after it uses the declared separator), and unset fields must be
+  *dropped*, not parsed as the literal `-` (which floats to NaN by luck on
+  numeric fields but would poison string fields like history). JSON-lines
+  support is a few lines and covers the increasingly common json-streaming
+  deployments.
+- The pipe-masking near-miss is worth remembering: `black --check | tail -1`
+  swallowed black's non-zero exit and the feat commit initially landed with an
+  unformatted file — caught by reading the output, fixed by amending before
+  push. Check chains must gate on the tool's exit code, not its last line.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
