@@ -863,6 +863,34 @@ def score(
 
 
 @app.command()
+def zeek(
+    input: Annotated[
+        Path, typer.Option("--input", "-i", help="Zeek conn.log (TSV or JSON lines).")
+    ],
+    output: Annotated[
+        Path, typer.Option("--output", help="Where to write scored connections.")
+    ] = Path("zeek_scored.csv"),
+    flows_out: Annotated[
+        Path | None, typer.Option(help="Also write the mapped CIC feature rows (CSV/Parquet).")
+    ] = None,
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    profile: Annotated[str | None, typer.Option(help="Threshold profile.")] = None,
+) -> None:
+    """Score a Zeek conn.log: map connections into CIC features, run the model."""
+    from netsentry.integrations.zeek import score_zeek_log
+    from netsentry.models.registry import latest_bundle
+    from netsentry.serving.bundle import build_serving_bundle
+
+    settings = _load(config, override)
+    if settings.serving.artifact_path is None and latest_bundle(settings) is None:
+        logger.info("No model bundle found; building a serving bundle (requires `prep`).")
+        build_serving_bundle(settings)
+    stats = score_zeek_log(settings, input, output, flows_out=flows_out, profile=profile)
+    logger.info("Zeek log scored", extra={**stats, "output": str(output)})
+
+
+@app.command()
 def incident(
     input: Annotated[Path, typer.Option("--input", "-i", help="Flow file (CSV/Parquet).")],
     output: Annotated[
