@@ -61,8 +61,10 @@ jobs:
           python -m netsentry.cli train supervised -o configs/ci.yaml
           python -m netsentry.cli eval -o configs/ci.yaml
           python -m netsentry.cli train anomaly -o configs/ci.yaml
-      - name: Packet-to-verdict smoke (demo pcap -> flows -> scored)
-        run: python -m netsentry.cli pcap --demo -o configs/ci.yaml --input demo.pcap --output pcap_scored.csv
+      - name: Packet-to-verdict smoke (demo pcap -> flows -> scored -> incidents)
+        run: |
+          python -m netsentry.cli pcap --demo -o configs/ci.yaml --input demo.pcap --output pcap_scored.csv --flows-out demo_flows.csv
+          python -m netsentry.cli incident -o configs/ci.yaml --input demo_flows.csv --output incident_report.md --profile fpr_1pct
       - name: Analysis suite (cost · conformal · robustness · rules · ablation · subgroups)
         run: |
           python -m netsentry.cli cost -o configs/ci.yaml
@@ -82,6 +84,12 @@ jobs:
           python -m netsentry.cli leaderboard -o configs/ci.yaml
           python -m netsentry.cli selftrain -o configs/ci.yaml
           python -m netsentry.cli campaigns -o configs/ci.yaml
+      - name: Adaptive-operation studies (baserate · adaptiveconformal · refresh · exemplars)
+        run: |
+          python -m netsentry.cli baserate -o configs/ci.yaml
+          python -m netsentry.cli adaptiveconformal -o configs/ci.yaml
+          python -m netsentry.cli refresh -o configs/ci.yaml
+          python -m netsentry.cli exemplars -o configs/ci.yaml
       - name: Model lifecycle (seeds · gate · promote · retrainpolicy)
         run: |
           python -m netsentry.cli seeds -o configs/ci.yaml

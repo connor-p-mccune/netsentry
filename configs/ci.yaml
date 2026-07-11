@@ -10,6 +10,12 @@ seed_variance:
   n_seeds: 3             # 4 refits total (incl. the same-seed repro check) is plenty for CI
 retrain_policy:
   n_batches: 4           # the tiny stream still exercises every trigger path
+refresh:
+  n_batches: 4           # match the retrain-policy stream at CI scale
+adaptive_conformal:
+  window: 200            # the 5k-row smoke's test stream needs smaller coverage windows
+exemplars:
+  per_class: 50          # a compact case base is plenty to exercise the retrieval
 leaderboard:
   families: [majority, logistic, gbdt]  # one linear + the deployed family is enough smoke
 selftrain:
