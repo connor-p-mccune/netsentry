@@ -1,0 +1,18 @@
+apiVersion: v2
+name: netsentry
+description: Leakage-safe ML network intrusion detection — the FastAPI inference service.
+type: application
+# Chart version is independent of the app; bump it when the templates change.
+version: 0.1.0
+# The NetSentry release this chart is built for.
+appVersion: "0.5.0"
+keywords:
+  - intrusion-detection
+  - machine-learning
+  - security
+  - mlops
+home: https://github.com/connor-p-mccune/netsentry
+sources:
+  - https://github.com/connor-p-mccune/netsentry
+maintainers:
+  - name: Connor McCune

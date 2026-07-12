@@ -7,6 +7,18 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Kubernetes deployment (`deploy/`): a production Helm chart
+  (`deploy/helm/netsentry`) and equivalent raw Kustomize manifests (`deploy/k8s`)
+  for the inference API, both rendering the same hardened deployment — a
+  health-gated rollout (liveness/readiness on `/health` + a `startupProbe` for the
+  first-boot bundle bootstrap), autoscaling (CPU-target HPA + PodDisruptionBudget),
+  a Prometheus Operator ServiceMonitor scraping `/metrics`, and a hardened runtime
+  (non-root uid 1000, readOnlyRootFilesystem, all capabilities dropped,
+  RuntimeDefault seccomp, no mounted service-account token). Optional `X-API-Key`
+  auth is injected from a Kubernetes Secret, never baked into a manifest. The model
+  volume defaults to an emptyDir (the image's synthetic-bundle bootstrap) and takes
+  a PVC for a real bundle. `make helm-lint` / `helm-template` / `k8s-render` /
+  `k8s-apply` targets and a `deploy/README.md` guide.
 - Beaconing / C2 periodicity detection (`netsentry beacon`,
   `netsentry/intel/beacon.py`): the cross-flow, identity-aware complement to the
   per-flow classifier, which drops every identifier and so is structurally blind to

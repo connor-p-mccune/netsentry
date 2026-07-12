@@ -556,6 +556,31 @@ gauges**, and the attack-probability distribution. Prometheus
 here: major input drift (PSI > 0.25), an attack-flag spike, error-rate, and a p99
 latency SLO. Grafana at `:3000` (admin/admin), Prometheus at `:9090`.
 
+## Kubernetes deployment (Helm + Kustomize)
+
+Beyond `docker compose`, the API ships production Kubernetes manifests in
+[`deploy/`](deploy) — a **Helm chart** (`deploy/helm/netsentry`) and equivalent raw
+**Kustomize** manifests (`deploy/k8s`), both rendering the same hardened deployment:
+
+```bash
+helm install netsentry deploy/helm/netsentry -n netsentry --create-namespace
+#   or, without Helm:
+kubectl -n netsentry apply -k deploy/k8s
+```
+
+Both give a **health-gated rollout** (liveness/readiness on the real `/health`, plus
+a `startupProbe` that covers the first-boot bundle bootstrap so a slow cold start
+never trips liveness), **autoscaling** (a CPU-target `HorizontalPodAutoscaler` and a
+`PodDisruptionBudget` that keeps a replica serving through drains), a Prometheus
+Operator **`ServiceMonitor`** scraping the same `/metrics` the Grafana dashboard
+renders, and a **hardened runtime** — non-root uid 1000, `readOnlyRootFilesystem`,
+all capabilities dropped, `RuntimeDefault` seccomp, no mounted service-account token.
+The optional `X-API-Key` is injected from a Kubernetes Secret, never baked into a
+manifest. Mount a trained bundle from a PVC for real detection, or let the default
+`emptyDir` trigger the image's synthetic-bundle bootstrap for a demo. `make
+helm-lint` / `make k8s-render` preview the manifests; full guide in
+[`deploy/README.md`](deploy/README.md).
+
 ## Cross-dataset generalization
 
 The strongest honesty test is whether the model transfers to a *different*

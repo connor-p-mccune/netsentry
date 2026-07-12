@@ -1,0 +1,18 @@
+# Requires the Prometheus Operator CRDs (kube-prometheus-stack). Apply only if the
+# monitoring.coreos.com/v1 API is present in the cluster.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: netsentry
+  labels:
+    app.kubernetes.io/name: netsentry
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: netsentry
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

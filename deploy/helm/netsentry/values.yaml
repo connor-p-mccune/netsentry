@@ -1,0 +1,120 @@
+# Default values for the NetSentry inference service.
+# Production-leaning defaults: two replicas, autoscaling, a Prometheus ServiceMonitor,
+# and a hardened non-root security context. Override per environment with -f.
+
+replicaCount: 2
+
+image:
+  repository: netsentry-serve
+  tag: "0.5.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+# Extra NETSENTRY_* environment (the app reads config via the NETSENTRY_ env prefix,
+# nested with __). These map straight onto the pydantic Settings tree.
+env:
+  NETSENTRY_LOG_JSON: "1"
+  NETSENTRY_SERVING__PORT: "8000"
+  # Turn on the drift/attack Prometheus metrics window, pick a default profile, etc.
+  # NETSENTRY_SERVING__DEFAULT_THRESHOLD_PROFILE: "fpr_0.1pct"
+
+# Optional API-key auth on the prediction endpoints. When enabled, the key is read
+# from a Kubernetes Secret and injected as NETSENTRY_SERVING__API_KEY, so it never
+# lands in a manifest or an image layer.
+apiKey:
+  enabled: false
+  # Reference an existing secret, or let the chart create one from `value`.
+  existingSecret: ""
+  secretKey: api-key
+  value: ""
+
+service:
+  type: ClusterIP
+  port: 8000
+  annotations: {}
+
+# HTTP probes hit the app's real /health endpoint (readiness/liveness) and give the
+# first-boot synthetic-bundle bootstrap time via a startupProbe.
+probes:
+  startup:
+    failureThreshold: 30
+    periodSeconds: 10
+  readiness:
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  liveness:
+    periodSeconds: 20
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  # targetMemoryUtilizationPercentage: 80
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Prometheus Operator ServiceMonitor (scrapes /metrics). Enable when the cluster
+# runs kube-prometheus-stack / the Prometheus Operator CRDs.
+serviceMonitor:
+  enabled: false
+  interval: 15s
+  scrapeTimeout: 10s
+  labels: {}
+
+# The model bundle. Default: an emptyDir + the image's first-boot synthetic
+# bootstrap, so the chart runs out-of-the-box. In production, point `existingClaim`
+# at a PVC that holds a real trained bundle (models/serving_bundle.joblib).
+model:
+  persistence:
+    enabled: false
+    existingClaim: ""
+  mountPath: /app/models
+
+podAnnotations:
+  # Scrape via pod annotations too, for Prometheus setups without the Operator.
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8000"
+  prometheus.io/path: /metrics
+
+# Hardened pod/container security context (matches the non-root uid 1000 image).
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+# Spread replicas across nodes by default for availability.
+topologySpreadConstraints: []

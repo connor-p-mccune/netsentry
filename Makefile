@@ -3,7 +3,8 @@
 PY ?= python
 
 .PHONY: help install install-all lint format typecheck test test-fast check clean \
-	smoke analysis verify lifecycle docker-serve docker-train docker-up docker-monitor docker-down
+	smoke analysis verify lifecycle docker-serve docker-train docker-up docker-monitor docker-down \
+	helm-lint helm-template k8s-render k8s-apply
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -71,6 +72,19 @@ docker-monitor: ## Run the API + Prometheus + Grafana (dashboard at :3000, admin
 
 docker-down: ## Stop the compose stack (all profiles)
 	docker compose -f docker/docker-compose.yml --profile monitoring --profile tracking down
+
+helm-lint: ## Lint the serving Helm chart
+	helm lint deploy/helm/netsentry
+
+helm-template: ## Render the Helm chart to stdout (preview the manifests)
+	helm template netsentry deploy/helm/netsentry
+
+k8s-render: ## Render the raw Kustomize manifests to stdout
+	kubectl kustomize deploy/k8s
+
+k8s-apply: ## Apply the raw Kustomize manifests to the current kube-context
+	kubectl create namespace netsentry --dry-run=client -o yaml | kubectl apply -f -
+	kubectl -n netsentry apply -k deploy/k8s
 
 clean: ## Remove caches and build artifacts
 	rm -rf .mypy_cache .ruff_cache .pytest_cache htmlcov .coverage build dist ./*.egg-info

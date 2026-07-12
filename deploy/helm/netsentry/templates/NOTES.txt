@@ -1,0 +1,28 @@
+NetSentry inference API is deploying.
+
+1. Watch the rollout:
+   kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "netsentry.fullname" . }}
+
+2. Port-forward and hit the API:
+   kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "netsentry.fullname" . }} {{ .Values.service.port }}:{{ .Values.service.port }}
+   curl localhost:{{ .Values.service.port }}/health
+   curl -X POST localhost:{{ .Values.service.port }}/predict \
+     -H 'content-type: application/json' -d @examples/sample_flow.json
+
+{{- if not .Values.model.persistence.enabled }}
+
+NOTE: model.persistence is disabled, so each pod builds a *synthetic* demo bundle
+on first boot (clearly labelled). For real detection, mount a trained bundle:
+  --set model.persistence.enabled=true --set model.persistence.existingClaim=<pvc>
+{{- end }}
+
+{{- if .Values.serviceMonitor.enabled }}
+
+Prometheus Operator ServiceMonitor is enabled — /metrics is scraped as job
+"{{ include "netsentry.fullname" . }}".
+{{- else }}
+
+Metrics are exposed at /metrics. Enable the Prometheus Operator ServiceMonitor with
+  --set serviceMonitor.enabled=true
+or scrape via the pod annotations already set.
+{{- end }}
