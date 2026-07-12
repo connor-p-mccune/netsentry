@@ -58,6 +58,11 @@ tighter than measured ([`reports/base_rate.md`](reports/base_rate.md)).
 - The training-time adversary: label flips barely move PR-AUC while the operating
   point collapses 21% → 1.8% ([`reports/poisoning.md`](reports/poisoning.md)) —
   the ranking-vs-operating-point thesis in the security dimension.
+- And the training-time fix, re-measured too: `netsentry sanitize` audits and drops
+  the poisoned labels and recovers detection 2.2% → 18.4% at a 50% flip, *through
+  the threshold channel* the poisoning study identified — with the clean-data tax
+  kept as a measured row ([`reports/poisoning_defense.md`](reports/poisoning_defense.md)).
+  Measure → fix → re-measure now closed for both adversaries.
 
 ## Stop 5 — The lifecycle layer is machinery, not slideware
 
@@ -103,9 +108,27 @@ pcapng, both pure-stdlib), assembles the exact 78 training columns
 (`netsentry/capture/`), and scores them through the same engine — no
 re-implemented preprocessing to skew — and `netsentry incident` folds the scored
 flows into an analyst-ready incident report with ATT&CK context
-([`reports/incident_demo.md`](reports/incident_demo.md)).
+([`reports/incident_demo.md`](reports/incident_demo.md)). The output side reaches
+the operator's tools too: `netsentry watch` turns a spool of rotated flow files
+into **ECS** JSON-lines alerts a SIEM ingests directly (exactly-once via a
+size/mtime state file), and `POST /admin/reload` swaps the served model in place
+**only if the candidate reproduces its own behavioral canaries in the live
+runtime** — the deploy-time twin of the load-time canary, integration-tested for
+the swap, the 409 rejection, and models-dir path safety.
 
-## Stop 7 — Where the bodies are buried, on purpose
+## Stop 7 — The queue is simulated, because a fraction lies about time
+
+The alert-queue study says budget K catches this fraction of attacks; `netsentry
+socsim` asks the question a fraction cannot answer — *which* attacks get reviewed
+before the shift ends. A seeded, event-driven **M/G/c queue with abandonment**
+(`netsentry/evaluation/socsim.py`, core hand-checked in `tests/unit/test_socsim.py`)
+works the model's real alerts under FIFO vs score-priority, and the payoff is a
+number capacity-planning hides: risk-ordering the queue is worth up to **18 points
+of attack-SLA** once the offered load crosses 1 and the backlog forms — with the
+backlog column kept beside it to show the tail-starvation trade, not hide it
+([`reports/socsim.md`](reports/socsim.md)).
+
+## Stop 8 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the
@@ -119,7 +142,7 @@ file is probably the fastest signal in the repo.
 make install
 netsentry download && netsentry prep   # synthetic stand-in, out of the box
 make lifecycle                         # seeds → gate → promote → retrainpolicy → canary
-netsentry analyze                      # regenerate all 34 reports + the index
+netsentry analyze                      # regenerate all 36 reports + the index
 netsentry pcap --demo                  # raw packets → CIC flows → verdicts
 ```
 

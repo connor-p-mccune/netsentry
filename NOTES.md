@@ -1230,6 +1230,80 @@ smaller dev-run numbers noted in earlier phases:
   exact zeros — the same "figure lies a little, table doesn't" discipline the
   base-rate report uses.
 
+## SOC queue simulation (the time dimension the fraction hides)
+
+- The alert-queue study already answers "how many attacks does budget K catch,"
+  so I had to be sure `socsim` was a *different* question, not a reskin. It is:
+  the alert-queue number is a steady-state fraction that silently assumes the
+  queue is worked to the bottom every day. The moment you add arrival time,
+  finite servers, and a shift boundary, "in the queue" and "reviewed in time"
+  come apart — and only a simulation shows the split. Attack-SLA attainment is
+  the metric that makes the difference legible.
+- The result that convinced me it was worth shipping is the backlog column
+  *disagreeing* with the SLA column at deep saturation (2 analysts): priority
+  reviews more attacks in-SLA (15.9% vs 4.8%) yet leaves a *higher* attack
+  backlog (66.4% vs 62.6%). That is not a bug — priority spends its scarce
+  server-minutes on the top-scored attacks and starves the low-scored tail, while
+  FIFO spreads thin. The report keeps both columns so the trade is visible instead
+  of cherry-picked; the honest headline is the SLA win, the honest footnote is the
+  tail cost.
+- Keeping the event loop pure paid off immediately: because `simulate_queue` takes
+  explicit arrival/service/score arrays, the tests hand-check it against shifts I
+  worked out on paper (a late high-score attack waits 18 min under FIFO, 8 under
+  priority). The RNG lives entirely in the caller, so nothing about the core is
+  "trust the simulation" — it is arithmetic with a heap.
+- A near-miss I caught in review: at 0.1% FPR the alert set is 293 attacks / 300
+  flows, because at that strict budget almost everything over threshold is a true
+  attack. So the campaigns dominate the timeline and the benign-FP arrival model
+  barely matters here — fine for the mechanics demo, but I wrote the limit into
+  the report rather than letting a reader assume a realistic FP mix.
+
+## Canary-gated hot reload (the deploy-time twin of the load-time canary)
+
+- The canary already existed for load time; the insight was that the *same*
+  check is exactly what you want at swap time. A model swap that changes scores
+  because of an environment mismatch is the precise failure canaries were built
+  to catch, so gating `/admin/reload` on the candidate's own canary replay is
+  reusing a proven mechanism, not inventing a new trust story.
+- The subtlety was `canary_strict`: the InferenceEngine constructor *raises* on a
+  failed canary in strict mode, which would collapse "the candidate is behaviorally
+  wrong" (want 409) into "the candidate failed to load" (422). I load the probe
+  engine with a `canary_strict=False` copy of settings so the constructor never
+  raises on canary, then make the accept/reject decision explicitly — the endpoint
+  owns the gate, not the constructor.
+- The engine-holder indirection is the whole concurrency story: a single attribute
+  reassignment is atomic under the GIL, and any request that already read
+  `holder.engine` keeps its reference to completion. That is genuinely enough for a
+  single-process deploy; I wrote the multi-worker caveat (each worker reloads
+  independently) into the docstring rather than pretending it generalizes for free.
+- Path safety mattered more than it looked: `/admin/reload` takes a bundle name,
+  and without the `models_dir`-containment check that is an arbitrary-file-load
+  primitive. Resolving under `models_dir` and rejecting anything that escapes it is
+  the input-hygiene the whole project preaches, applied to its own admin surface.
+
+## Spool watcher (meet the alerts where the SOC already reads them)
+
+- The design goal was zero new concepts for the operator: they already have a
+  directory of rotated flow files and a SIEM that reads ECS. `watch` is just the
+  bridge, and choosing ECS (not a bespoke JSON) is the difference between "another
+  format to write a parser for" and "drops into Elasticsearch as-is." Mapping the
+  MITRE fields into `threat.*` and the capture identity into `source`/`destination`
+  is what makes it a real SIEM document rather than a scored CSV in JSON clothing.
+- Exactly-once was the part worth getting right, because a watcher that
+  double-emits on restart trains analysts to ignore it. Keying state on (size,
+  mtime) is deliberately simple and has a nice property: a writer still appending
+  to a file changes its mtime, so the file is naturally re-read on the next tick
+  once it settles — no separate "is it done being written" heuristic.
+- The best-effort posture is load-bearing for an unattended process: a malformed
+  or half-written file is marked-and-skipped, not retried every tick (which would
+  spin) and not fatal (which would take the watcher down over one bad file). The
+  same skip-don't-die discipline the pcap reader uses at the packet level, applied
+  at the file level.
+- `threshold_profile` was a small honesty catch: `score_dataframe` doesn't return
+  it per row, so my first draft emitted `null`. Rather than leave a null field I
+  pass the *resolved* profile (`profile or engine.default_profile`) through, so the
+  ECS document records the operating point the verdict was actually made at.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

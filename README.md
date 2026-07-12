@@ -17,19 +17,21 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.3.0`.** The build plan in
+**Released `v0.4.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and two post-release waves build on top — the
+tested, and committed, and three post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
-thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack) and the
+thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
-threshold refresh, exemplar evidence, pcapng, incident reports). `make check` is
-green (lint + type-check + **409 passing tests**, property-based invariants
-included), and the full `download → prep → train → eval → serve` pipeline runs
-end-to-end on the bundled synthetic data (raw packet captures included, via
-`netsentry pcap`), followed by a **model-lifecycle layer** (noise floor → release
-gate → promotion → canaries → shadow → retrain policy) that governs what actually
-ships.
+threshold refresh, exemplar evidence, pcapng, incident reports), and the
+defense-and-operations wave (poisoning defense re-measured, threshold transfer
+priced, a discrete-event SOC queue simulation, canary-gated hot reload, and an
+ECS spool watcher). `make check` is green (lint + type-check + **443 passing
+tests**, property-based invariants included), and the full `download → prep →
+train → eval → serve` pipeline runs end-to-end on the bundled synthetic data (raw
+packet captures included, via `netsentry pcap`), followed by a **model-lifecycle
+layer** (noise floor → release gate → promotion → canaries → shadow → retrain
+policy) that governs what actually ships.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -59,6 +61,7 @@ ships.
 | Adversarial hardening | adversarial training vs mimicry, re-measured (measure → fix → re-measure) | ✅ Done |
 | Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
 | Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |
+| SOC queue simulation | discrete-event M/G/c queue: FIFO vs score-priority attack-SLA | ✅ Done |
 | Base-rate stress test | alert precision vs production prevalence (Axelsson 1999) | ✅ Done |
 | Conformal prediction | distribution-free coverage + selective alerting | ✅ Done |
 | Adaptive conformal | coverage restored online under drift (ACI); the review-load price | ✅ Done |
@@ -100,6 +103,8 @@ ships.
 | Surrogate distillation | the model's closest auditable imitation, fidelity priced | ✅ Done |
 | Packet ingestion | raw pcap/pcapng → CIC flows → verdicts, pure-stdlib capture stack | ✅ Done |
 | Zeek ingestion | conn.log (TSV/JSON) → CIC features → verdicts, limits stated | ✅ Done |
+| Spool watcher | watch a flow-file directory → ECS JSON-lines alerts for a SIEM | ✅ Done |
+| Canary-gated hot reload | swap the served model in place only if it reproduces its canaries | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -233,6 +238,9 @@ netsentry selftrain                 # pseudo-labels on the unlabeled stream vs t
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
 netsentry alertqueue                # detection vs analyst budget (lift over random triage)
+netsentry socsim                    # simulate the analyst queue: FIFO vs score-priority SLA
+netsentry sanitize                  # audit-and-drop poisoned labels, then re-measure
+netsentry transfer                  # re-buy the FPR budget on a foreign set: quantile vs labels
 netsentry baserate                  # alert precision vs production base rate (Axelsson's fallacy)
 netsentry adaptiveconformal         # conformal coverage restored online under drift (ACI)
 netsentry driftscan                 # KS+FDR + online Page-Hinkley/DDM drift detection
@@ -249,6 +257,7 @@ netsentry score -i flows.csv --output scored.csv   # offline batch scoring
 netsentry incident -i flows.csv     # fold the alerts into an analyst-ready incident report
 netsentry pcap -i capture.pcap      # raw packets (pcap/pcapng) → CIC flows → verdicts (--demo to try it)
 netsentry zeek -i conn.log          # score the Zeek logs a network team already collects
+netsentry watch -s spool/ --alerts alerts.ndjson   # watch a flow-file spool → ECS alerts
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
@@ -376,6 +385,36 @@ incidents (T1046, `auto_alert`, sources and targets named) and a **DoS Hulk**
 incident (T1499). The report states its own limit: incident grouping is a
 contiguity heuristic — the campaigns study's correlation assumption — and adds
 no detection.
+
+## Streaming alerts to a SIEM (spool watcher)
+
+The incident and batch commands are one-shot; `netsentry watch` is the streaming
+sibling for the workflow most networks already have — flow records rotated into a
+directory (Zeek on a timer, a CICFlowMeter cron, or `netsentry pcap --flows-out`).
+The watcher scores each new file through the same `InferenceEngine` the API serves
+and appends the attack verdicts as **Elastic Common Schema (ECS)** JSON lines —
+the format Elasticsearch/OpenSearch and most SIEMs ingest directly: `event.*`
+envelope, `rule.name` for the class, `threat.*` for the MITRE mapping, and
+`source`/`destination`/`network` enriched from any capture-identity columns that
+rode along (never model features). A JSON state file keyed on each file's size and
+mtime makes processing **exactly-once** across restarts and overlapping ticks; a
+malformed file is logged and skipped, never fatal; `--once` drains the backlog and
+exits (cron, tests) while the default polls. `netsentry watch -s /var/spool/flows
+--alerts alerts.ndjson` is the whole deployment.
+
+## Canary-gated hot reload (swap the model without a restart)
+
+The behavioral canary already proves, at load time, that the serving runtime
+reproduces the model that was validated. `POST /admin/reload` (config-gated
+`serving.reload_enabled`, off by default, API-key guarded) turns that check into a
+**deploy gate**: it loads a candidate bundle into a fresh engine, replays *that
+bundle's* embedded canaries in the live runtime, and swaps the served model in
+place **only if they reproduce within tolerance** — a mismatch is refused `409` and
+the current model keeps serving (a path escaping the models dir is `400`, a missing
+bundle `404`). The swap is a single atomic reference reassignment, so in-flight
+requests finish on the model they started with, and every attempt increments
+`netsentry_model_reloads_total{outcome}`. `netsentry verify` attests a bundle's
+*bytes* offline; the reload gate attests its *behaviour* at the moment of the swap.
 
 ## Monitoring & drift
 
@@ -565,6 +604,24 @@ triage: ~12 analysts (500 alerts/day) catch 2.5% of attacks at ~83% queue precis
 rising to 8.2% at 2,500/day, with detection flattening as staffing climbs — the
 capacity-planning knee PR-AUC alone can't show. See
 [`docs/reports/alert_queue.md`](docs/reports/alert_queue.md).
+
+## SOC queue simulation (detection in the time domain)
+
+The alert-queue study is *static* capacity planning: at budget K the ranking puts
+this fraction of attacks in the queue, assuming the queue is worked perfectly. Real
+queues have **time** — alerts arrive over a shift, analysts are finite servers, and a
+burst of benign false positives can bury a genuine attack past the point anyone reviews
+it. `netsentry socsim` runs a **non-preemptive M/G/c queue with abandonment at the shift
+boundary** (seeded, event-driven), lays the model's real alerts onto a shift (benign FPs
+uniform, attacks clustered into campaigns), and works them under two disciplines: FIFO
+and score-priority. The headline — **attack-SLA attainment**, the share of true-attack
+alerts an analyst *starts within the SLA window* — decomposes the alert-queue study's
+"detected" into "detected **and** triaged in time." On the stand-in, score-priority is
+worth up to **18 points** of attack-SLA (at 6 analysts, offered load 0.85: 49% vs FIFO's
+31%), and the sweep shows *where* it matters: the gain appears once the offered load
+crosses 1 and the backlog forms — the queueing knee a fraction can't express, since a
+fraction assumes the queue was worked. The event-driven core is a pure, deterministic
+function, hand-checked in the tests. See [`docs/reports/socsim.md`](docs/reports/socsim.md).
 
 ## The base-rate fallacy, measured
 
