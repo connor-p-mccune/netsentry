@@ -6,7 +6,50 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-07-11
+
+The defense-and-operations wave: the training-time adversary's defense
+re-measured (audit-and-drop sanitization, completing the measure→fix→re-measure
+arc), the cross-schema operating-point advice finally priced (threshold
+transfer), a discrete-event SOC queue simulation that shows why triage order
+matters once the queue saturates, and two production surfaces — canary-gated hot
+model reload and an ECS spool watcher that streams SIEM-ready alerts from a
+directory of dropped flow files.
+
 ### Added
+- SOC queue simulation (`netsentry socsim`, `netsentry/evaluation/socsim.py`): a
+  non-preemptive M/G/c queue with abandonment at the shift boundary, seeded and
+  event-driven, that lays the deployed model's real alerts onto a shift (benign
+  false positives uniform, attacks clustered into campaigns) and works them under
+  FIFO vs score-priority. The headline is attack-SLA attainment — the share of
+  true-attack alerts an analyst starts within the SLA window — which decomposes
+  the alert-queue study's "detected" into "detected AND triaged in time." On the
+  stand-in, score-priority is worth up to 18 points of attack-SLA, appearing once
+  the offered load crosses 1 and the backlog forms — the queueing knee a static
+  fraction cannot express. The event-driven core is a pure, deterministic function
+  hand-checked against known shifts; the arrival timeline is documented as a model
+  (CIC-IDS2017 has no per-flow clock); in the analysis suite.
+- Canary-gated hot model reload (`POST /admin/reload`, `netsentry/serving/app.py`):
+  config-gated (`serving.reload_enabled`, off by default, API-key guarded) swap of
+  the live bundle without a restart. The candidate is loaded into a fresh engine
+  that replays its own embedded behavioral canaries in this runtime; the swap
+  happens only if they reproduce within tolerance (mismatch → 409, keeping the old
+  model; escaping path → 400; missing bundle → 404). The engine lives behind a
+  mutable holder so the swap is a single atomic reassignment and in-flight requests
+  finish on the model they started with; every attempt increments
+  `netsentry_model_reloads_total{outcome}`. The deploy-time analogue of the
+  load-time canary — `verify` attests the bytes, this attests the behaviour at the
+  moment of the swap. Integration-tested (swap, canary gate, path safety).
+- Spool watcher (`netsentry watch`, `netsentry/serving/watch.py`): scores each new
+  flow file dropped into a directory (Zeek rotation, a CICFlowMeter cron, or
+  `pcap --flows-out`) through the same engine the API serves and appends the attack
+  verdicts as Elastic Common Schema (ECS) JSON lines — `event.*` envelope,
+  `rule.name`, `threat.*` for the MITRE mapping, and `source`/`destination`/
+  `network` enriched from capture-identity columns that ride along (never model
+  features). A JSON state file keyed on each file's size and mtime makes processing
+  exactly-once across restarts; a malformed file is skipped, never fatal; `--once`
+  drains the backlog and exits. ECS mapping and state logic are pure and
+  unit-tested; an end-to-end slow test drives a real bundle over a spooled file.
 - Poisoning defense (`netsentry sanitize`, `netsentry/robustness/sanitize.py`):
   the third step of the measure→fix→re-measure arc for the training-time
   adversary, mirroring `netsentry harden` for evasion. Flips are planted across
