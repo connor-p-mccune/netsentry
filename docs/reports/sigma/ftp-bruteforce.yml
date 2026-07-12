@@ -1,0 +1,25 @@
+title: Rapid repeated connections to FTP (Patator style)
+id: 66b23953-fe0d-5f4f-bce9-1c7e024ca4a6
+status: experimental
+description: NetSentry signature 'ftp-bruteforce'. Rapid repeated connections to FTP
+  (Patator style). Fields are CICFlowMeter/NetSentry flow-feature names; map them
+  to your flow-log schema with a Sigma field mapping.
+references:
+- https://github.com/connor-p-mccune/netsentry
+author: NetSentry
+date: 2026/07/12
+logsource:
+  category: flow
+  product: cicflowmeter
+detection:
+  selection:
+    Destination Port: 21
+    SYN Flag Count|gte: 4
+    Total Fwd Packets|gte: 20
+  condition: selection
+falsepositives:
+- Legitimate traffic matching the same volumetric/timing shape
+level: medium
+tags:
+- attack.credential-access
+- attack.t1110

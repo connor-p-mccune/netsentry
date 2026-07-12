@@ -1,0 +1,25 @@
+title: Connection held open with sparse traffic (slowloris style)
+id: 469109c0-74be-5e28-b817-b5e0ef754bb7
+status: experimental
+description: NetSentry signature 'slow-drip-dos'. Connection held open with sparse
+  traffic (slowloris style). Fields are CICFlowMeter/NetSentry flow-feature names;
+  map them to your flow-log schema with a Sigma field mapping.
+references:
+- https://github.com/connor-p-mccune/netsentry
+author: NetSentry
+date: 2026/07/12
+logsource:
+  category: flow
+  product: cicflowmeter
+detection:
+  selection:
+    Flow Duration|gte: 600000
+    Flow IAT Mean|gte: 50000
+    Total Fwd Packets|lte: 8
+  condition: selection
+falsepositives:
+- Legitimate traffic matching the same volumetric/timing shape
+level: medium
+tags:
+- attack.impact
+- attack.t1499.002

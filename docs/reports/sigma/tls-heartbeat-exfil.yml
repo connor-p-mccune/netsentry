@@ -1,0 +1,25 @@
+title: Oversized TLS responses to tiny requests (Heartbleed style)
+id: c5bd8658-d11b-568b-98fb-ee831b924572
+status: experimental
+description: NetSentry signature 'tls-heartbeat-exfil'. Oversized TLS responses to
+  tiny requests (Heartbleed style). Fields are CICFlowMeter/NetSentry flow-feature
+  names; map them to your flow-log schema with a Sigma field mapping.
+references:
+- https://github.com/connor-p-mccune/netsentry
+author: NetSentry
+date: 2026/07/12
+logsource:
+  category: flow
+  product: cicflowmeter
+detection:
+  selection:
+    Destination Port: 443
+    Bwd Packet Length Max|gte: 300
+    Total Length of Bwd Packets|gte: 4000
+  condition: selection
+falsepositives:
+- Legitimate traffic matching the same volumetric/timing shape
+level: medium
+tags:
+- attack.initial-access
+- attack.t1190

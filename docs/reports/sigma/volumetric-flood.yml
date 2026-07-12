@@ -1,0 +1,24 @@
+title: High packet- and byte-rate flood (DoS Hulk / DDoS style)
+id: 470f3d08-5f1c-5536-9035-11562b99f278
+status: experimental
+description: NetSentry signature 'volumetric-flood'. High packet- and byte-rate flood
+  (DoS Hulk / DDoS style). Fields are CICFlowMeter/NetSentry flow-feature names; map
+  them to your flow-log schema with a Sigma field mapping.
+references:
+- https://github.com/connor-p-mccune/netsentry
+author: NetSentry
+date: 2026/07/12
+logsource:
+  category: flow
+  product: cicflowmeter
+detection:
+  selection:
+    Flow Packets/s|gte: 800
+    Flow Bytes/s|gte: 8000
+  condition: selection
+falsepositives:
+- Legitimate traffic matching the same volumetric/timing shape
+level: medium
+tags:
+- attack.impact
+- attack.t1499

@@ -1,0 +1,25 @@
+title: Rapid repeated connections to SSH (Patator style)
+id: cf990f36-cb9e-5faa-85f9-40b81bf597fb
+status: experimental
+description: NetSentry signature 'ssh-bruteforce'. Rapid repeated connections to SSH
+  (Patator style). Fields are CICFlowMeter/NetSentry flow-feature names; map them
+  to your flow-log schema with a Sigma field mapping.
+references:
+- https://github.com/connor-p-mccune/netsentry
+author: NetSentry
+date: 2026/07/12
+logsource:
+  category: flow
+  product: cicflowmeter
+detection:
+  selection:
+    Destination Port: 22
+    SYN Flag Count|gte: 4
+    Total Fwd Packets|gte: 20
+  condition: selection
+falsepositives:
+- Legitimate traffic matching the same volumetric/timing shape
+level: medium
+tags:
+- attack.credential-access
+- attack.t1110

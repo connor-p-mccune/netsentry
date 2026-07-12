@@ -41,6 +41,7 @@ from netsentry.explain.importance_stability import run_importance_stability_repo
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
+from netsentry.intel.sigma import run_sigma_export
 from netsentry.log import get_logger
 from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
@@ -262,6 +263,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection coverage as a loadable Navigator layer",
         "attack_navigator_layer.json",
         run_navigator_export,
+    ),
+    (
+        "Sigma detection rules",
+        "the signature baseline exported as portable Sigma rules",
+        "sigma/README.md",
+        run_sigma_export,
     ),
     (
         "Provenance & supply chain",

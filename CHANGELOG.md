@@ -6,6 +6,22 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- Sigma detection-rule export (`netsentry sigma`, `netsentry/intel/sigma.py`):
+  the hand-written signature baseline (`rules.definitions`, the incumbent
+  `netsentry rules` benchmarks the model against) emitted as portable
+  [Sigma](https://sigmahq.io) rules a detection-engineering team compiles to any
+  SIEM backend via pySigma. Each rule carries the Sigma comparison modifiers
+  (`|gte`/`|lte`), an indicative ATT&CK tag shared with the `mitre` prediction
+  field via the one mapping (so they cannot drift), and a deterministic UUIDv5
+  `id` (byte-stable regeneration, no version-control churn). Field names stay
+  CICFlowMeter/NetSentry flow-feature names with the field-mapping caveat written
+  into the generated `README.md`. Colliding clauses on one field split into
+  separate `selection_*` groups; NaN never matches, mirroring the `RuleEngine`
+  semantics. The committed pack lives in `docs/reports/sigma/`; wired into the
+  analysis suite. Modifier mapping, ATT&CK tags, deterministic ids, YAML
+  validity, and the export unit-tested.
+
 ## [0.4.0] — 2026-07-11
 
 The defense-and-operations wave: the training-time adversary's defense

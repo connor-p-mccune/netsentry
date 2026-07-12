@@ -1,0 +1,25 @@
+title: Short, SYN-heavy, low-volume probe (PortScan style)
+id: 6af5c564-4a2a-5137-a5cf-dc4453e566c0
+status: experimental
+description: NetSentry signature 'port-scan-sweep'. Short, SYN-heavy, low-volume probe
+  (PortScan style). Fields are CICFlowMeter/NetSentry flow-feature names; map them
+  to your flow-log schema with a Sigma field mapping.
+references:
+- https://github.com/connor-p-mccune/netsentry
+author: NetSentry
+date: 2026/07/12
+logsource:
+  category: flow
+  product: cicflowmeter
+detection:
+  selection:
+    SYN Flag Count|gte: 4
+    Flow Duration|lte: 20000
+    Total Fwd Packets|lte: 5
+  condition: selection
+falsepositives:
+- Legitimate traffic matching the same volumetric/timing shape
+level: medium
+tags:
+- attack.discovery
+- attack.t1046

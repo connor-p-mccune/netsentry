@@ -781,6 +781,22 @@ def navigator(
 
 
 @app.command()
+def sigma(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    out: Annotated[
+        Path | None, typer.Option(help="Output directory (default: reports_dir/sigma).")
+    ] = None,
+) -> None:
+    """Export the signature ruleset as portable Sigma detection rules for any SIEM."""
+    from netsentry.intel.sigma import export_sigma_rules
+
+    settings = _load(config, override)
+    target = export_sigma_rules(settings, out)
+    logger.info("Sigma rules ready", extra={"dir": str(target)})
+
+
+@app.command()
 def analyze(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

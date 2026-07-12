@@ -484,6 +484,24 @@ to see the technique matrix colored by NetSentry's measured per-class detection 
 Web/Heartbleed ~2, brute force ~5) — the honest shape of the coverage, in the
 framework a detection-engineering team already works from.
 
+## Sigma detection rules (deploy the signatures to any SIEM)
+
+The signature baseline the ML model is benchmarked against
+(`netsentry rules`) is not just an evaluation prop — `netsentry sigma` emits it as
+portable **[Sigma](https://sigmahq.io) rules**, the vendor-neutral detection format
+a detection-engineering team authors in and compiles (via
+[pySigma](https://github.com/SigmaHQ/pySigma)) to Splunk SPL, Elastic/Sentinel KQL,
+or any supported backend. Each of the six port-scoped signatures becomes a valid
+Sigma rule ([`docs/reports/sigma/`](docs/reports/sigma)) with the numeric
+comparison modifiers (`|gte` / `|lte`), an **indicative ATT&CK tag** shared with
+the `mitre` prediction field (so the two cannot drift), and a deterministic UUIDv5
+`id` so regenerating the pack is byte-stable. The honest scoping is written into the
+generated `README.md`: the fields are CICFlowMeter/NetSentry flow-feature names, so a
+one-time Sigma field-mapping points them at whatever flow-log schema a deployment
+ingests — the same binding any custom log source needs. Together with the ECS alert
+stream (`netsentry watch`) and the ATT&CK Navigator layer (`netsentry navigator`),
+it is the third artifact that lets NetSentry drop into a workflow a SOC already runs.
+
 ## Observability (Prometheus + Grafana)
 
 The API already exports Prometheus metrics; the stack ships a one-command
