@@ -32,6 +32,7 @@ from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.seed_variance import run_seed_variance_report
 from netsentry.evaluation.slices import run_slices_report
+from netsentry.evaluation.socsim import run_socsim_report
 from netsentry.evaluation.subgroups import run_subgroups_report
 from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.explain.distill import run_distill_report
@@ -79,6 +80,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection vs analyst budget; lift over random triage",
         "alert_queue.md",
         run_alert_queue_report,
+    ),
+    (
+        "SOC queue simulation",
+        "FIFO vs score-priority attack-SLA under queueing load",
+        "socsim.md",
+        run_socsim_report,
     ),
     (
         "Base-rate stress test",

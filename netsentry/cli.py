@@ -365,6 +365,19 @@ def alert_queue_cmd(
 
 
 @app.command()
+def socsim(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Simulate the analyst queue: FIFO vs score-priority attack-SLA under load."""
+    from netsentry.evaluation.socsim import run_socsim_report
+
+    settings = _load(config, override)
+    out = run_socsim_report(settings)
+    logger.info("SOC-sim report ready", extra={"path": str(out)})
+
+
+@app.command()
 def conformal(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -222,6 +222,19 @@ def test_poisoning_defense_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_socsim_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.socsim import run_socsim_report
+
+    prepared.socsim.n_runs = 3
+    prepared.socsim.arrivals_per_shift = 120
+    prepared.socsim.analyst_counts = [2, 4]
+    out = run_socsim_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "fifo" in text and "score-priority" in text
+    assert "attack-sla" in text and "offered load" in text
+
+
+@pytest.mark.slow
 def test_threshold_transfer_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.transfer import run_transfer_report
     from netsentry.serving.bundle import build_serving_bundle

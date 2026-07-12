@@ -189,6 +189,32 @@ class AlertQueueConfig(BaseModel):
     analyst_minutes_per_day: float = 420.0  # ~7 productive hours per analyst per day
 
 
+class SocSimConfig(BaseModel):
+    """Discrete-event simulation of the analyst queue at the deployed operating point.
+
+    The alert-queue study is static capacity planning — at budget K, what fraction
+    of attacks does the ranking put in the queue. This adds the dimension a
+    fraction cannot show: **time**. Real alerts arrive over a shift (benign false
+    positives roughly uniform, attack alerts clustered into campaigns), analysts
+    are finite servers with a per-alert service time, and a saturated queue makes
+    the triage discipline decide *which* attacks are reviewed before the shift
+    ends. FIFO works the oldest ticket; score-priority lets a high-risk attack
+    jump a benign false-positive pileup. The study sweeps analyst headcount so the
+    saturation knee is visible, and every point is a median over ``n_runs`` seeded
+    arrival draws. The timeline is a documented model (CIC-IDS2017 carries no
+    per-flow wall-clock), driven by the model's *real* score distribution and
+    labels."""
+
+    horizon_minutes: float = 480.0  # one analyst shift
+    arrivals_per_shift: int = 300  # alerts entering the queue over the shift (sampled)
+    minutes_per_alert_mean: float = 8.0  # mean exponential service time per alert
+    sla_minutes: float = 30.0  # an attack alert must reach an analyst within this
+    n_campaigns: int = 4  # attack alerts cluster into this many bursts
+    campaign_spread_minutes: float = 15.0  # burst width (std dev of arrival jitter)
+    analyst_counts: list[int] = Field(default_factory=lambda: [2, 3, 4, 6, 8])
+    n_runs: int = 20  # seeded arrival draws per (headcount, discipline); medians reported
+
+
 class BaseRateConfig(BaseModel):
     """Base-rate stress test: the operating points re-read at deployment prevalences.
 
@@ -856,6 +882,7 @@ class Settings(BaseSettings):
     cost: CostConfig = Field(default_factory=CostConfig)
     alert_queue: AlertQueueConfig = Field(default_factory=AlertQueueConfig)
     base_rate: BaseRateConfig = Field(default_factory=BaseRateConfig)
+    socsim: SocSimConfig = Field(default_factory=SocSimConfig)
     capture: CaptureConfig = Field(default_factory=CaptureConfig)
     validation: ValidationConfig = Field(default_factory=ValidationConfig)
     evaluation: EvaluationConfig = Field(default_factory=EvaluationConfig)
