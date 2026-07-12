@@ -38,6 +38,7 @@ from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.explain.distill import run_distill_report
 from netsentry.explain.exemplars import run_exemplars_report
 from netsentry.explain.importance_stability import run_importance_stability_report
+from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
@@ -226,6 +227,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "are the shipped explanations stable across refits",
         "importance_stability.md",
         run_importance_stability_report,
+    ),
+    (
+        "Partial dependence & ICE",
+        "the response-curve shape of the top features",
+        "partial_dependence.md",
+        run_partial_dependence_report,
     ),
     (
         "Exemplar explanations",

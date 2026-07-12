@@ -6,6 +6,7 @@ module stays cheap and it works in CI/containers without a display.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
@@ -103,6 +104,50 @@ def plot_barh(
         ax.axvline(xpos, color="#d1495b", linestyle="--", alpha=0.9, label=line_label)
         ax.legend(loc="lower right")
     ax.grid(alpha=0.3, axis="x")
+    return _save(fig, out_path)
+
+
+def plot_pdp_grid(
+    panels: Sequence[tuple[str, np.ndarray, np.ndarray, np.ndarray | None]],
+    *,
+    out_path: Path,
+    ylabel: str = "attack probability",
+    ncols: int = 2,
+) -> Path:
+    """Small-multiples partial-dependence panels: PDP (bold) over faint ICE curves.
+
+    Each panel is ``(feature, grid_x, pdp_y, ice_matrix|None)`` where ``ice_matrix``
+    is ``(n_ice, len(grid))``. The y-axis (attack probability) is shared across panels
+    so effect sizes are comparable at a glance.
+    """
+    plt = _plt()
+    n = len(panels)
+    ncols = max(1, min(ncols, n))
+    nrows = (n + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5.5 * ncols, 3.6 * nrows), squeeze=False)
+
+    lo, hi = 1.0, 0.0
+    for _, _, pdp, ice in panels:
+        vals = [np.asarray(pdp, dtype=float)]
+        if ice is not None and len(ice):
+            vals.append(np.asarray(ice, dtype=float).ravel())
+        stacked = np.concatenate(vals)
+        lo, hi = min(lo, float(stacked.min())), max(hi, float(stacked.max()))
+    pad = max(0.02, (hi - lo) * 0.1)
+    ylim = (max(0.0, lo - pad), min(1.0, hi + pad))
+
+    for i, (feature, grid, pdp, ice) in enumerate(panels):
+        ax = axes[i // ncols][i % ncols]
+        grid = np.asarray(grid, dtype=float)
+        if ice is not None and len(ice):
+            for row in np.asarray(ice, dtype=float):
+                ax.plot(grid, row, color="#9bb8d3", alpha=0.25, linewidth=0.7)
+        ax.plot(grid, np.asarray(pdp, dtype=float), color="#d1495b", linewidth=2.2, label="PDP")
+        ax.set(xlabel=feature, ylabel=ylabel, title=feature)
+        ax.set_ylim(*ylim)
+        ax.grid(alpha=0.3)
+    for j in range(n, nrows * ncols):  # hide unused panels
+        axes[j // ncols][j % ncols].axis("off")
     return _save(fig, out_path)
 
 

@@ -576,6 +576,19 @@ def exemplars(
     logger.info("Exemplars report ready", extra={"path": str(out)})
 
 
+@app.command("pdp")
+def partial_dependence_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Plot partial dependence + ICE for the top features (the model's response shape)."""
+    from netsentry.explain.partial_dependence import run_partial_dependence_report
+
+    settings = _load(config, override)
+    out = run_partial_dependence_report(settings)
+    logger.info("Partial-dependence report ready", extra={"path": str(out)})
+
+
 @app.command("importance")
 def importance_stability_cmd(
     config: ConfigOpt = None,

@@ -6,6 +6,24 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- Partial dependence + ICE (`netsentry pdp`,
+  `netsentry/explain/partial_dependence.py`): the response-curve shape the rest of
+  the explainability suite doesn't show. Partial dependence (Friedman) for the top
+  model features with individual conditional expectation (ICE) curves layered under
+  each, computed in raw feature space — a feature is swept across its own data
+  quantiles while the others stay put, and every perturbed frame is scored through
+  the fitted pipeline + model (the API's transform), so the axis is interpretable
+  and there is no train/serve skew. On the stand-in the steepest curves (Total Fwd
+  Packets, flow rates, Flow Duration) are the attacker-controllable features the
+  evasion/recourse studies exploit. The report states the PDP independence caveat
+  plainly and points at the ICE spread as the signal of correlation-driven
+  extrapolation, framing it as a marginal-response diagnostic, not a causal claim
+  (that is the ablation's job). Adds `plots.plot_pdp_grid` (small-multiples PDP+ICE
+  panels, shared y-axis) and a `partial_dependence.*` config block; in the analysis
+  suite. Grid trimming, the sweep math, ICE heterogeneity, and direction/effect
+  unit-tested; an end-to-end slow test writes the report and figure.
+
 ## [0.5.0] — 2026-07-12
 
 The SOC-native integrations wave: NetSentry stops speaking only its own dialect and

@@ -850,6 +850,25 @@ It's the companion to the SHAP global summary (which explains one model) and the
 ablation (which measures each family's causal value). See
 [`docs/reports/importance_stability.md`](docs/reports/importance_stability.md).
 
+## Partial dependence & ICE (the shape of the response)
+
+SHAP says *which* features matter and the ablation says *what a family is worth*, but
+neither shows the **shape** of the model's response — as a feature sweeps its range,
+does the attack probability rise, fall, saturate, or turn over? `netsentry pdp` adds
+that: partial dependence (Friedman) for the top features with individual conditional
+expectation (ICE) curves layered underneath, computed honestly in **raw feature
+space** — each feature is swept across its own data quantiles while the others stay
+put, and every perturbed flow is scored through the *fitted pipeline + model*, so the
+axis is interpretable and there is no train/serve skew. On the stand-in the steepest
+curves (Total Fwd Packets, flow rates, Flow Duration) are exactly the
+attacker-controllable features the evasion and recourse studies exploit — the
+response shape *is* the surface an adversary shapes traffic along. The report states
+the standard caveat plainly: PDP assumes the swept feature is independent of the
+others, so where features are correlated the curve extrapolates, and the **ICE
+spread** is the honest signal of that — a diagnostic of the model's marginal
+response, not a causal claim (the causal reading is the ablation's job). See
+[`docs/reports/partial_dependence.md`](docs/reports/partial_dependence.md).
+
 ## Exemplar explanations (the case-based *have we seen this?*)
 
 SHAP says which features drove a score; an analyst's next question is whether

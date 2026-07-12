@@ -371,6 +371,24 @@ class ImportanceStabilityConfig(BaseModel):
     max_val_rows: int = 4000  # cap validation rows for the permutation fallback (speed)
 
 
+class PartialDependenceConfig(BaseModel):
+    """Partial dependence + ICE: the response-curve shape of the top model features.
+
+    Complements the SHAP importance ranking (which features), the ablation (a
+    family's causal value), and the importance-stability audit (is the ranking
+    trustworthy) with the one thing none of them show — how the predicted attack
+    probability *moves* as a feature sweeps its range. Computed in raw feature space
+    through the fitted pipeline, so the axis is interpretable and there is no
+    train/serve skew. ``grid_trim_quantile`` clips the sweep to the feature's central
+    mass so a single outlier does not stretch the grid into empty space."""
+
+    top_k: int = 6  # most-important features to profile
+    grid_points: int = 20  # sweep resolution per feature
+    ice_samples: int = 40  # individual ICE curves drawn under each PDP
+    sample_rows: int = 500  # validation rows the PDP is averaged over
+    grid_trim_quantile: float = 0.05  # trim each tail before building the grid
+
+
 class ExemplarConfig(BaseModel):
     """Exemplar (case-based) explanations: nearest known training flows per query.
 
@@ -937,6 +955,7 @@ class Settings(BaseSettings):
         default_factory=ImportanceStabilityConfig
     )
     exemplars: ExemplarConfig = Field(default_factory=ExemplarConfig)
+    partial_dependence: PartialDependenceConfig = Field(default_factory=PartialDependenceConfig)
     distill: DistillConfig = Field(default_factory=DistillConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
