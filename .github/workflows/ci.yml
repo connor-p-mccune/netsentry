@@ -90,6 +90,11 @@ jobs:
           python -m netsentry.cli adaptiveconformal -o configs/ci.yaml
           python -m netsentry.cli refresh -o configs/ci.yaml
           python -m netsentry.cli exemplars -o configs/ci.yaml
+      - name: Defense & operations studies (sanitize · transfer · socsim)
+        run: |
+          python -m netsentry.cli sanitize -o configs/ci.yaml
+          python -m netsentry.cli transfer -o configs/ci.yaml
+          python -m netsentry.cli socsim -o configs/ci.yaml
       - name: Model lifecycle (seeds · gate · promote · retrainpolicy)
         run: |
           python -m netsentry.cli seeds -o configs/ci.yaml

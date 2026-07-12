@@ -20,6 +20,16 @@ leaderboard:
   families: [majority, logistic, gbdt]  # one linear + the deployed family is enough smoke
 selftrain:
   max_pseudo_per_class: 2000
+sanitize:
+  flip_rates: [0.0, 0.25]  # two points exercise both the tax and the recovery branch
+  max_rows: 3000
+transfer:
+  label_budgets: [50, 500]  # one starved budget + one that begins to hold
+  n_resamples: 5
+socsim:
+  n_runs: 3                # medians over 3 draws are enough to exercise the queue
+  arrivals_per_shift: 120
+  analyst_counts: [2, 4]   # one saturated setting + one nearer capacity
 gate:
   min_tpr_at_primary_fpr: 0.0  # the 5k-row smoke is about the structural checks
   max_ece: 1.0
