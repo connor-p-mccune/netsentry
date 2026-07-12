@@ -811,6 +811,24 @@ class IncidentConfig(BaseModel):
     top_talkers: int = 5  # sources/targets/services listed per incident
 
 
+class BeaconConfig(BaseModel):
+    """Beaconing / C2 periodicity detection over connection timelines.
+
+    The per-flow classifier drops every identifier and scores flows in isolation,
+    so it cannot see a host calling home on a fixed cadence (ATT&CK Command and
+    Control). This unsupervised, identity-aware analytic groups connections by
+    talker pair and scores the regularity of their inter-arrival times. A pair needs
+    ``min_events`` connections before periodicity is judgeable; ``score_threshold``
+    is the regularity flag line (1.0 = perfectly periodic, 0.0 = bursty). Reads the
+    timestamp/identity columns as metadata only — the fields the model never sees."""
+
+    timestamp_column: str = "Timestamp"
+    min_events: int = 8  # connections a pair needs before its regularity is scored
+    score_threshold: float = 0.85  # regularity at/above which a pair is flagged
+    by_port: bool = True  # group by (src, dst, dst_port) rather than (src, dst)
+    top_n: int = 20  # ranked candidates rendered in the report
+
+
 class StixConfig(BaseModel):
     """STIX 2.1 threat-intel bundle export from scored detections.
 
@@ -935,6 +953,7 @@ class Settings(BaseSettings):
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
     transfer: TransferConfig = Field(default_factory=TransferConfig)
     incident: IncidentConfig = Field(default_factory=IncidentConfig)
+    beacon: BeaconConfig = Field(default_factory=BeaconConfig)
     stix: StixConfig = Field(default_factory=StixConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)

@@ -7,6 +7,21 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Beaconing / C2 periodicity detection (`netsentry beacon`,
+  `netsentry/intel/beacon.py`): the cross-flow, identity-aware complement to the
+  per-flow classifier, which drops every identifier and so is structurally blind to
+  a host calling home on a fixed cadence (ATT&CK Command and Control, T1071). Groups
+  connections by talker pair (`Src IP` -> `Dst IP`, optionally per destination port)
+  and scores each pair's inter-arrival-time regularity with a robust dispersion (MAD
+  over the median interval), 0.0 (bursty/human) to 1.0 (perfectly periodic), skipping
+  pairs below `beacon.min_events`. `--demo` runs a deterministic synthetic capture
+  that plants one 60 s beacon among jittery benign talkers; the detector ranks it
+  first (regularity 0.975, CV 0.04) above every benign pair (<=0.44), committed to
+  `docs/reports/beacon_demo.md`. Reads the timestamp/identity columns as metadata
+  only — the fields the model never sees — and the report states the scope plainly:
+  a hunt-lead generator, not a verdict (legitimate periodic services also flag), and
+  it adds no detection to the per-flow verdicts. `beacon.*` config. Regularity math,
+  ranking, min-events skipping, timestamp-order recovery, and the demo unit-tested.
 - STIX 2.1 threat-intel bundle export (`netsentry stix`,
   `netsentry/intel/stix.py`): scored-flow incidents (reusing the incident
   grouping) folded into a standards-conformant STIX 2.1 bundle a TAXII server or

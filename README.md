@@ -522,6 +522,28 @@ graph is navigable, and a **TLP marking-definition** (default AMBER) on every
 object. Every id is a deterministic UUIDv5 over stable content, so re-exporting the
 same detections yields a byte-identical bundle — idempotent to a TAXII push.
 
+## Beaconing / C2 detection (what the per-flow model can't see)
+
+The classifier scores each flow **in isolation** and, by design, drops every
+identifier — so it is structurally blind to **beaconing**: a compromised host
+calling home to a command-and-control server on a fixed cadence (MITRE ATT&CK
+**Command and Control**, T1071). No single callback looks anomalous; the
+*regularity of the schedule* is the tell, and it only exists **across** flows.
+`netsentry beacon` is the cross-flow, identity-aware complement — the timing mirror
+of how the signature ruleset is the interpretable complement. It groups connections
+by talker pair (`Src IP → Dst IP`, optionally per port) and scores each pair's
+inter-arrival regularity with a robust dispersion (MAD over the median interval),
+0.0 (bursty, human) to 1.0 (perfectly periodic). `netsentry beacon --demo` runs a
+deterministic synthetic capture that plants one 60-second beacon among jittery
+benign talkers; the detector ranks it first (regularity **0.975**, CV **0.04**)
+above every benign pair (≤0.44) — the mechanic on data with a known answer, in
+[`docs/reports/beacon_demo.md`](docs/reports/beacon_demo.md). It reads the
+timestamp/identity columns as **metadata only** (the fields the model never sees),
+and the report states its own limit plainly: this is a **hunt lead generator, not a
+verdict** — a legitimate periodic service (NTP, a monitoring poll, a cron job) is
+also regular and will score high, so the analytic surfaces ranked candidates for a
+human, and adds no detection to the per-flow verdicts.
+
 ## Observability (Prometheus + Grafana)
 
 The API already exports Prometheus metrics; the stack ships a one-command

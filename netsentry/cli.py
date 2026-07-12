@@ -969,6 +969,31 @@ def incident(
 
 
 @app.command()
+def beacon(
+    input: Annotated[
+        Path | None, typer.Option("--input", "-i", help="Flow file with identity + timestamp.")
+    ] = None,
+    output: Annotated[
+        Path | None, typer.Option("--output", help="Where to write the beacon report.")
+    ] = None,
+    demo: Annotated[
+        bool, typer.Option(help="Analyze a synthetic capture with a planted beacon.")
+    ] = False,
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Rank talker pairs by beacon-like periodicity (C2 the per-flow model can't see)."""
+    from netsentry.intel.beacon import run_beacon_report
+
+    settings = _load(config, override)
+    if input is None and not demo:
+        logger.error("Provide a flow file with --input, or use --demo.")
+        raise typer.Exit(code=2)
+    out = run_beacon_report(settings, input_path=input, output_path=output, demo=demo)
+    logger.info("Beacon report ready", extra={"path": str(out)})
+
+
+@app.command()
 def stix(
     input: Annotated[Path, typer.Option("--input", "-i", help="Flow file (CSV/Parquet).")],
     output: Annotated[
