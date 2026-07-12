@@ -244,6 +244,61 @@ def test_hot_reload_rejects_missing_and_escaping_bundles(  # type: ignore[no-unt
 
 
 @pytest.mark.slow
+def test_watch_spool_emits_ecs_alerts(  # type: ignore[no-untyped-def]
+    repo_root: Path, tmp_path: Path, clean_synth: pd.DataFrame
+) -> None:
+    import json
+
+    settings = load_settings(repo_root / "configs" / "default.yaml")
+    settings.paths.data_processed = tmp_path / "processed"
+    settings.paths.models_dir = tmp_path / "models"
+    settings.paths.mlruns_dir = tmp_path / "mlruns"
+    settings.mlflow.enabled = False
+    settings.supervised.n_estimators = 60
+    settings.paths.data_processed.mkdir(parents=True)
+    clean_synth.to_parquet(settings.paths.data_processed / "clean.parquet", index=False)
+    make_splits(settings)
+    build_serving_bundle(settings)
+
+    from netsentry.serving.watch import run_watch
+
+    spool = tmp_path / "spool"
+    spool.mkdir()
+    # A flow file with capture-identity metadata columns (as pcap --flows-out emits).
+    flows = clean_synth.head(40).copy()
+    flows["Src IP"] = "10.0.0.5"
+    flows["Dst IP"] = "10.0.0.9"
+    flows["Dst Port"] = 80
+    flows.to_csv(spool / "flows_001.csv", index=False)
+
+    alerts_out = tmp_path / "alerts.ndjson"
+    state_path = tmp_path / "state.json"
+    totals = run_watch(
+        settings,
+        spool=spool,
+        alerts_out=alerts_out,
+        state_path=state_path,
+        once=True,
+        emit_all=True,  # deterministic output regardless of the operating threshold
+    )
+    assert totals["files"] == 1
+    assert totals["alerts"] == 40  # one ECS doc per flow under emit_all
+    lines = alerts_out.read_text(encoding="utf-8").strip().splitlines()
+    assert len(lines) == 40
+    doc = json.loads(lines[0])
+    assert doc["ecs"]["version"] == "8.11"
+    assert doc["event"]["kind"] == "alert"
+    assert doc["source"]["ip"] == "10.0.0.5"  # metadata rode into ECS network fields
+    assert doc["destination"]["port"] == 80
+
+    # A second pass processes nothing (the file is already recorded in state).
+    again = run_watch(
+        settings, spool=spool, alerts_out=alerts_out, state_path=state_path, once=True
+    )
+    assert again["files"] == 0
+
+
+@pytest.mark.slow
 def test_malformed_requests_return_422(client) -> None:  # type: ignore[no-untyped-def]
     # Unknown feature column.
     assert client.post("/predict", json={"flow": {"NotAFeature": 1.0}}).status_code == 422

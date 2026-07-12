@@ -991,6 +991,50 @@ def pcap(
 
 
 @app.command()
+def watch(
+    spool: Annotated[
+        Path, typer.Option("--spool", "-s", help="Directory to watch for new flow files.")
+    ],
+    alerts_out: Annotated[
+        Path, typer.Option("--alerts", help="ECS JSON-lines alert file to append to.")
+    ] = Path("alerts.ndjson"),
+    state: Annotated[Path, typer.Option(help="State file tracking processed spool files.")] = Path(
+        ".netsentry_watch_state.json"
+    ),
+    profile: Annotated[str | None, typer.Option(help="Threshold profile.")] = None,
+    once: Annotated[
+        bool, typer.Option(help="Drain the current backlog once and exit (else poll).")
+    ] = False,
+    interval: Annotated[float, typer.Option(help="Poll interval in seconds.")] = 5.0,
+    emit_all: Annotated[
+        bool, typer.Option(help="Emit every flow, not just the ones flagged as attacks.")
+    ] = False,
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Watch a spool directory; score new flow files into ECS JSON-lines alerts."""
+    from netsentry.models.registry import latest_bundle
+    from netsentry.serving.bundle import build_serving_bundle
+    from netsentry.serving.watch import run_watch
+
+    settings = _load(config, override)
+    if settings.serving.artifact_path is None and latest_bundle(settings) is None:
+        logger.info("No model bundle found; building a serving bundle (requires `prep`).")
+        build_serving_bundle(settings)
+    totals = run_watch(
+        settings,
+        spool=spool,
+        alerts_out=alerts_out,
+        state_path=state,
+        profile=profile,
+        once=once,
+        interval=interval,
+        emit_all=emit_all,
+    )
+    logger.info("Watch pass complete", extra={**totals, "alerts_out": str(alerts_out)})
+
+
+@app.command()
 def benchmark(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
