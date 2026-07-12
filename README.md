@@ -89,6 +89,7 @@ canaries → shadow → retrain policy) that governs what actually ships.
 | Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
 | Testing rigor | property-based invariants (hypothesis) over metrics, drift, cleaning | ✅ Done |
+| Parser fuzzing | hypothesis fuzz harness asserting the capture parser never crashes on untrusted bytes | ✅ Done |
 | Batch inference | offline `score` a CSV/Parquet of flows to predictions | ✅ Done |
 | Incident reports | alerts folded into analyst-ready incidents with ATT&CK context | ✅ Done |
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
@@ -378,7 +379,13 @@ rather than a detection claim. Malformed or non-IP traffic is counted and
 skipped, never fatal. The same posture holds for the **pcapng** container,
 which is parsed natively (both byte orders, per-interface `if_tsresol`
 timestamp resolutions, concatenated sections; unknown block types skipped by
-length) — IPv6 remains a stated limitation.
+length) — IPv6 remains a stated limitation. Because a capture parser ingests
+attacker-supplied binary — a classic memory-safety / DoS surface — that
+"skip-don't-die" contract is not just asserted in prose but **fuzzed**: a
+Hypothesis harness (`tests/unit/test_capture_fuzz.py`) drives arbitrary bytes,
+valid-magic-plus-garbage, and byte-level mutations of a real capture through the
+reader and asserts it only ever returns or raises the one typed `PcapReadError` —
+never an uncaught `struct.error`, an unbounded allocation, or a hang.
 
 ## Incident reports (from verdicts to a response artifact)
 

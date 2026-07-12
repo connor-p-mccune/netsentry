@@ -7,6 +7,15 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Capture-parser fuzz harness (`tests/unit/test_capture_fuzz.py`): a Hypothesis
+  fuzzer asserting the never-crash / count-and-skip contract of the untrusted-input
+  pcap/pcapng reader — a classic memory-safety and DoS surface. Three regimes
+  (arbitrary bytes, a valid container magic followed by garbage, and byte-level
+  mutations of a real capture) drive the reader, which must only ever return a
+  `(records, stats)` pair or raise the one typed `PcapReadError` — never an uncaught
+  `struct.error`, an unbounded allocation, or a hang. The parser passes as-is (it was
+  already defensively written); the harness makes that a regression guard. Slow-marked
+  (file I/O + binary parsing), so it runs in `make test` / CI, not the fast dev loop.
 - Partial dependence + ICE (`netsentry pdp`,
   `netsentry/explain/partial_dependence.py`): the response-curve shape the rest of
   the explainability suite doesn't show. Partial dependence (Friedman) for the top
