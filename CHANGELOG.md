@@ -7,6 +7,22 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- STIX 2.1 threat-intel bundle export (`netsentry stix`,
+  `netsentry/intel/stix.py`): scored-flow incidents (reusing the incident
+  grouping) folded into a standards-conformant STIX 2.1 bundle a TAXII server or
+  intel platform (MISP, OpenCTI) ingests directly. Emits an identity SDO, one
+  attack-pattern per observed ATT&CK technique (`external_references` into
+  `mitre-attack`, shared with the `mitre` field), an indicator per incident with a
+  real STIX pattern over the attacking hosts (`ipv4-addr:value`) or targeted
+  service (`network-traffic:dst_port`), observed-data + the SCOs it references
+  (`ipv4-addr`, `network-traffic`) when capture identity is present, a sighting
+  (count/first/last-seen) and an `indicator indicates attack-pattern`
+  relationship, all under a TLP marking-definition (default AMBER). Object ids are
+  deterministic UUIDv5s over stable content, so re-export is byte-identical
+  (idempotent TAXII push); the bundle id is content-addressed over its objects.
+  `stix.*` config for the identity name and TLP level. Bundle structure,
+  pattern selection, SCO emission, dedup, TLP marking, and determinism
+  unit-tested; an end-to-end slow test scores a real bundle.
 - Sigma detection-rule export (`netsentry sigma`, `netsentry/intel/sigma.py`):
   the hand-written signature baseline (`rules.definitions`, the incumbent
   `netsentry rules` benchmarks the model against) emitted as portable

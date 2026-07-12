@@ -811,6 +811,19 @@ class IncidentConfig(BaseModel):
     top_talkers: int = 5  # sources/targets/services listed per incident
 
 
+class StixConfig(BaseModel):
+    """STIX 2.1 threat-intel bundle export from scored detections.
+
+    Emits a standards-conformant bundle (identity, attack-pattern, indicator,
+    observed-data + SCOs, sighting, relationship) a TAXII server or intel platform
+    (MISP, OpenCTI) can ingest directly. ``tlp`` selects the Traffic Light Protocol
+    marking-definition applied to every object; the default AMBER matches the
+    limited-distribution posture of an internal detection feed."""
+
+    identity_name: str = "NetSentry ML-NIDS"
+    tlp: Literal["white", "green", "amber", "red"] = "amber"
+
+
 class TriageConfig(BaseModel):
     """Weights for fusing CVE severity with NetSentry's live-traffic risk signals."""
 
@@ -922,6 +935,7 @@ class Settings(BaseSettings):
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)
     transfer: TransferConfig = Field(default_factory=TransferConfig)
     incident: IncidentConfig = Field(default_factory=IncidentConfig)
+    stix: StixConfig = Field(default_factory=StixConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
     serving: ServingConfig = Field(default_factory=ServingConfig)

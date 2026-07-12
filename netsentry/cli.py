@@ -969,6 +969,29 @@ def incident(
 
 
 @app.command()
+def stix(
+    input: Annotated[Path, typer.Option("--input", "-i", help="Flow file (CSV/Parquet).")],
+    output: Annotated[
+        Path, typer.Option("--output", help="Where to write the STIX 2.1 bundle.")
+    ] = Path("stix_bundle.json"),
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    profile: Annotated[str | None, typer.Option(help="Threshold profile.")] = None,
+) -> None:
+    """Score a flow file and export the detections as a STIX 2.1 threat-intel bundle."""
+    from netsentry.intel.stix import build_stix_bundle
+    from netsentry.models.registry import latest_bundle
+    from netsentry.serving.bundle import build_serving_bundle
+
+    settings = _load(config, override)
+    if settings.serving.artifact_path is None and latest_bundle(settings) is None:
+        logger.info("No model bundle found; building a serving bundle (requires `prep`).")
+        build_serving_bundle(settings)
+    stats = build_stix_bundle(settings, input, output, profile=profile)
+    logger.info("STIX bundle ready", extra={**stats, "output": str(output)})
+
+
+@app.command()
 def pcap(
     input: Annotated[
         Path | None, typer.Option("--input", "-i", help="Packet capture (pcap or pcapng).")

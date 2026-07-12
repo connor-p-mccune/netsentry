@@ -502,6 +502,26 @@ ingests — the same binding any custom log source needs. Together with the ECS 
 stream (`netsentry watch`) and the ATT&CK Navigator layer (`netsentry navigator`),
 it is the third artifact that lets NetSentry drop into a workflow a SOC already runs.
 
+## STIX 2.1 threat-intel bundles (share the detections)
+
+A verdict stream is private; **intelligence is shared**. `netsentry stix -i
+flows.csv` scores a flow file through the same engine the API serves, folds the
+alerts into incidents, and writes a
+[STIX 2.1](https://oasis-open.github.io/cti-documentation/) bundle — the OASIS
+standard a TAXII server serves and a threat-intel platform (MISP, OpenCTI,
+Anomali) ingests directly. The bundle is *faithful* STIX, not a JSON blob that
+borrows the vocabulary: an **identity** for the producing system, one
+**attack-pattern** per observed ATT&CK technique (with `external_references` into
+`mitre-attack`, shared with the `mitre` prediction field so intel and API cannot
+drift), an **indicator** per incident carrying a real STIX **pattern** over the
+attacking hosts (`ipv4-addr:value = ...`) or targeted service
+(`network-traffic:dst_port = ...`), **observed-data** plus the **SCOs** it
+references when capture identity rode along, a **sighting** (count, first/last
+seen) and a **relationship** (`indicator` *indicates* `attack-pattern`) so the
+graph is navigable, and a **TLP marking-definition** (default AMBER) on every
+object. Every id is a deterministic UUIDv5 over stable content, so re-exporting the
+same detections yields a byte-identical bundle — idempotent to a TAXII push.
+
 ## Observability (Prometheus + Grafana)
 
 The API already exports Prometheus metrics; the stack ships a one-command
