@@ -856,6 +856,12 @@ class ServingConfig(BaseModel):
     canary_rows: int = 8  # validation flows embedded at bundle build (class-mixed)
     canary_tolerance: float = 1e-6  # max |score now - score at build| before failing
     canary_strict: bool = False  # refuse to start serving on canary failure (prod: true)
+    # Canary-gated hot reload: POST /admin/reload swaps the live bundle in place, but
+    # only after the candidate reproduces its own embedded canaries in this runtime
+    # (a mismatch is rejected 409 and the current model keeps serving). Off by
+    # default — an operational surface is opt-in — and guarded by the same API key
+    # as the prediction endpoints. Candidates must live under models_dir.
+    reload_enabled: bool = False
 
 
 class Settings(BaseSettings):

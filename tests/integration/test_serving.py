@@ -171,6 +171,79 @@ def test_api_key_and_rate_limit(repo_root: Path, tmp_path: Path, clean_synth: pd
 
 
 @pytest.mark.slow
+def test_hot_reload_is_disabled_by_default(client) -> None:  # type: ignore[no-untyped-def]
+    # The admin surface is opt-in: without serving.reload_enabled it 404s.
+    response = client.post("/admin/reload", json={"bundle": "serving_bundle.joblib"})
+    assert response.status_code == 404
+
+
+@pytest.mark.slow
+def test_hot_reload_swaps_a_canary_passing_bundle(  # type: ignore[no-untyped-def]
+    repo_root: Path, tmp_path: Path, clean_synth: pd.DataFrame
+) -> None:
+    import re
+    import shutil
+
+    from fastapi.testclient import TestClient
+
+    settings = load_settings(repo_root / "configs" / "default.yaml")
+    settings.paths.data_processed = tmp_path / "processed"
+    settings.paths.models_dir = tmp_path / "models"
+    settings.paths.mlruns_dir = tmp_path / "mlruns"
+    settings.mlflow.enabled = False
+    settings.supervised.n_estimators = 60
+    settings.serving.reload_enabled = True
+    settings.paths.data_processed.mkdir(parents=True)
+    clean_synth.to_parquet(settings.paths.data_processed / "clean.parquet", index=False)
+    make_splits(settings)
+    bundle_path = build_serving_bundle(settings)
+
+    # A valid candidate: a copy of the freshly-built bundle under another name.
+    candidate = tmp_path / "models" / "candidate.joblib"
+    shutil.copy2(bundle_path, candidate)
+    client = TestClient(create_app(settings))
+
+    before = client.get("/health").json()["model_version"]
+    response = client.post("/admin/reload", json={"bundle": "candidate.joblib"})
+    assert response.status_code == 200
+    body = response.json()
+    assert body["reloaded"] is True
+    assert body["canary"]["ok"] is True  # the swap is canary-gated
+    # The service keeps serving predictions after the swap.
+    assert client.post("/predict", json={"flow": SAMPLE_FLOW}).status_code == 200
+    assert client.get("/health").json()["model_version"] == before  # same model, new file
+
+    metrics = client.get("/metrics").text
+    promoted = re.search(r'netsentry_model_reloads_total\{outcome="promoted"\} (\S+)', metrics)
+    assert promoted is not None and float(promoted.group(1)) >= 1.0
+
+
+@pytest.mark.slow
+def test_hot_reload_rejects_missing_and_escaping_bundles(  # type: ignore[no-untyped-def]
+    repo_root: Path, tmp_path: Path, clean_synth: pd.DataFrame
+) -> None:
+    from fastapi.testclient import TestClient
+
+    settings = load_settings(repo_root / "configs" / "default.yaml")
+    settings.paths.data_processed = tmp_path / "processed"
+    settings.paths.models_dir = tmp_path / "models"
+    settings.paths.mlruns_dir = tmp_path / "mlruns"
+    settings.mlflow.enabled = False
+    settings.supervised.n_estimators = 60
+    settings.serving.reload_enabled = True
+    settings.paths.data_processed.mkdir(parents=True)
+    clean_synth.to_parquet(settings.paths.data_processed / "clean.parquet", index=False)
+    make_splits(settings)
+    build_serving_bundle(settings)
+    client = TestClient(create_app(settings))
+
+    # A path that escapes the models dir is refused before any load.
+    assert client.post("/admin/reload", json={"bundle": "../secrets.joblib"}).status_code == 400
+    # A missing bundle under the models dir is a 404.
+    assert client.post("/admin/reload", json={"bundle": "nope.joblib"}).status_code == 404
+
+
+@pytest.mark.slow
 def test_malformed_requests_return_422(client) -> None:  # type: ignore[no-untyped-def]
     # Unknown feature column.
     assert client.post("/predict", json={"flow": {"NotAFeature": 1.0}}).status_code == 422

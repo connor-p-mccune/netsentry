@@ -44,6 +44,13 @@ SHADOW_SCORE_DELTA = Histogram(
     buckets=(0.01, 0.05, 0.1, 0.2, 0.5, 1.0),
 )
 
+# Hot-reload outcomes: one series per outcome of a POST /admin/reload attempt
+# (promoted / canary_failed / load_failed / not_found), so a deploy pipeline can
+# alert on rejected swaps. Bounded cardinality (a fixed handful of outcomes).
+MODEL_RELOADS = Counter(
+    "netsentry_model_reloads_total", "Canary-gated model hot-reload attempts", ["outcome"]
+)
+
 # Feature-drift gauges, refreshed once per rolling window of served flows (see
 # netsentry.monitoring). Bounded cardinality: two series, no per-feature labels.
 FEATURE_DRIFT_PSI_MAX = Gauge(

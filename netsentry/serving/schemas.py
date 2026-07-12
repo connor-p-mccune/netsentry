@@ -93,6 +93,24 @@ class CanaryStatus(BaseModel):
     tolerance: float
 
 
+class ReloadRequest(BaseModel):
+    """Ask the service to swap in a candidate bundle (canary-gated hot reload)."""
+
+    model_config = ConfigDict(extra="forbid")
+    # Bundle filename or relative path; resolved under the configured models dir and
+    # rejected if it escapes that directory (no arbitrary-path loads).
+    bundle: str
+
+
+class ReloadResponse(BaseModel):
+    """Outcome of a hot-reload attempt: what is serving now, and the gate result."""
+
+    reloaded: bool
+    model_version: str
+    canary: CanaryStatus | None = None
+    detail: str
+
+
 class HealthResponse(BaseModel):
     status: str
     model_version: str
