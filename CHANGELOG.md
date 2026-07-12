@@ -7,6 +7,34 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Poisoning defense (`netsentry sanitize`, `netsentry/robustness/sanitize.py`):
+  the third step of the measure→fix→re-measure arc for the training-time
+  adversary, mirroring `netsentry harden` for evasion. Flips are planted across
+  the operator's whole labeled pool (train + validation, since threshold
+  selection is poisoned too); the confident-learning audit (shared knob with
+  `netsentry labelaudit`) flags suspects in both directions; every flag is
+  dropped (an operator cannot know which way labels rot); the model is refit and
+  the decay curve is re-measured undefended vs sanitized on the clean temporal
+  test split. On the stand-in, detection at the operating point recovers 2.2% →
+  18.4% at a 50% flip rate despite catching only ~45% of flips — the healing
+  runs through the poisoned-threshold channel, not perfect cleaning. The
+  zero-poison point is kept as the defense's measured tax, and rows are dropped
+  rather than relabeled so the auditing model's own errors are not bootstrapped
+  back in. Limits stated: random flips only; contamination untouched; the tax
+  recurs every retrain. Flip/drop/outcome arithmetic unit-tested; e2e slow test;
+  in the analysis suite.
+- Threshold transfer (`netsentry transfer`, `netsentry/evaluation/transfer.py`):
+  prices the cross-dataset study's closing instruction, "re-choose thresholds on
+  labeled local traffic." Four policies meet the foreign NetFlow-schema set at
+  the primary FPR budget — the transplanted source threshold (231× over budget
+  on the stand-in), an unsupervised quantile on the *unlabeled* target scores
+  (measured at both the as-is and a production-like mix, exposing that it
+  under-alerts when traffic is hostile), a threshold bought with k local labels
+  (redrawn 30× so small-sample quantile noise is spread not hidden), and the
+  all-label oracle. Budget compliance counts both sides, since an over-strict
+  cut silently spends detection. Quantile/compliance/trial arithmetic
+  unit-tested; e2e slow test. `plot_lines` gains a `yscale` passthrough for the
+  log-log realized-FPR figure.
 - Zeek conn.log ingestion (`netsentry zeek`, `netsentry/integrations/zeek.py`):
   score the logs a network team already collects. Parses classic TSV logs
   (`#separator`/`#fields`/`#unset_field` respected) and JSON-lines output,

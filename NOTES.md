@@ -1178,6 +1178,58 @@ smaller dev-run numbers noted in earlier phases:
   unformatted file — caught by reading the output, fixed by amending before
   push. Check chains must gate on the tool's exit code, not its last line.
 
+## Poisoning defense (measure → fix → re-measure, for labels)
+
+- This closes an arc the project already walks for evasion (`harden`) but had
+  left open for the training-time adversary: the poisoning study *measured* the
+  damage, the label audit proved it can *find* planted flips, and nothing tied
+  the two into a defense. `sanitize` is the wiring — audit, drop, refit,
+  re-measure — and reusing `label_audit.out_of_fold_scores`/`audit_labels`
+  verbatim kept it honest (the same out-of-fold discipline, no bespoke scorer to
+  argue about).
+- The interesting result is the zero-poison row. I expected a clean-data *tax*
+  (drop rows, lose a little), and the code's sign-aware reader has all three
+  branches — but on the stand-in the tax is **negative**: dropping the audit's
+  1,829-row ambiguity floor *raises* detection +6.6 points. That is the class
+  overlap the label-audit report already flagged (the synthetic generator's
+  attack families genuinely score like benign), so removing them sharpens the
+  boundary the threshold sits on. The temptation was to headline it as a free
+  win; the report does the opposite and warns against banking on the sign,
+  because on real data those dropped rows are more likely genuine attacks.
+- The subtle correctness point: flips are planted across the *combined* labeled
+  pool and split back positionally into train/val, so the validation set is
+  poisoned in the same proportion — otherwise the sanitized threshold would be
+  chosen on artificially clean labels and the defense would look better than it
+  is. Detection heals ~2% → ~18% at a 50% flip because the audit cleans the
+  *validation* labels the threshold is read from, even though it only catches
+  ~45% of flips; the poisoning study's "damage rides the threshold channel"
+  finding is exactly what the defense exploits.
+
+## Threshold transfer (pricing "re-choose thresholds locally")
+
+- Every cross-schema report I wrote ended with the same hand-wave — "re-choose
+  thresholds on labeled local traffic" — so this study exists to make me pay for
+  that sentence with numbers. The transplant running 231× over budget is the
+  easy half; the half worth building was the **unsupervised quantile**, because
+  it is the fix everyone reaches for and it fails *silently*.
+- The quantile's failure mode is a genuine trap: on an unlabeled stream you take
+  the (1−budget) score quantile and call it your threshold, but every attack in
+  the stream sits high and drags the quantile up into the attack mass, so you
+  under-alert precisely when traffic is hostile (0.3% detection on the 30%-attack
+  as-is mix). Computing it at both the as-is and a production-like prevalence is
+  what turns "this is biased" from an assertion into a measurement — the two rows
+  bracket the envelope.
+- Compliance had to count **both sides** of the budget. My first cut only
+  flagged over-budget (flooded queue), which quietly rewards a too-strict
+  threshold — but an over-strict cut spends detection you never see. The
+  `compliance_share` band `[budget/factor, budget*factor]` fixes that, and the
+  test pins a hand-computed 3/5 so the both-sides logic can't silently regress.
+- Log-log axis footgun: a redraw can realize *exactly* zero FPR, which has no
+  place on a log axis. Plotting at a half-flow resolution floor (0.5/N, finer
+  than one false positive) keeps the curve readable while the table carries the
+  exact zeros — the same "figure lies a little, table doesn't" discipline the
+  base-rate report uses.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

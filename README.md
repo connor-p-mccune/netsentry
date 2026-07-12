@@ -80,6 +80,7 @@ ships.
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
 | Model leaderboard | every family, one honest protocol; the split picks the winner | ✅ Done |
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
+| Poisoning defense | audit-and-drop sanitization, re-measured (measure → fix → re-measure) | ✅ Done |
 | Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
 | Testing rigor | property-based invariants (hypothesis) over metrics, drift, cleaning | ✅ Done |
@@ -468,6 +469,25 @@ transfers, the calibration does not. Point the adapter at UNSW-NB15 or the NetFl
 `NF-*-v2` releases for real numbers. See
 [`docs/reports/cross_dataset.md`](docs/reports/cross_dataset.md).
 
+## Threshold transfer (the operating point, re-bought locally)
+
+The cross-dataset study ends with an instruction — "re-choose thresholds on
+labeled local traffic" — and `netsentry transfer` prices it. Four policies meet
+the foreign set at the 0.1%-FPR budget, ordered by local effort. The
+**transplanted** source threshold runs **231× over budget** (23% realized FPR):
+the score scale moved between schemas, so the source cut floods the queue. The
+**unsupervised quantile** is the tempting label-free fix and the report catches
+it failing quietly — on the as-is stream it lands *inside* the attack mass (0.3%
+detection), because every attack in an unlabeled stream biases the quantile
+toward missing attacks; it is a prevalence assumption in a statistics costume.
+Only **local labels** re-buy the budget, and the price is explicit: ~2,500 labels
+hold the realized FPR within 2× of target in half the redraws, with a wide IQR
+below that — estimating a 0.1% quantile needs ~1,000 benign flows per expected
+false positive, so small budgets scatter across orders of magnitude (the refresh
+study's small-window noise, met at deployment). Compliance is scored on **both
+sides**: an over-strict threshold silently spends detection, which is a failure
+too. See [`docs/reports/threshold_transfer.md`](docs/reports/threshold_transfer.md).
+
 ## Zeek ingestion (score the logs you already collect)
 
 Most networks that would evaluate a NIDS already run **Zeek**; `netsentry zeek
@@ -602,6 +622,25 @@ barely moves under label flips while detection at the operator's threshold — c
 on the *poisoned* validation labels — **collapses from 21% to 1.8%** at a 50% flip.
 A study reporting only PR-AUC would call the model poison-resistant and be wrong
 about the number that ships. See [`docs/reports/poisoning.md`](docs/reports/poisoning.md).
+
+## Poisoning defense (measure → fix → re-measure, again)
+
+The poisoning study prices the attack; `netsentry sanitize` prices the cheapest
+defense an operator can actually run: the confident-learning audit over *all*
+labeled data (train + validation together, because threshold selection is
+poisoned too), every flagged row dropped — in both directions, since nobody
+knows which way labels rot — and the model refit. On the stand-in, detection at
+the operating point recovers from **2.2% to 18.4%** at a 50% flip rate even
+though the audit catches only ~45% of the flips: the healing flows through the
+*threshold channel* the poisoning study identified, not through perfect
+cleaning. The zero-poison row is kept as the defense's price — and it carries a
+surprise stated rather than smoothed over: dropping the audit's ambiguity floor
+(1,829 clean rows) *raises* detection +6.6 points here, a property of the
+generator's class overlap the report explicitly warns against banking on. Same
+arc as `netsentry harden` — measured weakness, applied defense, re-measured
+result — with the limits stated: random flips only; an adaptive poisoner who
+flips near-boundary flows sits inside the audit's measured floor. See
+[`docs/reports/poisoning_defense.md`](docs/reports/poisoning_defense.md).
 
 ## Signature-rule baseline
 

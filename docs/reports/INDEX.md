@@ -12,6 +12,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Adaptive conformal | coverage restored online under drift (ACI) | [open](adaptive_conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
+| Poisoning defense | audit-and-drop sanitization vs label flips, re-measured | [open](poisoning_defense.md) |
 | Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |
 | Label-noise audit | confident-learning flags + planted-flip self-validation | [open](label_audit.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
