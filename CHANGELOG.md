@@ -6,6 +6,14 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-07-12
+
+The SOC-native integrations wave: NetSentry stops speaking only its own dialect and
+starts speaking the languages a detection/intel team already deploys — the signature
+baseline exported as Sigma rules, detections as STIX 2.1 threat-intel bundles — adds
+the cross-flow C2 detection the per-flow model is structurally blind to (beaconing),
+and ships production Kubernetes manifests (Helm + Kustomize) for the inference API.
+
 ### Added
 - Kubernetes deployment (`deploy/`): a production Helm chart
   (`deploy/helm/netsentry`) and equivalent raw Kustomize manifests (`deploy/k8s`)

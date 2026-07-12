@@ -17,21 +17,23 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.4.0`.** The build plan in
+**Released `v0.5.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and three post-release waves build on top — the
+tested, and committed, and four post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
-threshold refresh, exemplar evidence, pcapng, incident reports), and the
+threshold refresh, exemplar evidence, pcapng, incident reports), the
 defense-and-operations wave (poisoning defense re-measured, threshold transfer
 priced, a discrete-event SOC queue simulation, canary-gated hot reload, and an
-ECS spool watcher). `make check` is green (lint + type-check + **443 passing
-tests**, property-based invariants included), and the full `download → prep →
-train → eval → serve` pipeline runs end-to-end on the bundled synthetic data (raw
-packet captures included, via `netsentry pcap`), followed by a **model-lifecycle
-layer** (noise floor → release gate → promotion → canaries → shadow → retrain
-policy) that governs what actually ships.
+ECS spool watcher), and the **SOC-native integrations wave** (the signature
+baseline exported as Sigma rules, detections as STIX 2.1 bundles, cross-flow
+beaconing/C2 detection, and production Kubernetes manifests). `make check` is green
+(lint + type-check + **471 passing tests**, property-based invariants included), and
+the full `download → prep → train → eval → serve` pipeline runs end-to-end on the
+bundled synthetic data (raw packet captures included, via `netsentry pcap`),
+followed by a **model-lifecycle layer** (noise floor → release gate → promotion →
+canaries → shadow → retrain policy) that governs what actually ships.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -105,6 +107,10 @@ policy) that governs what actually ships.
 | Zeek ingestion | conn.log (TSV/JSON) → CIC features → verdicts, limits stated | ✅ Done |
 | Spool watcher | watch a flow-file directory → ECS JSON-lines alerts for a SIEM | ✅ Done |
 | Canary-gated hot reload | swap the served model in place only if it reproduces its canaries | ✅ Done |
+| Sigma export | the signature baseline as portable Sigma rules for any SIEM | ✅ Done |
+| STIX 2.1 export | detections as a standards-conformant threat-intel bundle (TAXII/MISP/OpenCTI) | ✅ Done |
+| Beaconing / C2 | cross-flow periodicity detection the identity-blind model can't see | ✅ Done |
+| Kubernetes deploy | production Helm chart + Kustomize manifests, hardened + autoscaled | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -258,10 +264,15 @@ netsentry incident -i flows.csv     # fold the alerts into an analyst-ready inci
 netsentry pcap -i capture.pcap      # raw packets (pcap/pcapng) → CIC flows → verdicts (--demo to try it)
 netsentry zeek -i conn.log          # score the Zeek logs a network team already collects
 netsentry watch -s spool/ --alerts alerts.ndjson   # watch a flow-file spool → ECS alerts
+netsentry sigma                     # export the signature ruleset as portable Sigma rules
+netsentry stix -i flows.csv         # export detections as a STIX 2.1 threat-intel bundle
+netsentry beacon --demo             # rank talker pairs by C2-beacon periodicity (cross-flow)
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
 docker compose -f docker/docker-compose.yml up --build
+# deploy to Kubernetes:
+helm install netsentry deploy/helm/netsentry -n netsentry --create-namespace
 ```
 
 Example prediction:
