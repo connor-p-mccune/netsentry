@@ -17,23 +17,26 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.5.0`.** The build plan in
+**Released `v0.6.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and four post-release waves build on top — the
+tested, and committed, and five post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
 threshold refresh, exemplar evidence, pcapng, incident reports), the
 defense-and-operations wave (poisoning defense re-measured, threshold transfer
 priced, a discrete-event SOC queue simulation, canary-gated hot reload, and an
-ECS spool watcher), and the **SOC-native integrations wave** (the signature
+ECS spool watcher), the **SOC-native integrations wave** (the signature
 baseline exported as Sigma rules, detections as STIX 2.1 bundles, cross-flow
-beaconing/C2 detection, and production Kubernetes manifests). `make check` is green
-(lint + type-check + **471 passing tests**, property-based invariants included), and
-the full `download → prep → train → eval → serve` pipeline runs end-to-end on the
-bundled synthetic data (raw packet captures included, via `netsentry pcap`),
-followed by a **model-lifecycle layer** (noise floor → release gate → promotion →
-canaries → shadow → retrain policy) that governs what actually ships.
+beaconing/C2 detection, and production Kubernetes manifests), and the
+**explainability-depth & parser-hardening wave** (partial dependence + ICE, and a
+fuzz harness pinning the capture parser's never-crash contract). `make check` is
+green (lint + type-check + **481 passing tests**, property-based invariants and a
+Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
+serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
+included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
+floor → release gate → promotion → canaries → shadow → retrain policy) that governs
+what actually ships.
 
 | Phase | Scope | Status |
 |---|---|---|
@@ -238,6 +241,7 @@ netsentry rules                     # ML vs a signature ruleset at a matched FPR
 netsentry leaderboard               # every model family under the identical honest protocol
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
+netsentry pdp                       # partial dependence + ICE (the shape of the model's response)
 netsentry exemplars                 # case-based explanations: do known cases vouch for alerts?
 netsentry distill                   # the model's closest auditable tree, fidelity priced
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)

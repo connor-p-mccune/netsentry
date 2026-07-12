@@ -6,6 +6,13 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-07-12
+
+The explainability-depth and parser-hardening wave: the response-curve shape of the
+model's top features (partial dependence + ICE, the one interpretability view the
+suite was missing), and a Hypothesis fuzz harness that pins the never-crash contract
+of the untrusted-input capture parser.
+
 ### Added
 - Capture-parser fuzz harness (`tests/unit/test_capture_fuzz.py`): a Hypothesis
   fuzzer asserting the never-crash / count-and-skip contract of the untrusted-input
