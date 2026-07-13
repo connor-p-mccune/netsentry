@@ -356,6 +356,19 @@ def test_membership_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_anomaly_explain_report_is_written(prepared: Settings) -> None:
+    from netsentry.explain.anomaly_explain import run_anomaly_explain_report
+
+    prepared.anomaly.detectors = ["iforest"]  # no Torch assumption in the test path
+    prepared.anomaly_explain.max_explained = 100
+    prepared.anomaly_explain.min_class_flags = 3
+    out = run_anomaly_explain_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "anomaly" in text and "occlusion" in text
+    assert "faithfulness" in text and "iforest" in text
+
+
+@pytest.mark.slow
 def test_dp_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.dp import run_dp_report
 

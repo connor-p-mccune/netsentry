@@ -389,6 +389,24 @@ class PartialDependenceConfig(BaseModel):
     grid_trim_quantile: float = 0.05  # trim each tail before building the grid
 
 
+class AnomalyExplainConfig(BaseModel):
+    """Per-feature attribution for anomaly flags — the unsupervised mirror of SHAP.
+
+    The anomaly detector emits only a score; this names the behaviours behind a flag
+    by model-agnostic benign occlusion (reset each feature to its benign reference,
+    re-score, and read the drop). ``max_explained`` caps the flagged flows attributed
+    (occlusion re-scores once per feature); ``top_k`` features are listed per attack
+    class (a class needs ``min_class_flags`` flags to be profiled); ``report_features``
+    sets the global table/figure length; ``faithfulness_k`` is the deletion-test width
+    (the top-k vs random-k score-drop comparison that validates the attributions)."""
+
+    max_explained: int = 400  # flagged flows attributed (occlusion cost scales with this)
+    top_k: int = 6  # features listed per attack class
+    report_features: int = 12  # features in the global ranking table/figure
+    min_class_flags: int = 10  # flagged flows a class needs before it is profiled
+    faithfulness_k: int = 5  # features occluded in the top-k-vs-random deletion check
+
+
 class ExemplarConfig(BaseModel):
     """Exemplar (case-based) explanations: nearest known training flows per query.
 
@@ -1036,6 +1054,7 @@ class Settings(BaseSettings):
         default_factory=ImportanceStabilityConfig
     )
     exemplars: ExemplarConfig = Field(default_factory=ExemplarConfig)
+    anomaly_explain: AnomalyExplainConfig = Field(default_factory=AnomalyExplainConfig)
     partial_dependence: PartialDependenceConfig = Field(default_factory=PartialDependenceConfig)
     distill: DistillConfig = Field(default_factory=DistillConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)

@@ -602,6 +602,19 @@ def exemplars(
     logger.info("Exemplars report ready", extra={"path": str(out)})
 
 
+@app.command("anomexplain")
+def anomaly_explain_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Attribute anomaly flags to features (why is a flow abnormal?) + a faithfulness check."""
+    from netsentry.explain.anomaly_explain import run_anomaly_explain_report
+
+    settings = _load(config, override)
+    out = run_anomaly_explain_report(settings)
+    logger.info("Anomaly-explanation report ready", extra={"path": str(out)})
+
+
 @app.command("pdp")
 def partial_dependence_cmd(
     config: ConfigOpt = None,

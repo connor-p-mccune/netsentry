@@ -35,6 +35,7 @@ from netsentry.evaluation.seed_variance import run_seed_variance_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.socsim import run_socsim_report
 from netsentry.evaluation.subgroups import run_subgroups_report
+from netsentry.explain.anomaly_explain import run_anomaly_explain_report
 from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.explain.distill import run_distill_report
 from netsentry.explain.exemplars import run_exemplars_report
@@ -260,6 +261,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "do the nearest known training flows vouch for the alerts",
         "exemplars.md",
         run_exemplars_report,
+    ),
+    (
+        "Anomaly attribution",
+        "why a flow is abnormal: per-feature anomaly explanations + a faithfulness check",
+        "anomaly_explain.md",
+        run_anomaly_explain_report,
     ),
     (
         "Surrogate distillation",
