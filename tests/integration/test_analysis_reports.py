@@ -330,6 +330,20 @@ def test_promotion_lifecycle_bootstrap_hold_and_rollforward(prepared: Settings) 
 
 
 @pytest.mark.slow
+def test_membership_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.membership import run_membership_report
+
+    prepared.membership.target_train_rows = 1500
+    prepared.membership.eval_rows = 800
+    prepared.membership.shadow_rows = 1500
+    prepared.membership.n_shadow = 3
+    out = run_membership_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "membership" in text and "shadow" in text
+    assert "advantage" in text and "overfit reference" in text
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 

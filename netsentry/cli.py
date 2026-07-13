@@ -313,6 +313,19 @@ def harden(
 
 
 @app.command()
+def privacy(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit membership-inference leakage (does the model memorise its training data?)."""
+    from netsentry.robustness.membership import run_membership_report
+
+    settings = _load(config, override)
+    out = run_membership_report(settings)
+    logger.info("Membership-inference report ready", extra={"path": str(out)})
+
+
+@app.command()
 def sanitize(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

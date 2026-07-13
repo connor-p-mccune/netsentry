@@ -538,6 +538,26 @@ class RobustnessConfig(BaseModel):
     recourse_max_steps: int = 5  # max features a counterfactual explanation may change
 
 
+class MembershipConfig(BaseModel):
+    """Membership-inference privacy audit: how much does the model memorise its data?
+
+    The third classic adversarial axis after evasion (inference-time) and poisoning
+    (training-time). With only query access, can an attacker tell whether a flow was in
+    the training set (Shokri et al. 2017; Yeom et al. 2018)? Runs on the exchangeable
+    stratified split — the assumption MI needs. ``target_train_rows`` sizes the member
+    pool; ``n_shadow`` shadow models feed the Shokri attack classifier; ``top_k_confidences``
+    is the width of the sorted-probability feature vector; ``attack_fpr`` is the low
+    false-accusation budget for the worst-case TPR (Carlini et al. 2022). Deliberately a
+    few thousand rows and a handful of shadows so the audit stays fast."""
+
+    target_train_rows: int = 6000  # rows the target model trains on (the members)
+    eval_rows: int = 3000  # members and non-members each capped to this for the attack
+    n_shadow: int = 8  # shadow models mimicking the target (Shokri)
+    shadow_rows: int = 6000  # auxiliary pool per study, split in/out across shadows
+    top_k_confidences: int = 3  # sorted top-k probabilities used as attack features
+    attack_fpr: float = 0.01  # low false-accusation budget for the worst-case TPR
+
+
 class HardeningConfig(BaseModel):
     """Adversarial training against the feature-space mimicry the evasion study runs.
 
@@ -979,6 +999,7 @@ class Settings(BaseSettings):
     partial_dependence: PartialDependenceConfig = Field(default_factory=PartialDependenceConfig)
     distill: DistillConfig = Field(default_factory=DistillConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
+    membership: MembershipConfig = Field(default_factory=MembershipConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)
