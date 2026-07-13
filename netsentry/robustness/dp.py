@@ -35,10 +35,16 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
+from sklearn.metrics import average_precision_score
 
 from netsentry.log import get_logger
+
+if TYPE_CHECKING:
+    from netsentry.config import Settings
 
 logger = get_logger(__name__)
 
@@ -281,3 +287,310 @@ class DPClassifier:
             target_delta=target_delta,
             orders=orders,
         )
+
+
+# --------------------------------------------------------------------------- #
+# The privacy-utility-leakage frontier study.
+# --------------------------------------------------------------------------- #
+REPORT_NAME = "dp.md"
+
+
+@dataclass
+class DPPoint:
+    """One model on the frontier: its privacy cost, detection, and residual leak."""
+
+    label: str
+    noise_multiplier: float
+    epsilon: float  # inf for the non-private reference
+    pr_auc: float
+    tpr_at_fpr: float
+    fpr_budget: float
+    membership_auc: float  # Yeom threshold attack (0.5 == no leakage)
+    membership_advantage: float
+
+    @property
+    def private(self) -> bool:
+        return math.isfinite(self.epsilon)
+
+
+@dataclass
+class _AttackPools:
+    """The member / non-member pools the Yeom attack is scored on."""
+
+    x_mem: np.ndarray
+    y_mem: np.ndarray
+    x_non: np.ndarray
+    y_non: np.ndarray
+
+
+def _fit_and_score(
+    settings: Settings,
+    noise_multiplier: float,
+    x_mem: np.ndarray,
+    y_mem: np.ndarray,
+    x_val: np.ndarray,
+    y_val: np.ndarray,
+    x_test: np.ndarray,
+    y_test: np.ndarray,
+    attack: _AttackPools,
+) -> DPPoint:
+    """Train one (non-)private model and measure privacy, utility, and leakage."""
+    from netsentry.evaluation.metrics import operating_point
+    from netsentry.robustness.membership import attack_scores, true_class_probability
+
+    cfg = settings.dp
+    clf = DPClassifier(
+        noise_multiplier=noise_multiplier,
+        l2_clip=cfg.l2_clip,
+        epochs=cfg.epochs,
+        lr=cfg.lr,
+        batch_size=cfg.batch_size,
+        l2_reg=cfg.l2_reg,
+        seed=settings.seed,
+    ).fit(x_mem, y_mem)
+
+    scores_val = clf.decision_scores(x_val)
+    scores_test = clf.decision_scores(x_test)
+    pr_auc = float(average_precision_score(y_test, scores_test))
+    op = operating_point(
+        y_val,
+        scores_val,
+        y_test,
+        scores_test,
+        cfg.primary_fpr,
+        settings.thresholds.assumed_flows_per_day,
+    )
+
+    # Yeom membership attack: members are over-confident on their true class.
+    classes = clf.classes_
+    s_mem = true_class_probability(clf.predict_proba(attack.x_mem), classes, attack.y_mem)
+    s_non = true_class_probability(clf.predict_proba(attack.x_non), classes, attack.y_non)
+    is_member = np.concatenate([np.ones(len(s_mem)), np.zeros(len(s_non))])
+    scores = np.concatenate([s_mem, s_non])
+    auc, adv, _, _, _ = attack_scores(is_member, scores, cfg.attack_fpr)
+
+    eps = clf.epsilon(cfg.delta)
+    label = "non-private" if not clf.private else f"sigma={noise_multiplier:g}"
+    point = DPPoint(
+        label=label,
+        noise_multiplier=noise_multiplier,
+        epsilon=eps,
+        pr_auc=pr_auc,
+        tpr_at_fpr=float(op["tpr"]),
+        fpr_budget=cfg.primary_fpr,
+        membership_auc=auc,
+        membership_advantage=adv,
+    )
+    logger.info(
+        "DP frontier point",
+        extra={
+            "label": label,
+            "epsilon": None if math.isinf(eps) else round(eps, 3),
+            "pr_auc": round(pr_auc, 4),
+            "membership_auc": round(auc, 4),
+        },
+    )
+    return point
+
+
+def run_dp(settings: Settings) -> list[DPPoint]:
+    """Train the non-private reference and DP models; price the frontier."""
+    from netsentry.data.clean import BINARY_TARGET
+    from netsentry.data.split import load_split
+    from netsentry.features.pipeline import build_pipeline
+    from netsentry.seed import seed_everything
+
+    cfg = settings.dp
+    variant = settings.model_copy(deep=True)
+    variant.split.strategy = "stratified"  # the exchangeable split the leakage measure needs
+    seed_everything(variant.seed)
+
+    train = load_split(variant, "stratified", "train")
+    val = load_split(variant, "stratified", "val")
+    test = load_split(variant, "stratified", "test")
+
+    pipeline = build_pipeline(variant)
+    pipeline.fit(train)  # unsupervised fit on the full train split (leakage-safe)
+
+    rng = np.random.default_rng(variant.seed)
+    train = train.reset_index(drop=True)
+    n_mem = min(cfg.target_train_rows, len(train))
+    members = train.iloc[rng.choice(len(train), size=n_mem, replace=False)]
+
+    x_mem = np.asarray(pipeline.transform(members))
+    y_mem = members[BINARY_TARGET].to_numpy().astype(int)
+    x_val = np.asarray(pipeline.transform(val))
+    y_val = val[BINARY_TARGET].to_numpy().astype(int)
+    x_test = np.asarray(pipeline.transform(test))
+    y_test = test[BINARY_TARGET].to_numpy().astype(int)
+
+    # Attack pools: a capped slice of members vs fresh (non-member) test rows.
+    non = test.sample(n=min(cfg.eval_rows, len(test)), random_state=variant.seed)
+    mem_eval = members.sample(n=min(cfg.eval_rows, len(members)), random_state=variant.seed)
+    attack = _AttackPools(
+        x_mem=np.asarray(pipeline.transform(mem_eval)),
+        y_mem=mem_eval[BINARY_TARGET].to_numpy().astype(int),
+        x_non=np.asarray(pipeline.transform(non)),
+        y_non=non[BINARY_TARGET].to_numpy().astype(int),
+    )
+
+    points: list[DPPoint] = []
+    for sigma in cfg.noise_multipliers:
+        points.append(
+            _fit_and_score(variant, sigma, x_mem, y_mem, x_val, y_val, x_test, y_test, attack)
+        )
+    return points
+
+
+def _eps_str(eps: float) -> str:
+    return "inf (non-private)" if math.isinf(eps) else f"{eps:.2f}"
+
+
+def _table(points: list[DPPoint]) -> str:
+    budget = f"{points[0].fpr_budget:.1%}"
+    rows = [
+        f"| model | noise (sigma) | epsilon (delta fixed) | PR-AUC | TPR @ {budget} FPR "
+        "| membership AUC | advantage |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for p in points:
+        rows.append(
+            f"| {p.label} | {p.noise_multiplier:g} | {_eps_str(p.epsilon)} | {p.pr_auc:.3f} "
+            f"| {p.tpr_at_fpr * 100:.1f}% | {p.membership_auc:.3f} | {p.membership_advantage:.3f} |"
+        )
+    return "\n".join(rows)
+
+
+def _read(points: list[DPPoint]) -> str:
+    """Sign-aware prose so the narrative tracks whatever the numbers actually do."""
+    ref = points[0]
+    private = [p for p in points if p.private]
+    if not private:
+        return "No private models were configured; add noise multipliers > 0 to price the frontier."
+    tightest = min(private, key=lambda p: p.epsilon)  # smallest epsilon = strongest privacy
+    util_cost = ref.pr_auc - tightest.pr_auc
+    tpr_cost = ref.tpr_at_fpr - tightest.tpr_at_fpr
+    leak_drop = ref.membership_auc - tightest.membership_auc
+
+    head = (
+        f"The non-private reference detects at PR-AUC **{ref.pr_auc:.3f}** "
+        f"(TPR@{ref.fpr_budget:.1%}FPR {ref.tpr_at_fpr * 100:.1f}%) and its membership leakage "
+        f"sits at AUC {ref.membership_auc:.3f}. Tightening to a formal **epsilon = "
+        f"{tightest.epsilon:.2f}** guarantee costs **{util_cost:+.3f} PR-AUC** "
+        f"({tpr_cost * 100:+.1f} pts of detection at the operating point) and moves membership "
+        f"leakage by {(-leak_drop):+.3f} AUC."
+    )
+
+    if leak_drop > 0.01:
+        leak_note = (
+            "The leak closes as the budget tightens — the expected direction: noise added to the "
+            "gradient is exactly what stops the model over-fitting the rows it saw."
+        )
+    else:
+        leak_note = (
+            "The measured leak barely moves here, and honestly so: a regularised **linear** model "
+            "memorises little to begin with (the membership audit's thesis — leakage tracks "
+            "memorisation, which linear models and early stopping already suppress), so the "
+            "empirical attack has little to close. That does not make DP pointless: its value is "
+            "the *formal* (epsilon, delta) bound, which holds against **every** attacker and "
+            "dataset, not just the Yeom attack measured here. The frontier prices its cost."
+        )
+
+    tail = (
+        "This is the project's measure -> fix -> re-measure arc one axis over: the membership "
+        "audit *measured* the leak, DP-SGD *applies* the control with a certificate, and the table "
+        "*re-measures* both the residual empirical leak and the detection the guarantee costs."
+    )
+    return f"{head}\n\n{leak_note}\n\n{tail}"
+
+
+def _render(settings: Settings, points: list[DPPoint], fig: Path) -> str:
+    cfg = settings.dp
+    return f"""# NetSentry - Differential Privacy: the Utility-Leakage Frontier
+
+_Synthetic stand-in; the methodology is the point. DP-SGD **logistic** models on the
+exchangeable **stratified**, binary split (the split the membership audit uses), at a
+fixed delta = {cfg.delta:g}. epsilon is spent by a pure-stdlib integer-order Renyi-DP
+accountant; utility is binary attack-vs-benign detection, leakage is the same Yeom
+confidence-threshold attack the [membership audit](membership.md) runs._
+
+The [membership-inference audit](membership.md) measures how much the model memorises
+its training data and ends by naming the mitigation with a formal guarantee -
+**differentially-private training** - which buys an (epsilon, delta) bound at a
+measured detection cost. This is that study. DP-SGD clips each flow's gradient to a
+fixed L2 norm (bounding any one flow's influence) and adds Gaussian noise, so the
+spent epsilon is a function of the noise multiplier, the minibatch sampling rate, and
+the number of steps **only** - a certificate that holds for any dataset and any
+attacker, not just the one measured below.
+
+## The frontier
+
+{_table(points)}
+
+Smaller **epsilon** is a stronger privacy guarantee. **PR-AUC** and **TPR @ FPR** are
+the detection kept; **membership AUC** (0.5 = no leakage) is the empirical leak that
+remains against the Yeom attack. The **advantage** is Yeom's max(TPR - FPR).
+
+![Privacy-utility-leakage frontier]({fig.as_posix()})
+
+## Read
+
+{_read(points)}
+
+## Scope
+
+- The guarantee is **formal**: DP bounds the influence of any single training flow on
+  the released model, so it defends against attacks not enumerated here (the shadow
+  attack, reconstruction, future attacks) - which is the whole point of a certificate
+  over an empirical patch.
+- The mechanism is **DP-SGD on a linear model**. DP for gradient-boosted trees is a
+  different, messier mechanism; a linear model keeps the accountant honest and the
+  utility ceiling real (the leaderboard shows logistic regression is competitive on
+  the honest split). The deployed GBDT is unchanged.
+- The accountant scans **integer** RDP orders, a sound upper bound on epsilon;
+  fractional orders (Mironov 2019) would tighten the reported epsilon marginally.
+"""
+
+
+def run_dp_report(settings: Settings) -> Path:
+    """Run the DP frontier study and write the report + figure."""
+    from netsentry.evaluation import plots
+    from netsentry.training.tracking import track_run
+
+    points = run_dp(settings)
+    private = [p for p in points if p.private]
+
+    series: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    if private:
+        eps = np.array([p.epsilon for p in private])
+        series["detection (TPR @ FPR budget)"] = (eps, np.array([p.tpr_at_fpr for p in private]))
+        series["membership advantage"] = (eps, np.array([p.membership_advantage for p in private]))
+    fig = plots.plot_lines(
+        series or {"detection": (np.array([1.0]), np.array([0.0]))},
+        xlabel="Privacy budget epsilon (log scale; smaller = more private)",
+        ylabel="Rate",
+        title="Differential privacy: detection and leakage vs epsilon",
+        out_path=settings.paths.figures_dir / "dp_frontier.png",
+        xscale="log",
+    )
+
+    report = _render(settings, points, Path("..") / "figures" / fig.name)
+    out_path = settings.paths.reports_dir / REPORT_NAME
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(report, encoding="utf-8")
+    logger.info("Wrote DP report", extra={"path": str(out_path)})
+
+    with track_run(settings, "dp") as run:
+        for p in points:
+            tag = "nonpriv" if not p.private else f"sig{p.noise_multiplier:g}"
+            run.log_metrics(
+                {
+                    f"{tag}_pr_auc": p.pr_auc,
+                    f"{tag}_tpr": p.tpr_at_fpr,
+                    f"{tag}_membership_auc": p.membership_auc,
+                    f"{tag}_epsilon": p.epsilon if math.isfinite(p.epsilon) else -1.0,
+                }
+            )
+        run.log_artifact(fig)
+        run.log_artifact(out_path)
+    return out_path

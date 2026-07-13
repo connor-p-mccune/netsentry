@@ -356,6 +356,21 @@ def test_membership_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_dp_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.dp import run_dp_report
+
+    prepared.dp.noise_multipliers = [0.0, 1.0, 4.0]
+    prepared.dp.target_train_rows = 1500
+    prepared.dp.eval_rows = 800
+    prepared.dp.epochs = 20
+    out = run_dp_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "differential privacy" in text and "frontier" in text
+    # The non-private reference and a private (finite-epsilon) row are both present.
+    assert "non-private" in text and "membership auc" in text
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 

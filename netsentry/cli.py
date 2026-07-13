@@ -326,6 +326,19 @@ def privacy(
 
 
 @app.command()
+def dp(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price the differential-privacy frontier: detection & leakage vs the epsilon budget."""
+    from netsentry.robustness.dp import run_dp_report
+
+    settings = _load(config, override)
+    out = run_dp_report(settings)
+    logger.info("Differential-privacy report ready", extra={"path": str(out)})
+
+
+@app.command()
 def sanitize(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

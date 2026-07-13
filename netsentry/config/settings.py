@@ -558,6 +558,32 @@ class MembershipConfig(BaseModel):
     attack_fpr: float = 0.01  # low false-accusation budget for the worst-case TPR
 
 
+class DPConfig(BaseModel):
+    """Differentially-private training: the formal privacy control, priced.
+
+    The membership audit measures leakage; this prices the mitigation with a formal
+    guarantee. DP-SGD logistic models are trained at a sweep of Gaussian
+    ``noise_multipliers`` (0.0 is the non-private reference), each priced on the
+    same axis: the epsilon it spends (at a fixed ``delta``), the detection it keeps,
+    and the membership leak it closes (the same Yeom attack the membership audit
+    runs). ``l2_clip`` bounds each flow's per-example gradient; ``epochs`` /
+    ``batch_size`` / ``lr`` are the optimiser knobs the accountant reads as
+    (steps, sampling rate). Deliberately a few thousand rows and a linear model so
+    the study stays fast and the accountant stays exact."""
+
+    noise_multipliers: list[float] = Field(default_factory=lambda: [0.0, 0.5, 1.0, 2.0, 4.0, 8.0])
+    l2_clip: float = 1.0  # per-example gradient L2 clip norm (the influence bound)
+    epochs: int = 60
+    lr: float = 0.5
+    batch_size: int = 256
+    l2_reg: float = 1e-4  # weight decay (a private prior; the bias is never penalised)
+    delta: float = 1e-5  # the (epsilon, delta) budget's delta, fixed across the sweep
+    target_train_rows: int = 6000  # rows the models train on (the members)
+    eval_rows: int = 3000  # members/non-members each capped to this for the attack
+    primary_fpr: float = 0.001  # operating point for the TPR utility column
+    attack_fpr: float = 0.01  # low false-accusation budget for the worst-case leak
+
+
 class HardeningConfig(BaseModel):
     """Adversarial training against the feature-space mimicry the evasion study runs.
 
@@ -1014,6 +1040,7 @@ class Settings(BaseSettings):
     distill: DistillConfig = Field(default_factory=DistillConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     membership: MembershipConfig = Field(default_factory=MembershipConfig)
+    dp: DPConfig = Field(default_factory=DPConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)

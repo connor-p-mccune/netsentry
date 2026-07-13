@@ -23,6 +23,11 @@ selftrain:
 sanitize:
   flip_rates: [0.0, 0.25]  # two points exercise both the tax and the recovery branch
   max_rows: 3000
+dp:
+  noise_multipliers: [0.0, 1.0, 4.0]  # non-private + two budgets exercises the frontier
+  target_train_rows: 1500
+  eval_rows: 800
+  epochs: 20
 transfer:
   label_budgets: [50, 500]  # one starved budget + one that begins to hold
   n_resamples: 5
