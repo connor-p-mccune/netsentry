@@ -6,6 +6,61 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-07-13
+
+The adversarial-privacy & host-graph wave: NetSentry completes the classic
+adversarial-ML attack triad by adding the third axis — privacy — alongside the
+existing evasion and poisoning studies; adds the cross-flow *topology* analytic the
+identity-blind per-flow model is structurally blind to (scan fan-out + lateral
+movement, the topology mirror of beaconing's timing); and makes the project's founding
+thesis executable with a leakage-attribution study that reproduces the field's inflated
+~99% and prices each leakage source.
+
+### Added
+- Membership-inference privacy audit (`netsentry privacy`,
+  `netsentry/robustness/membership.py`): the third classic attack on an ML model after
+  evasion (inference-time) and poisoning (training-time) — the one about privacy. With
+  only query access, can an attacker tell whether a flow was in the training set (Shokri
+  et al. 2017; Yeom et al. 2018)? Runs on the exchangeable stratified split (the
+  assumption MI needs, the same reason active learning runs there) with a Yeom
+  confidence-threshold attack and a Shokri shadow-model attack (eight shadows teach an
+  attack classifier), plus a deliberately-overfit reference of the same architecture that
+  keeps the project's measure → re-measure arc. Worst-case leakage is reported as TPR at a
+  low false-accusation budget (Carlini et al. 2022), not attack accuracy. On the
+  stand-in the deployed model leaks above chance (threshold AUC 0.68, shadow 0.70) but
+  the low-FPR worst case is thin (~2% of members), while the overfit reference's
+  advantage nearly doubles (0.27 → 0.54) even though its accuracy gap barely moves —
+  leakage is driven by memorisation, so the deployed model's regularisation and early
+  stopping are its privacy control; the report names DP training as the next study. Pure
+  attack math unit-tested; e2e slow test; in the analysis suite. `membership.*` config.
+- Host-graph analytics (`netsentry graph`, `netsentry/intel/graph.py`): the cross-flow,
+  topology-aware complement to the per-flow classifier — the topology mirror of how
+  `netsentry beacon` is its timing mirror. Reconstructs the host communication graph
+  from the `Src IP`/`Dst IP`/`Dst Port` metadata (the fields the model never sees) and
+  surfaces two attacks no single flow can show: scan fan-out (ATT&CK Discovery, T1046 —
+  horizontal by distinct hosts, vertical by distinct ports; the signal the temporal
+  model misses on PortScan) and lateral-movement chains (ATT&CK Lateral Movement, T1021
+  — a reached host pivoting deeper, recovered whole via a depth-bounded DFS along
+  internal→internal hops so ordinary egress can't form a chain). `--demo` plants a
+  horizontal sweep, a vertical sweep, and a four-hop pivot among benign egress talkers
+  and recovers all three (`docs/reports/graph_demo.md`). Reads identity as metadata only;
+  a hunt-lead generator, not a verdict, like beaconing. Internal/external is strict
+  RFC1918 (not `ip_address.is_private`, which matches documentation ranges). Fan-out,
+  chain recovery, order invariance, and the demo unit-tested. `graph.*` config.
+- Leakage-attribution study (`netsentry leakage`, `netsentry/evaluation/leakage.py`): the
+  executable form of the project's thesis. Starting from the honest temporal model, three
+  leakage sources are added back one at a time — a shuffled split, `Destination Port`, and
+  a synthetic per-(day, class) session identifier standing in for Flow ID / Source IP —
+  and each rung's raw-score PR-AUC gain is priced. On the stand-in: honest 0.529 →
+  shuffled 0.783 (+0.254) → +port 0.958 (+0.176) → +identifier 1.000 (+0.042), reproducing
+  and decomposing the field's ~99%. The identifier leak only works on the shuffled split
+  (later-day campaigns carry ids the model never saw), so it is a consequence of the split
+  leak, not an independent term. The injected identifier is a controlled demonstration of
+  the anti-pattern the `remainder="drop"` firewall stops, never adopted by the pipeline;
+  ties back to `netsentry gate`'s > 0.999 leakage ceiling. Injected-id stability, dense
+  coercion, and ladder deltas unit-tested; e2e slow test; in the analysis suite.
+  `leakage.*` config.
+
 ## [0.6.0] — 2026-07-12
 
 The explainability-depth and parser-hardening wave: the response-curve shape of the

@@ -1304,6 +1304,88 @@ smaller dev-run numbers noted in earlier phases:
   pass the *resolved* profile (`profile or engine.default_profile`) through, so the
   ECS document records the operating point the verdict was actually made at.
 
+## Host-graph analytics (the topology the per-flow model can't see)
+
+- `beacon` established the shape of this argument: the classifier drops every
+  identifier and scores flows in isolation, so a whole family of behaviour is
+  invisible to it because the signal lives *between* flows. Beacon is the *timing*
+  version (a fixed cadence); `graph` is the *topology* version (who talks to whom).
+  Framing it as the deliberate complement — not a competitor — is the honest read:
+  it adds no detection to the per-flow verdicts, it surfaces different evidence.
+- Two patterns, chosen because neither can exist inside one flow: **scan fan-out**
+  (one source, many destinations or ports) and **lateral-movement chains** (a reached
+  host that then reaches deeper). The scan half has a nice tie-in to the project's own
+  findings — PortScan is the later-day class the temporal model misses (per-class
+  slices), and a single scan probe genuinely *is* an unremarkable short flow, so the
+  fan-out view is exactly the missing signal, not a redundant one.
+- The chain detector's discriminator is internal-vs-external. My first instinct was
+  `ipaddress.is_private`, which quietly classifies the TEST-NET documentation range
+  (`203.0.113.0/24`, the range I used for the "external attacker" in the demo) as
+  private — so the external entry read as internal and the framing broke. Switched to
+  an explicit RFC1918 check. The lesson is the usual one: a stdlib predicate's
+  definition of "private" is not necessarily an operator's definition of "internal."
+- Restricting chain hops to internal destinations is what keeps ordinary egress from
+  reading as lateral movement: a benign host talking to the internet can't extend a
+  chain, because the next hop is external. The DFS is depth- and start-capped so it
+  stays bounded on a real (large) flow file, and I dedupe sub-paths so the report
+  shows movement paths rather than every prefix of one.
+
+## Membership inference (the third adversarial axis — privacy)
+
+- The adversarial suite had evasion (inference-time) and poisoning (training-time)
+  but not the third classic attack: **privacy**. Membership inference — can a
+  query-only attacker tell a training member from fresh traffic — completes the triad
+  and measures how much the model *memorises*, which is a real disclosure on a NIDS
+  ("was this host's traffic in the training set?").
+- Ran it on the **stratified** split on purpose. MI assumes members and non-members
+  are exchangeable; under the temporal shift they differ by *distribution* as well as
+  membership, which would confound the attack. Same reasoning as running active
+  learning on stratified — state the assumption the method needs and honour it.
+- Kept the project's measure → re-measure arc rather than reporting a single number:
+  the **overfit reference** (same architecture, un-regularised, no early stopping)
+  makes the mechanism legible — leakage tracks the generalisation gap, so the deployed
+  model's regularisation and early stopping *are* the privacy control. The honest
+  expected finding on the synthetic stand-in is low leakage (a model that generalises
+  has little to memorise), with the overfit model showing what the leak looks like
+  when the gap is allowed to open.
+- Two real bugs worth recording. LightGBM's early-stopping eval set must carry only
+  labels the model saw in training; a rare class (Heartbleed, dozens of rows) lands in
+  the eval half but not the subsampled training half and throws. Fixed by restricting
+  the eval set to trained labels (it only steers early stopping). And `extra={"name":
+  ...}` in a structured-log call raised `KeyError: Attempt to overwrite 'name' in
+  LogRecord` — `name` is reserved on `LogRecord`; renamed the field. The second cost
+  three minutes of compute to surface, which is its own argument for the fast unit
+  tests around the pure attack math.
+- The worst-case metric is TPR at a low false-accusation rate (Carlini et al. 2022),
+  not attack accuracy: a handful of confidently-memorised rows is the real leak, and a
+  mean hides them. The natural next study is differentially-private training — a formal
+  (ε, δ) guarantee at a measured detection cost — named in the report's scope so the
+  arc points somewhere.
+
+## Leakage attribution (the thesis, made executable)
+
+- Every other study in the project *avoids* leakage; this one deliberately reproduces
+  it, because "we don't leak" is more convincing as a priced decomposition than as a
+  claim. The ladder — honest 0.529 → shuffled 0.783 → +port 0.958 → +identifier 1.000 —
+  reproduces the field's ~99% and says exactly what manufactures it. The whole point of
+  the repo, in one table.
+- The sharpest finding fell out of the mechanics rather than being designed in: the
+  identifier leak **only works on the shuffled split.** A per-campaign session id is a
+  perfect predictor on a stratified split (the campaign's rows straddle train/test) and
+  worthless on the temporal split (later-day campaigns carry ids the model never saw).
+  So the identifier leak is a *consequence* of the split leak, not an independent term —
+  which is why the report injects the id only on the shuffled ladder. That is the honest
+  read, and it is more interesting than a flat "identifiers leak."
+- The injected identifier is the one place the project deliberately does the thing it
+  forbids, so the framing had to be careful: it is a *controlled demonstration* of the
+  mechanism the `remainder="drop"` firewall stops, derived from `(Day, class)` via a
+  stable hash so it is a *session identifier* (like a reused Source IP), not literally
+  the label. The report and the docstring both say so, twice, because the difference
+  between "priced the anti-pattern" and "adopted the anti-pattern" is the whole
+  credibility of the study.
+- It closes a loop with `netsentry gate`, which fails a PR-AUC above 0.999 as suspected
+  leakage: this study is what a caught leak actually looks like on the way to 1.000.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

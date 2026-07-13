@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.6.0`.** The build plan in
+**Released `v0.7.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and five post-release waves build on top — the
+tested, and committed, and six post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -30,8 +30,12 @@ ECS spool watcher), the **SOC-native integrations wave** (the signature
 baseline exported as Sigma rules, detections as STIX 2.1 bundles, cross-flow
 beaconing/C2 detection, and production Kubernetes manifests), and the
 **explainability-depth & parser-hardening wave** (partial dependence + ICE, and a
-fuzz harness pinning the capture parser's never-crash contract). `make check` is
-green (lint + type-check + **481 passing tests**, property-based invariants and a
+fuzz harness pinning the capture parser's never-crash contract), and the
+**adversarial-privacy & host-graph wave** (a membership-inference privacy audit that
+completes the evasion/poisoning/**privacy** attack triad, and host-graph analytics
+for the scan fan-out and lateral-movement chains the identity-blind per-flow model
+can't see). `make check` is
+green (lint + type-check + **503 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -64,6 +68,7 @@ what actually ships.
 | Probability calibration | isotonic/Platt calibrator + reliability/Brier/ECE diagnostics | ✅ Done |
 | Adversarial robustness | mimicry + adaptive query-search evasion, robustness curves | ✅ Done |
 | Adversarial hardening | adversarial training vs mimicry, re-measured (measure → fix → re-measure) | ✅ Done |
+| Membership inference | privacy audit (Shokri shadow + Yeom threshold); the overfit reference prices the leak | ✅ Done |
 | Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
 | Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |
 | SOC queue simulation | discrete-event M/G/c queue: FIFO vs score-priority attack-SLA | ✅ Done |
@@ -87,6 +92,7 @@ what actually ships.
 | Temporal sensitivity | leave-one-day-out: every day takes a turn as the future | ✅ Done |
 | Rules baseline | ML benchmarked against a signature ruleset at matched FPR | ✅ Done |
 | Model leaderboard | every family, one honest protocol; the split picks the winner | ✅ Done |
+| Leakage attribution | reproduce the field's ~99% and price each source (split → port → identifier) | ✅ Done |
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
 | Poisoning defense | audit-and-drop sanitization, re-measured (measure → fix → re-measure) | ✅ Done |
 | Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
@@ -114,6 +120,7 @@ what actually ships.
 | Sigma export | the signature baseline as portable Sigma rules for any SIEM | ✅ Done |
 | STIX 2.1 export | detections as a standards-conformant threat-intel bundle (TAXII/MISP/OpenCTI) | ✅ Done |
 | Beaconing / C2 | cross-flow periodicity detection the identity-blind model can't see | ✅ Done |
+| Host-graph analytics | scan fan-out + lateral-movement chains: the cross-flow topology the model can't see | ✅ Done |
 | Kubernetes deploy | production Helm chart + Kustomize manifests, hardened + autoscaled | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
@@ -239,6 +246,7 @@ netsentry lodo                      # leave-one-day-out temporal sensitivity
 netsentry labelaudit                # find likely label errors (self-validated)
 netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
 netsentry leaderboard               # every model family under the identical honest protocol
+netsentry leakage                   # reproduce the field's ~99% and attribute it to each source
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
 netsentry pdp                       # partial dependence + ICE (the shape of the model's response)
@@ -248,6 +256,7 @@ netsentry activelearning            # uncertainty vs random labeling (label effi
 netsentry selftrain                 # pseudo-labels on the unlabeled stream vs the labeled ceiling
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
+netsentry privacy                   # membership-inference audit: does the model memorise its data?
 netsentry alertqueue                # detection vs analyst budget (lift over random triage)
 netsentry socsim                    # simulate the analyst queue: FIFO vs score-priority SLA
 netsentry sanitize                  # audit-and-drop poisoned labels, then re-measure
@@ -272,6 +281,7 @@ netsentry watch -s spool/ --alerts alerts.ndjson   # watch a flow-file spool →
 netsentry sigma                     # export the signature ruleset as portable Sigma rules
 netsentry stix -i flows.csv         # export detections as a STIX 2.1 threat-intel bundle
 netsentry beacon --demo             # rank talker pairs by C2-beacon periodicity (cross-flow)
+netsentry graph --demo              # rank scan fan-out + lateral-movement chains (cross-flow topology)
 netsentry modelcard                 # auto-generate the model-card spec sheet from the bundle
 netsentry demo                      # Streamlit dashboard (pip install '.[demo]')
 # or, one command:
@@ -566,6 +576,28 @@ verdict** — a legitimate periodic service (NTP, a monitoring poll, a cron job)
 also regular and will score high, so the analytic surfaces ranked candidates for a
 human, and adds no detection to the per-flow verdicts.
 
+## Host-graph analytics (the topology the per-flow model can't see)
+
+Beaconing is the cross-flow *timing* signal the identity-blind model misses;
+`netsentry graph` is the cross-flow *topology* signal — the same argument, one
+dimension over. It reconstructs the host communication graph from the
+`Src IP`/`Dst IP`/`Dst Port` columns (metadata the model never sees) and surfaces two
+attacks that cannot exist inside a single flow. **Scan fan-out** (ATT&CK Discovery,
+T1046): a source touching many distinct destinations (horizontal) or ports (vertical)
+— exactly the signal the temporal model misses on **PortScan**, a later-day class it
+never trained on, because one scan probe genuinely is an unremarkable short flow.
+**Lateral-movement chains** (ATT&CK Lateral Movement, T1021): a reached host pivoting
+deeper, recovered *whole* via a depth-bounded search along internal→internal hops, so
+ordinary egress to the internet cannot masquerade as a chain. `netsentry graph --demo`
+plants a horizontal sweep, a vertical sweep, and a four-hop pivot among benign egress
+talkers and recovers all three in
+[`docs/reports/graph_demo.md`](docs/reports/graph_demo.md). Like beaconing, the report
+states its scope plainly: a **hunt-lead generator, not a verdict** — a vulnerability
+scanner, a monitoring poller, or an administrator's jump box all fan out or pivot
+legitimately — and it adds no detection to the per-flow verdicts. Internal/external is
+a strict RFC1918 check (not `ip_address.is_private`, which also matches the
+documentation ranges an operator treats as external).
+
 ## Observability (Prometheus + Grafana)
 
 The API already exports Prometheus metrics; the stack ships a one-command
@@ -774,6 +806,30 @@ standing case for pairing it with the benign-only anomaly detector. It is the ho
 arc: NetSentry *measured* the evasion weakness, *acted* on it, and *re-measured*. See
 [`docs/reports/hardening.md`](docs/reports/hardening.md).
 
+## Membership inference (the privacy axis)
+
+Evasion is the inference-time adversary and poisoning the training-time one;
+`netsentry privacy` adds the third classic attack on an ML model — the one about
+**privacy**. With only query access, can an attacker tell whether a specific flow was
+in the training set? On a NIDS that is a real disclosure ("was this host's traffic used
+to train the model?") and the standard way to measure how much a model **memorises**
+(Shokri et al. 2017; Yeom et al. 2018). It runs on the exchangeable **stratified** split
+— the assumption membership inference needs, the same reason active learning runs there
+— with two attacks: a **confidence-threshold** attack (a memorised member is
+over-confident on its true class) and a **shadow-model** attack (eight shadows mimic the
+target on disjoint data and teach an attack classifier). The project's measure →
+re-measure arc is kept: a deliberately **overfit reference** of the same architecture is
+priced beside the deployed model. On the synthetic stand-in the deployed model leaks
+above chance (threshold-attack AUC **0.68**, shadow **0.70**) but the *worst-case* metric
+is thin — at a 1% false-accusation budget the attack recovers only **~2%** of members —
+while the overfit reference's advantage nearly doubles (**0.27 → 0.54**) even though its
+accuracy gap barely moves: privacy leakage is driven by **memorisation**, not accuracy
+alone, so the regularisation and early stopping the deployed model already uses *are* its
+privacy control. The worst-case low-FPR framing follows Carlini et al. (2022), and the
+report names differentially-private training as the next study — a formal (ε, δ)
+guarantee at a measured detection cost. See
+[`docs/reports/membership.md`](docs/reports/membership.md).
+
 ## Training-set poisoning
 
 Evasion is the inference-time adversary; `netsentry poisoning` measures the
@@ -835,6 +891,32 @@ gap growing monotonically with capacity — flexible models fit the training-day
 regime tightly and pay for it on later days. A team selecting its model on the
 shuffled split would ship the wrong model. See
 [`docs/reports/leaderboard.md`](docs/reports/leaderboard.md).
+
+## Leakage attribution (the thesis, made executable)
+
+Every study above *avoids* leakage; `netsentry leakage` reproduces it on purpose, so
+"we don't leak" becomes a priced decomposition instead of a claim. Starting from the
+honest temporal model, it adds the field's three leakage sources back one at a time and
+reports the raw-score PR-AUC each buys:
+
+| rung | leakage source | PR-AUC | Δ |
+|---|---|---|---|
+| honest (temporal, no port) | — | **0.529** | — |
+| + shuffled split | near-duplicate bursts straddle train/test | 0.783 | **+0.254** |
+| + Destination Port | the model memorises "attack X hit port Y" | 0.958 | **+0.176** |
+| + session identifier | Flow ID / Source IP stand-in | **1.000** | **+0.042** |
+
+The field's near-perfect number is reproduced and **decomposed**: the shuffled split is
+the largest single leak, and the identifier leak is a *consequence* of it — a
+per-campaign session id is a perfect predictor when the split is shuffled (the campaign's
+rows straddle train/test) and worthless on the temporal split (later-day campaigns carry
+ids the model never saw), which is why it is injected only on the shuffled ladder. Every
+rung is something the rest of NetSentry deliberately refuses: the temporal split is the
+headline, `Destination Port` is dropped, and the `remainder="drop"` firewall discards any
+identifier that reaches the pipeline. The injected identifier is a **controlled
+demonstration** of the anti-pattern the firewall stops, never something the pipeline
+adopts — and the study closes a loop with `netsentry gate`, which **fails** a PR-AUC above
+0.999 as suspected leakage. See [`docs/reports/leakage.md`](docs/reports/leakage.md).
 
 ## Feature-group ablation
 

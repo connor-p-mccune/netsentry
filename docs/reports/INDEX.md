@@ -14,6 +14,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
 | Poisoning defense | audit-and-drop sanitization vs label flips, re-measured | [open](poisoning_defense.md) |
+| Membership inference | privacy leakage: does the model memorise its training data | [open](membership.md) |
 | Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |
 | Label-noise audit | confident-learning flags + planted-flip self-validation | [open](label_audit.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
@@ -23,6 +24,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Threshold refresh | the label-cheap lever vs retraining; budget compliance under drift | [open](refresh.md) |
 | Self-training | pseudo-labels on the unlabeled stream vs the labeled ceiling | [open](selftrain.md) |
 | Model-family leaderboard | every family through one honest protocol; the gap replicates | [open](leaderboard.md) |
+| Leakage attribution | reproduce the field's ~99% and price each leakage source | [open](leakage.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |
 | Campaign detection | the (day, class) operation as the unit: first alerts and silent campaigns | [open](campaigns.md) |
 | Per-service parity | detection/false-alarm equity across services | [open](subgroups.md) |
