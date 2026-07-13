@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netsentry"
-version = "0.6.0"
+version = "0.7.0"
 description = "Leakage-safe ML network intrusion detection on CIC-IDS2017 with honest temporal evaluation, anomaly detection, explainability, and a served API."
 readme = "README.md"
 requires-python = ">=3.11"
