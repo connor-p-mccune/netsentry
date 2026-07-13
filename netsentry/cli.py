@@ -1007,6 +1007,31 @@ def beacon(
 
 
 @app.command()
+def graph(
+    input: Annotated[
+        Path | None, typer.Option("--input", "-i", help="Flow file with Src/Dst identity columns.")
+    ] = None,
+    output: Annotated[
+        Path | None, typer.Option("--output", help="Where to write the host-graph report.")
+    ] = None,
+    demo: Annotated[
+        bool, typer.Option(help="Analyze a synthetic capture with a planted scan and pivot chain.")
+    ] = False,
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Rank scan fan-out + lateral-movement chains (topology the per-flow model can't see)."""
+    from netsentry.intel.graph import run_graph_report
+
+    settings = _load(config, override)
+    if input is None and not demo:
+        logger.error("Provide a flow file with --input, or use --demo.")
+        raise typer.Exit(code=2)
+    out = run_graph_report(settings, input_path=input, output_path=output, demo=demo)
+    logger.info("Host-graph report ready", extra={"path": str(out)})
+
+
+@app.command()
 def stix(
     input: Annotated[Path, typer.Option("--input", "-i", help="Flow file (CSV/Parquet).")],
     output: Annotated[

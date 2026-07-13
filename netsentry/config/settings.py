@@ -847,6 +847,27 @@ class BeaconConfig(BaseModel):
     top_n: int = 20  # ranked candidates rendered in the report
 
 
+class GraphConfig(BaseModel):
+    """Host-communication-graph analytics: scan fan-out + lateral-movement chains.
+
+    The per-flow classifier drops every identifier and scores flows in isolation, so
+    it is structurally blind to attacks whose signal lives in the *topology* — a
+    source fanning out across the network (scanning) or a reached host pivoting deeper
+    (lateral movement). This identity-aware analytic reconstructs the graph from the
+    ``Src IP`` / ``Dst IP`` / ``Dst Port`` columns (metadata the model never sees). A
+    source needs ``min_fanout`` distinct destinations *or* ports to count as a scan;
+    a movement chain needs ``min_chain_hosts`` hosts. Runtime on large graphs is
+    bounded by ``max_depth`` (chain search depth) and ``max_starts`` (entry nodes
+    the depth-first search launches from)."""
+
+    min_fanout: int = 20  # distinct hosts/ports a source must reach to be a scan candidate
+    by_port: bool = True  # also score vertical (per-port) fan-out, not just horizontal
+    min_chain_hosts: int = 3  # hosts in a movement chain (a->b->c) before it is reported
+    max_depth: int = 8  # cap on chain search depth (bounds the DFS on large graphs)
+    max_starts: int = 500  # entry nodes the chain search launches from (runtime bound)
+    top_n: int = 20  # ranked candidates rendered per table
+
+
 class StixConfig(BaseModel):
     """STIX 2.1 threat-intel bundle export from scored detections.
 
@@ -973,6 +994,7 @@ class Settings(BaseSettings):
     transfer: TransferConfig = Field(default_factory=TransferConfig)
     incident: IncidentConfig = Field(default_factory=IncidentConfig)
     beacon: BeaconConfig = Field(default_factory=BeaconConfig)
+    graph: GraphConfig = Field(default_factory=GraphConfig)
     stix: StixConfig = Field(default_factory=StixConfig)
     triage: TriageConfig = Field(default_factory=TriageConfig)
     mlflow: MLflowConfig = Field(default_factory=MLflowConfig)
