@@ -735,6 +735,20 @@ class ActiveLearningConfig(BaseModel):
     strategies: list[str] = Field(default_factory=lambda: ["uncertainty", "random"])
 
 
+class LeakageConfig(BaseModel):
+    """Leakage-attribution ladder: reproduce the field's ~99% and price each source.
+
+    The executable form of the project's thesis. Starting from the honest temporal
+    model, three leakage sources are added back one at a time — a shuffled split, the
+    memorisable ``Destination Port``, and a synthetic per-campaign session identifier
+    standing in for Flow ID / Source IP — and each rung's PR-AUC gain is that source's
+    contribution to the inflation. ``max_rows`` caps each split so the four refits stay
+    fast; the identifier injection is a controlled demonstration of the anti-pattern the
+    ``remainder="drop"`` firewall exists to stop, never something the pipeline adopts."""
+
+    max_rows: int = 30000  # per-split row cap for the ladder refits (keeps it fast)
+
+
 class LeaderboardConfig(BaseModel):
     """Model-family leaderboard: every family through one shared honest protocol.
 
@@ -1006,6 +1020,7 @@ class Settings(BaseSettings):
     refresh: RefreshConfig = Field(default_factory=RefreshConfig)
     retrain_policy: RetrainPolicyConfig = Field(default_factory=RetrainPolicyConfig)
     leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
+    leakage: LeakageConfig = Field(default_factory=LeakageConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

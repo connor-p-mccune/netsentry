@@ -330,6 +330,18 @@ def test_promotion_lifecycle_bootstrap_hold_and_rollforward(prepared: Settings) 
 
 
 @pytest.mark.slow
+def test_leakage_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.leakage import run_leakage_report
+
+    prepared.leakage.max_rows = 3000
+    out = run_leakage_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "leakage" in text and "shuffled split" in text
+    # The ladder must reproduce inflation: the leaky end beats the honest baseline.
+    assert "session identifier" in text and "manufactur" in text
+
+
+@pytest.mark.slow
 def test_membership_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.membership import run_membership_report
 

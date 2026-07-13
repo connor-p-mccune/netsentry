@@ -690,6 +690,19 @@ def leaderboard(
 
 
 @app.command()
+def leakage(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Reproduce the field's ~99% and attribute the inflation to each leakage source."""
+    from netsentry.evaluation.leakage import run_leakage_report
+
+    settings = _load(config, override)
+    out = run_leakage_report(settings)
+    logger.info("Leakage-attribution report ready", extra={"path": str(out)})
+
+
+@app.command()
 def slices(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

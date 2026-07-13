@@ -26,6 +26,7 @@ from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
+from netsentry.evaluation.leakage import run_leakage_report
 from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.report import run_evaluation
@@ -180,6 +181,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "every family through one honest protocol; the gap replicates",
         "leaderboard.md",
         run_leaderboard_report,
+    ),
+    (
+        "Leakage attribution",
+        "reproduce the field's ~99% and price each leakage source",
+        "leakage.md",
+        run_leakage_report,
     ),
     (
         "Per-class detection",
