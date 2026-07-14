@@ -1386,6 +1386,46 @@ smaller dev-run numbers noted in earlier phases:
 - It closes a loop with `netsentry gate`, which fails a PR-AUC above 0.999 as suspected
   leakage: this study is what a caught leak actually looks like on the way to 1.000.
 
+## Privacy & explainable-anomaly wave (v0.8.0)
+
+- **The DP accountant is pure stdlib on purpose.** The membership report named DP as
+  the next study; the temptation was to `pip install opacus` or `dp-accounting`.
+  Instead the Rényi accountant is `math`-only (lgamma, log1p) at **integer** orders.
+  That is not a shortcut that cheats: integer-order RDP→(ε, δ) is a *sound upper
+  bound* (every order gives a valid conversion; scanning more can only tighten it),
+  so the reported ε is honest, never optimistic. Fractional orders (Mironov 2019)
+  would sharpen it marginally. Same posture as the from-scratch pcap reader — a
+  dependency-light, auditable primitive with the closed forms unit-tested (Gaussian
+  mechanism at q=1, composition linear in steps, subsampling amplification).
+- **A too-*good* privacy result got the same scrutiny as a too-good accuracy one.**
+  The DP frontier's empirical membership leak barely moves as ε tightens, which could
+  read as "DP does nothing." It isn't a bug — it is the membership audit's own thesis
+  resurfacing: a regularised **linear** model memorises little, so there is little
+  empirical leak to close. The honest move was to *lead with the formal guarantee*
+  (the (ε, δ) certificate holds against attacks never enumerated) rather than lean on
+  a weak empirical delta. The surprising positive is real and stated: detection is
+  strikingly robust to the budget (PR-AUC 0.690 → 0.683 down to ε ≈ 1.7).
+- **DP-SGD noise is unbiased — so "more noise ⇒ worse accuracy" is false on easy
+  data.** My first utility unit test asserted heavier noise lowers toy accuracy; it
+  flaked (0.9447 vs 0.9460) and I removed it rather than loosen a threshold to hide a
+  wrong premise. On a strongly separable toy, many epochs of unbiased noisy gradients
+  still converge; the real utility cost shows at the low-FPR *operating point* on hard
+  data, which is what the report measures. The test now asserts the true mechanism:
+  heavier noise widens run-to-run variance of the fitted scores.
+- **Occlusion is the right anomaly-attribution primitive because it is
+  detector-agnostic.** The autoencoder has an exact per-feature reconstruction error,
+  but Isolation Forest does not, and the serving image often has no Torch. Benign
+  occlusion ("reset this feature to normal, how much less anomalous?") explains *any*
+  `detector.score`, so the same code serves the AE locally and the iForest in CI. It
+  is validated, not asserted: a deletion/faithfulness check (top-k vs random-k score
+  drop) — on the stand-in the named features carry **13.4×** the score of random ones,
+  and the per-class drivers are exactly right (DDoS → rates, PortScan → SYN count).
+- **The live `anomaly_features` field reused the `?exemplars=true` playbook to keep
+  it safe.** Opt-in (no latency tax on the default path), evidence-only (verdict
+  fields byte-identical — asserted in the serving test), and best-effort (a bundle
+  without the embedded benign reference returns `null`, never an error), so older
+  bundles and any failure degrade gracefully instead of breaking a prediction.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

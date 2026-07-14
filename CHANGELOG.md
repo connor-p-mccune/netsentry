@@ -6,6 +6,58 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-07-13
+
+The privacy & explainable-anomaly wave: the membership audit's named next step
+finally taken — differentially-private training with a from-scratch privacy
+accountant, priced on a utility–leakage frontier — and the "detect the unknown"
+component made explainable, both offline (a per-feature attribution study with a
+faithfulness check) and live (an opt-in API field that says *why* a flow was
+flagged).
+
+### Added
+- Differential-privacy training + frontier (`netsentry dp`,
+  `netsentry/robustness/dp.py`): the mitigation the [membership audit](docs/reports/membership.md)
+  names but does not exercise. Two reusable primitives — a **pure-stdlib
+  (math-only, no scipy) Rényi-DP accountant** for the subsampled Gaussian mechanism
+  (Abadi et al. 2016; Mironov 2017) at integer orders (a sound upper bound on
+  epsilon; log-space composition; the sharpened Canonne–Kamath–Steinke RDP→DP
+  conversion), and a **DP-SGD logistic classifier** (per-example gradient clipping +
+  Gaussian noise; the spent epsilon is a function of the noise multiplier, sampling
+  rate, and step count only, so it is certified for any dataset). The study trains a
+  non-private reference and DP models across a noise sweep on the exchangeable
+  stratified/binary split and prices each on one axis: epsilon spent, detection kept
+  (PR-AUC + TPR@FPR), and membership leak closed (the same Yeom attack, reusing the
+  membership module). Stand-in finding, reported as it fell: detection is remarkably
+  robust to the guarantee (PR-AUC 0.690 → 0.683 down to a strong epsilon ≈ 1.7, then
+  0.666 at epsilon ≈ 0.8), while the empirical Yeom leak barely moves because a
+  regularised **linear** model memorises little to begin with — so the report leads
+  with DP's real value: the *formal* (epsilon, delta) certificate holds against every
+  attacker, not just the one measured. Accountant closed-forms + monotonicities and
+  DP mechanics unit-tested; e2e slow test; in the analysis suite. `dp.*` config.
+- Anomaly-flag attribution (`netsentry anomexplain`,
+  `netsentry/explain/anomaly_explain.py`): the unsupervised mirror of SHAP. The
+  supervised model returns its top features on every prediction; the anomaly
+  detector emitted only a score. This names the behaviours behind a flag by
+  **model-agnostic benign occlusion** (reset each feature to its benign reference,
+  re-score, read the drop), so it explains whichever detector ships (the autoencoder
+  locally, Isolation Forest in torch-less CI). Because occlusion can be a just-so
+  story, the report **validates** it the XAI way — a deletion/faithfulness check that
+  occluding the top-attributed features must move the score far more than random
+  ones. Stand-in: strongly faithful (top-5 occlusion drops the score 13.4× more than
+  random-5) and cleanly interpretable — DDoS flags driven by Flow Packets/s + Flow
+  Bytes/s (volumetric), PortScan by SYN Flag Count (the scan signature). Pure
+  attribution + faithfulness math unit-tested against a known-rule stub; e2e slow
+  test; in the analysis suite. `anomaly_explain.*` config.
+- Live anomaly explanations in serving (`?anomaly_explain=true` on `/predict` +
+  `/predict/batch`): turns the attribution study into an API contract. The serving
+  bundle now embeds a per-feature benign median (the occlusion reference), and the
+  engine returns `anomaly_features` — the top benign-occlusion contributions behind a
+  flag, with analyst-readable feature names — for flagged flows only. Mirrors the
+  `?exemplars=true` posture: opt-in (no latency tax on the standard path),
+  evidence-only (verdict fields byte-identical), and best-effort (a bundle without
+  the reference, or any failure, returns null, never an error). Integration-tested.
+
 ## [0.7.0] — 2026-07-13
 
 The adversarial-privacy & host-graph wave: NetSentry completes the classic

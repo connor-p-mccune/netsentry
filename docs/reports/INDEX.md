@@ -15,6 +15,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
 | Poisoning defense | audit-and-drop sanitization vs label flips, re-measured | [open](poisoning_defense.md) |
 | Membership inference | privacy leakage: does the model memorise its training data | [open](membership.md) |
+| Differential privacy | the (ε, δ) guarantee priced: detection & leakage vs ε | [open](dp.md) |
 | Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |
 | Label-noise audit | confident-learning flags + planted-flip self-validation | [open](label_audit.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
@@ -35,6 +36,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
 | Importance stability | are the shipped explanations stable across refits | [open](importance_stability.md) |
 | Exemplar explanations | do the nearest known training flows vouch for the alerts | [open](exemplars.md) |
+| Anomaly attribution | why a flow is abnormal: per-feature anomaly explanations + a faithfulness check | [open](anomaly_explain.md) |
 | Surrogate distillation | the model's closest auditable imitation, with fidelity priced | [open](distill.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
 | Seed sensitivity | the training-noise floor under every reported metric | [open](seed_variance.md) |

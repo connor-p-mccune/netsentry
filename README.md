@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.7.0`.** The build plan in
+**Released `v0.8.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and six post-release waves build on top — the
+tested, and committed, and seven post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -28,14 +28,17 @@ defense-and-operations wave (poisoning defense re-measured, threshold transfer
 priced, a discrete-event SOC queue simulation, canary-gated hot reload, and an
 ECS spool watcher), the **SOC-native integrations wave** (the signature
 baseline exported as Sigma rules, detections as STIX 2.1 bundles, cross-flow
-beaconing/C2 detection, and production Kubernetes manifests), and the
+beaconing/C2 detection, and production Kubernetes manifests), the
 **explainability-depth & parser-hardening wave** (partial dependence + ICE, and a
-fuzz harness pinning the capture parser's never-crash contract), and the
+fuzz harness pinning the capture parser's never-crash contract), the
 **adversarial-privacy & host-graph wave** (a membership-inference privacy audit that
 completes the evasion/poisoning/**privacy** attack triad, and host-graph analytics
 for the scan fan-out and lateral-movement chains the identity-blind per-flow model
-can't see). `make check` is
-green (lint + type-check + **503 passing tests**, property-based invariants and a
+can't see), and the **privacy & explainable-anomaly wave** (differentially-private
+training with a from-scratch Rényi accountant, priced on a utility–leakage frontier;
+and the anomaly detector made explainable — per-feature attribution with a
+faithfulness check, served live via `?anomaly_explain=true`). `make check` is
+green (lint + type-check + **528 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -69,6 +72,7 @@ what actually ships.
 | Adversarial robustness | mimicry + adaptive query-search evasion, robustness curves | ✅ Done |
 | Adversarial hardening | adversarial training vs mimicry, re-measured (measure → fix → re-measure) | ✅ Done |
 | Membership inference | privacy audit (Shokri shadow + Yeom threshold); the overfit reference prices the leak | ✅ Done |
+| Differential privacy | DP-SGD + a from-scratch pure-stdlib Rényi accountant; the (ε, δ) guarantee priced on a utility–leakage frontier | ✅ Done |
 | Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
 | Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |
 | SOC queue simulation | discrete-event M/G/c queue: FIFO vs score-priority attack-SLA | ✅ Done |
@@ -103,6 +107,7 @@ what actually ships.
 | Incident reports | alerts folded into analyst-ready incidents with ATT&CK context | ✅ Done |
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
 | Exemplar explanations | nearest known training flows per prediction, audited then served | ✅ Done |
+| Explainable anomaly | per-feature attribution for anomaly flags (occlusion + a faithfulness check), served via `?anomaly_explain` | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
 | Seed sensitivity | same-seed reproducibility asserted + the cross-seed noise floor | ✅ Done |
@@ -250,6 +255,7 @@ netsentry leakage                   # reproduce the field's ~99% and attribute i
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
 netsentry pdp                       # partial dependence + ICE (the shape of the model's response)
+netsentry anomexplain               # why is a flow anomalous? per-feature anomaly attribution + faithfulness
 netsentry exemplars                 # case-based explanations: do known cases vouch for alerts?
 netsentry distill                   # the model's closest auditable tree, fidelity priced
 netsentry activelearning            # uncertainty vs random labeling (label efficiency)
@@ -257,6 +263,7 @@ netsentry selftrain                 # pseudo-labels on the unlabeled stream vs t
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
 netsentry privacy                   # membership-inference audit: does the model memorise its data?
+netsentry dp                        # differential privacy: detection & leakage vs the epsilon budget
 netsentry alertqueue                # detection vs analyst budget (lift over random triage)
 netsentry socsim                    # simulate the analyst queue: FIFO vs score-priority SLA
 netsentry sanitize                  # audit-and-drop poisoned labels, then re-measure
@@ -829,6 +836,53 @@ privacy control. The worst-case low-FPR framing follows Carlini et al. (2022), a
 report names differentially-private training as the next study — a formal (ε, δ)
 guarantee at a measured detection cost. See
 [`docs/reports/membership.md`](docs/reports/membership.md).
+
+## Differential privacy (the guarantee the membership audit names, priced)
+
+The membership audit ends by naming the mitigation it does not yet exercise —
+**differentially-private training** — and `netsentry dp` takes it, closing the
+measure → fix → re-measure arc on the privacy axis. Two pieces do the work. A
+**pure-stdlib Rényi-DP accountant** (`math` only, no scipy) for the subsampled
+Gaussian mechanism (Abadi et al. 2016; Mironov 2017): log-space composition at
+integer orders — a *sound upper bound* on ε, in the same from-scratch, auditable
+spirit as the pcap reader — and the sharpened Canonne–Kamath–Steinke RDP→(ε, δ)
+conversion. And a **DP-SGD logistic classifier**: each flow's per-example gradient
+is clipped to a fixed L2 norm (bounding any one flow's influence) and Gaussian noise
+is added, so the spent ε is a function of the noise multiplier, the minibatch
+sampling rate, and the step count *only* — a certificate that holds for any dataset
+and any attacker. The study trains a non-private reference and DP models across a
+noise sweep on the exchangeable stratified split and prices each on one axis: the ε
+it spends, the detection it keeps (PR-AUC + TPR@FPR), and the membership leak it
+closes (the same Yeom attack, reused). On the synthetic stand-in the result is worth
+stating plainly: detection is **remarkably robust** to the guarantee — PR-AUC holds
+**0.690 → 0.683** down to a strong **ε ≈ 1.7**, softening only to 0.666 at ε ≈ 0.8 —
+while the *empirical* Yeom leak barely moves, because a regularised **linear** model
+memorises little to begin with (the membership audit's own thesis). So the report
+leads with DP's real value: the **formal** (ε, δ) certificate holds against attacks
+never enumerated, not just the one measured. The deployed GBDT is unchanged; a linear
+model keeps the accountant exact and the utility ceiling real. See
+[`docs/reports/dp.md`](docs/reports/dp.md).
+
+## Explaining the anomaly flag (why is this flow abnormal?)
+
+The supervised model returns its SHAP top features on every prediction; the anomaly
+detector — the "detect the unknown" component — emitted only a score, and a bare
+"anomaly = 0.83" is not actionable. `netsentry anomexplain` is the unsupervised
+mirror of SHAP: it names *which behaviours* made a flow abnormal by **model-agnostic
+benign occlusion** — reset each feature to its benign reference, re-score, and read
+the drop ("if this behaviour had looked normal, how much less anomalous would the
+flow be?") — so it explains whichever detector ships (the autoencoder, or the
+Isolation Forest in a torch-less deployment). Because an attribution can be a just-so
+story, the report **validates** it the way the XAI literature does — a
+deletion/faithfulness check that occluding the top-attributed features must move the
+score far more than random ones. On the stand-in the attributions are strongly
+faithful (top-5 occlusion drops the score **13.4× more** than random-5) and cleanly
+interpretable — **DDoS** flags are driven by *Flow Packets/s* and *Flow Bytes/s*
+(volumetric), **PortScan** by *SYN Flag Count* (the scan signature). The capability
+is also **live**: `POST /predict?anomaly_explain=true` returns `anomaly_features` for
+flagged flows — opt-in, evidence-only (the verdict is byte-identical), and
+best-effort — so a SOC analyst who sees `is_anomaly: true` also sees *why*. See
+[`docs/reports/anomaly_explain.md`](docs/reports/anomaly_explain.md).
 
 ## Training-set poisoning
 
