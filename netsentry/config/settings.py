@@ -602,6 +602,32 @@ class DPConfig(BaseModel):
     attack_fpr: float = 0.01  # low false-accusation budget for the worst-case leak
 
 
+class ExtractionConfig(BaseModel):
+    """Model-extraction (model-stealing) attack: is the deployed model stealable by query?
+
+    The fourth classic adversarial axis after evasion, poisoning, and membership
+    inference — the one about the confidentiality of the *model*. A surrogate is
+    trained purely on the victim's returned scores over the attacker's own
+    same-distribution traffic (no ground-truth labels), and its fidelity (agreement
+    with the victim) and stolen detection (PR-AUC) are swept over ``query_budgets``.
+    ``round_decimals`` sets the precision of the 'rounded' query-response defense
+    (the label-only defense returns the top-1 class); ``transfer_*`` parametrise the
+    black-box transfer-evasion attack the stolen surrogate enables — an L2 search of
+    radius ``transfer_budget`` (standardised units, matching the robustness study)
+    for ``transfer_iterations`` random restarts over up to ``max_attack_samples``
+    attack flows, scored at the ``transfer_fpr`` operating point. Runs on the
+    exchangeable stratified/binary split; deliberately a few thousand rows and a
+    generic surrogate so the study stays fast."""
+
+    query_budgets: list[int] = Field(default_factory=lambda: [250, 500, 1000, 2000, 4000])
+    round_decimals: int = 1  # precision of the 'rounded' query-response defense
+    max_eval_rows: int = 4000  # held-out rows for fidelity/PR-AUC measurement
+    transfer_budget: float = 2.0  # L2 evasion budget (standardised units) for the transfer attack
+    transfer_iterations: int = 100  # random-restart search iterations for the transfer attack
+    transfer_fpr: float = 0.01  # victim operating point the transfer attack tries to slip under
+    max_attack_samples: int = 1500  # attack flows perturbed in the transfer experiment
+
+
 class HardeningConfig(BaseModel):
     """Adversarial training against the feature-space mimicry the evasion study runs.
 
@@ -1060,6 +1086,7 @@ class Settings(BaseSettings):
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     membership: MembershipConfig = Field(default_factory=MembershipConfig)
     dp: DPConfig = Field(default_factory=DPConfig)
+    extraction: ExtractionConfig = Field(default_factory=ExtractionConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)

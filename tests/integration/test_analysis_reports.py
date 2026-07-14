@@ -384,6 +384,21 @@ def test_dp_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_extraction_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.extraction import run_extraction_report
+
+    prepared.extraction.query_budgets = [200, 600]
+    prepared.extraction.max_eval_rows = 800
+    prepared.extraction.transfer_iterations = 15
+    prepared.extraction.max_attack_samples = 300
+    out = run_extraction_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "model extraction" in text and "fidelity" in text
+    # The defense axis and the transfer attack are both rendered.
+    assert "top-1 label only" in text and "transfer" in text
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 

@@ -339,6 +339,19 @@ def dp(
 
 
 @app.command()
+def extraction(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Steal the model by query (model extraction): fidelity, stolen detection, transfer evasion."""
+    from netsentry.robustness.extraction import run_extraction_report
+
+    settings = _load(config, override)
+    out = run_extraction_report(settings)
+    logger.info("Model-extraction report ready", extra={"path": str(out)})
+
+
+@app.command()
 def sanitize(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -51,6 +51,7 @@ from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
 from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.dp import run_dp_report
+from netsentry.robustness.extraction import run_extraction_report
 from netsentry.robustness.hardening import run_hardening_report
 from netsentry.robustness.membership import run_membership_report
 from netsentry.robustness.poisoning import run_poisoning_report
@@ -146,6 +147,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the (epsilon, delta) guarantee priced: detection & leakage vs epsilon",
         "dp.md",
         run_dp_report,
+    ),
+    (
+        "Model extraction",
+        "stealing the model by query: fidelity, stolen detection, transfer evasion",
+        "extraction.md",
+        run_extraction_report,
     ),
     (
         "Label-noise audit",
