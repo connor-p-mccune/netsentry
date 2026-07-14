@@ -71,6 +71,10 @@ def build_serving_bundle(settings: Settings) -> Path:
         )
         bundle.anomaly_detector = detector
         bundle.anomaly_threshold = detector.threshold
+        # Per-feature benign median (transformed space) — the occlusion reference the
+        # serving engine uses to attribute an anomaly flag (?anomaly_explain=true).
+        benign_reference = np.median(np.asarray(bundle.pipeline.transform(benign_train)), axis=0)
+        bundle.metadata["anomaly_reference"] = [float(v) for v in benign_reference]
 
     # Carry a compact drift reference (per-feature PSI bins) so the deployed model
     # can self-monitor input drift at serve time without the processed dataset.

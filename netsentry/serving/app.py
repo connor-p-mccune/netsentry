@@ -170,6 +170,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         description="Include similar_flows: the nearest known training flows "
         "(case-based evidence), when the bundle carries an exemplar index.",
     )
+    anomaly_explain_query = Query(
+        default=False,
+        description="Include anomaly_features: why the anomaly detector flagged the "
+        "flow (top benign-occlusion features), for flagged flows only.",
+    )
 
     @app.post("/predict", response_model=PredictionResponse)
     def predict(
@@ -177,12 +182,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         profile: str | None = Query(default=None, description="Threshold profile."),
         explain: bool = explain_query,
         exemplars: bool = exemplars_query,
+        anomaly_explain: bool = anomaly_explain_query,
     ) -> PredictionResponse:
         return holder.engine.predict(
             [request.flow],
             profile=_resolve_profile(profile),
             explain=explain,
             exemplars=exemplars,
+            anomaly_explain=anomaly_explain,
         )[0]
 
     @app.post("/predict/batch", response_model=BatchResponse)
@@ -191,6 +198,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         profile: str | None = Query(default=None, description="Threshold profile."),
         explain: bool = explain_query,
         exemplars: bool = exemplars_query,
+        anomaly_explain: bool = anomaly_explain_query,
     ) -> BatchResponse:
         if len(request.flows) > settings.serving.max_batch_size:
             raise HTTPException(
@@ -198,7 +206,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 detail=f"batch too large: {len(request.flows)} > {settings.serving.max_batch_size}",
             )
         predictions = holder.engine.predict(
-            request.flows, profile=_resolve_profile(profile), explain=explain, exemplars=exemplars
+            request.flows,
+            profile=_resolve_profile(profile),
+            explain=explain,
+            exemplars=exemplars,
+            anomaly_explain=anomaly_explain,
         )
         return BatchResponse(predictions=predictions)
 

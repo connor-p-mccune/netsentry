@@ -78,6 +78,11 @@ class PredictionResponse(BaseModel):
     # Nearest known training flows (case-based explanation). Opt-in via
     # ?exemplars=true; None when not requested or the bundle carries no index.
     similar_flows: list[SimilarFlow] | None = None
+    # Why the anomaly detector flagged this flow: the top features by benign-occlusion
+    # contribution (the unsupervised mirror of top_features). Opt-in via
+    # ?anomaly_explain=true; populated only for flagged flows on a bundle that carries
+    # an anomaly detector + benign reference, else None.
+    anomaly_features: list[FeatureContribution] | None = None
 
 
 class BatchResponse(BaseModel):

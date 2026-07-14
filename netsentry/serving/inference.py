@@ -19,7 +19,7 @@ from netsentry.data.services import PER_SERVICE_PROFILE, service_of
 from netsentry.evaluation.metrics import attack_probability
 from netsentry.explain.exemplars import ExemplarIndex
 from netsentry.explain.shap_explainer import ShapExplainer
-from netsentry.features.feature_sets import model_features
+from netsentry.features.feature_sets import display_feature_name, model_features
 from netsentry.intel.attack_mapping import mitre_payload
 from netsentry.log import get_logger
 from netsentry.models.registry import latest_bundle, load_bundle
@@ -87,6 +87,7 @@ class InferenceEngine:
         self.conformal: dict[str, float] | None = conformal if isinstance(conformal, dict) else None
         self.drift = self._build_monitor(settings)
         self.exemplar_index = self._load_exemplars()
+        self.anomaly_reference, self.anomaly_feature_names = self._load_anomaly_reference()
         self.canary = self._run_canary(settings)
         self.shadow, self.shadow_version = self._load_shadow(settings)
         self.loaded_at = datetime.now(UTC).isoformat()
@@ -191,6 +192,60 @@ class InferenceEngine:
             logger.warning("Exemplar retrieval skipped (%s)", exc)
             return None
 
+    def _load_anomaly_reference(self) -> tuple[np.ndarray | None, list[str]]:
+        """Load the benign occlusion reference + transformed feature names, if present.
+
+        Returns ``(None, [])`` for bundles without an anomaly detector or a stored
+        reference, so ``?anomaly_explain=true`` degrades to ``None`` rather than error.
+        """
+        ref = self.bundle.metadata.get("anomaly_reference")
+        if not isinstance(ref, list) or self.bundle.anomaly_detector is None:
+            return None, []
+        try:
+            raw_names = self.bundle.pipeline.named_steps["features"].get_feature_names_out()
+            names = [display_feature_name(n) for n in raw_names]
+            return np.asarray(ref, dtype=float), names
+        except Exception as exc:  # attribution is additive; never fatal
+            logger.warning("Anomaly reference disabled (%s)", exc)
+            return None, []
+
+    def _anomaly_features(
+        self, transformed: np.ndarray, is_anomaly: np.ndarray | None, top_k: int
+    ) -> list[list[FeatureContribution] | None] | None:
+        """Top anomaly-driving features per flagged flow (benign-occlusion, best-effort).
+
+        Only flagged flows get an explanation (a non-anomalous flow has no flag to
+        explain); everything else, and any failure, returns ``None`` so the field is
+        purely additive to the response.
+        """
+        if self.anomaly_reference is None or self.bundle.anomaly_detector is None:
+            return None
+        try:
+            from netsentry.explain.anomaly_explain import occlusion_attributions
+
+            contrib = occlusion_attributions(
+                self.bundle.anomaly_detector, np.asarray(transformed), self.anomaly_reference
+            )
+            names = self.anomaly_feature_names
+            out: list[list[FeatureContribution] | None] = []
+            for i in range(len(contrib)):
+                if is_anomaly is not None and not bool(is_anomaly[i]):
+                    out.append(None)
+                    continue
+                order = np.argsort(-contrib[i])[:top_k]
+                out.append(
+                    [
+                        FeatureContribution(
+                            feature=names[j], contribution=round(float(contrib[i][j]), 6)
+                        )
+                        for j in order
+                    ]
+                )
+            return out
+        except Exception as exc:  # attribution must never break a prediction
+            logger.warning("Anomaly attribution skipped (%s)", exc)
+            return None
+
     def _build_monitor(self, settings: Settings) -> DriftMonitor | None:
         """Reconstruct the drift monitor from the bundle's reference, if it carries one."""
         summary = self.bundle.metadata.get("drift_reference")
@@ -248,6 +303,7 @@ class InferenceEngine:
         top_k: int | None = None,
         explain: bool = True,
         exemplars: bool = False,
+        anomaly_explain: bool = False,
     ) -> list[PredictionResponse]:
         """Score flows; ``explain=False`` skips SHAP (the measured majority of latency).
 
@@ -293,6 +349,11 @@ class InferenceEngine:
         similar = (
             self._similar_flows(transformed) if exemplars and transformed is not None else None
         )
+        anomaly_feats = (
+            self._anomaly_features(transformed, is_anomaly, top_k)
+            if anomaly_explain and transformed is not None
+            else None
+        )
 
         responses: list[PredictionResponse] = []
         for i in range(len(flows)):
@@ -325,6 +386,7 @@ class InferenceEngine:
                     recommended_action=action,
                     mitre=mitre,
                     similar_flows=similar[i] if similar is not None else None,
+                    anomaly_features=anomaly_feats[i] if anomaly_feats is not None else None,
                 )
             )
         return responses

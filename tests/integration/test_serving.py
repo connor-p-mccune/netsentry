@@ -111,6 +111,41 @@ def test_exemplars_opt_in_returns_similar_flows(client) -> None:  # type: ignore
     assert batch["predictions"][0]["similar_flows"]
 
 
+# A wildly out-of-distribution flow the benign-fit anomaly detector should flag.
+ANOMALOUS_FLOW = {
+    "Flow Duration": 1.0,
+    "Total Fwd Packets": 100000.0,
+    "Total Backward Packets": 100000.0,
+    "Flow Bytes/s": 1e8,
+    "Flow Packets/s": 1e6,
+    "Fwd Packet Length Max": 65535.0,
+    "Max Packet Length": 65535.0,
+}
+
+
+@pytest.mark.slow
+def test_anomaly_explain_opt_in_returns_features(client) -> None:  # type: ignore[no-untyped-def]
+    default = client.post("/predict", json={"flow": ANOMALOUS_FLOW}).json()
+    assert default["anomaly_features"] is None  # opt-in: absent unless requested
+
+    body = client.post("/predict?anomaly_explain=true", json={"flow": ANOMALOUS_FLOW}).json()
+    # The engine reproduces the same verdict; the attribution is evidence, not a decision.
+    assert body["is_attack"] == default["is_attack"]
+    assert body["anomaly_score"] == default["anomaly_score"]
+    if body["is_anomaly"]:  # only a flagged flow carries an explanation
+        assert body["anomaly_features"]
+        item = body["anomaly_features"][0]
+        assert set(item) == {"feature", "contribution"}
+        # Contributions are ranked by magnitude, most-driving first.
+        mags = [abs(c["contribution"]) for c in body["anomaly_features"]]
+        assert mags == sorted(mags, reverse=True)
+
+    # A benign, in-distribution flow requests the field but earns no explanation.
+    benign = client.post("/predict?anomaly_explain=true", json={"flow": SAMPLE_FLOW}).json()
+    if not benign["is_anomaly"]:
+        assert benign["anomaly_features"] is None
+
+
 @pytest.mark.slow
 def test_cost_optimal_profile_is_selectable(client) -> None:  # type: ignore[no-untyped-def]
     # The serving bundle carries a cost-optimal threshold profile alongside the FPR ones.
