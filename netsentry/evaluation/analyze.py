@@ -52,6 +52,7 @@ from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
 from netsentry.monitoring.streaming import run_streaming_report
+from netsentry.robustness.certify import run_certify_report
 from netsentry.robustness.dp import run_dp_report
 from netsentry.robustness.extraction import run_extraction_report
 from netsentry.robustness.hardening import run_hardening_report
@@ -131,6 +132,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "adversarial training vs mimicry, re-measured",
         "hardening.md",
         run_hardening_report,
+    ),
+    (
+        "Certified robustness",
+        "randomized smoothing: a provable L2 radius per flow (Cohen et al. 2019)",
+        "certify.md",
+        run_certify_report,
     ),
     (
         "Poisoning defense",

@@ -645,6 +645,28 @@ class ExtractionConfig(BaseModel):
     max_attack_samples: int = 1500  # attack flows perturbed in the transfer experiment
 
 
+class CertifyConfig(BaseModel):
+    """Certified robustness via randomized smoothing (Cohen, Rosenfeld & Kolter 2019).
+
+    The formal-guarantee counterpart to the empirical evasion study: the smoothed
+    classifier (majority vote under Gaussian noise) comes with a provable L2 radius
+    ``R = sigma * Phi^-1(p_A)``, where ``p_A`` is a Clopper-Pearson lower bound (at
+    confidence 1 - ``alpha``) on the majority-vote probability over ``n_samples`` noise
+    draws. ``sigmas`` sweep the accuracy/robustness frontier (more noise certifies farther
+    but detects less); ``radii_grid`` sets the certified-accuracy sweep; ``max_flows``
+    class-balanced test flows are certified (cost is ``n_samples`` model scorings per
+    flow, so both are kept modest); ``target_fpr`` sets the base detector's operating
+    point. Radii are in standardised-feature units — the same scale as the evasion search
+    budgets, so the reports read against each other. Runs on the stratified/binary split."""
+
+    sigmas: list[float] = Field(default_factory=lambda: [0.25, 0.5, 1.0])
+    n_samples: int = 1000  # Monte-Carlo noise draws per flow for the certificate
+    alpha: float = 0.001  # 1 - alpha is the certificate's confidence level
+    max_flows: int = 300  # class-balanced test flows certified (n_samples scorings each)
+    target_fpr: float = 0.01  # operating point of the base detector being smoothed
+    radii_grid: list[float] = Field(default_factory=lambda: [0.0, 0.25, 0.5, 1.0, 1.5, 2.0])
+
+
 class HardeningConfig(BaseModel):
     """Adversarial training against the feature-space mimicry the evasion study runs.
 
@@ -1127,6 +1149,7 @@ class Settings(BaseSettings):
     membership: MembershipConfig = Field(default_factory=MembershipConfig)
     dp: DPConfig = Field(default_factory=DPConfig)
     extraction: ExtractionConfig = Field(default_factory=ExtractionConfig)
+    certify: CertifyConfig = Field(default_factory=CertifyConfig)
     hardening: HardeningConfig = Field(default_factory=HardeningConfig)
     active_learning: ActiveLearningConfig = Field(default_factory=ActiveLearningConfig)
     streaming: StreamingConfig = Field(default_factory=StreamingConfig)

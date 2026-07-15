@@ -352,6 +352,19 @@ def extraction(
 
 
 @app.command()
+def certify(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Certify robustness (randomized smoothing): a provable L2 radius per flow vs sigma."""
+    from netsentry.robustness.certify import run_certify_report
+
+    settings = _load(config, override)
+    out = run_certify_report(settings)
+    logger.info("Certification report ready", extra={"path": str(out)})
+
+
+@app.command()
 def sanitize(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

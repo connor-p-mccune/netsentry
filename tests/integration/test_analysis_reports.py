@@ -425,6 +425,19 @@ def test_extraction_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_certify_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.certify import run_certify_report
+
+    prepared.certify.sigmas = [0.25, 0.5]
+    prepared.certify.n_samples = 200
+    prepared.certify.max_flows = 40
+    out = run_certify_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "certified" in text and "randomized smoothing" in text
+    assert "radius" in text and "sigma" in text
+
+
+@pytest.mark.slow
 def test_robustness_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.report import run_robustness_report
 
