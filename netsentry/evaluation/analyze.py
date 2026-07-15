@@ -23,6 +23,7 @@ from netsentry.evaluation.baserate import run_base_rate_report
 from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
+from netsentry.evaluation.data_value import run_data_value_report
 from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
@@ -159,6 +160,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "confident-learning flags + planted-flip self-validation",
         "label_audit.md",
         run_label_audit_report,
+    ),
+    (
+        "Training-data valuation",
+        "KNN-Shapley value per flow: mislabel detection + value-guided pruning",
+        "data_value.md",
+        run_data_value_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
     (

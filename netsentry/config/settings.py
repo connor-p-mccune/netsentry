@@ -819,6 +819,28 @@ class LeakageConfig(BaseModel):
     max_rows: int = 30000  # per-split row cap for the ladder refits (keeps it fast)
 
 
+class DataValueConfig(BaseModel):
+    """Training-data valuation via exact KNN-Shapley (Jia et al., VLDB 2019).
+
+    Values each training flow by its game-theoretic contribution to a K-nearest-
+    neighbour classifier's accuracy on held-out traffic, in the fitted pipeline's
+    standardised space — signed, so a negative value flags a flow that pulls the
+    classifier the wrong way (a mislabel signature). ``k`` is the neighbour count of
+    the valuation utility; ``reference_rows`` training flows are valued against
+    ``query_rows`` held-out flows (the closed form is O(N log N) per query, so both
+    can be sizeable). ``planted_flip_rate`` seeds the self-validating mislabel-recovery
+    check; ``prune_fractions`` drive the value-guided pruning experiment (each fraction
+    costs three deployed-model refits, so keep the list short); ``report_classes`` caps
+    the per-class value table. Runs on the exchangeable stratified/binary split."""
+
+    k: int = 10  # neighbours in the KNN utility the Shapley value is defined against
+    reference_rows: int = 5000  # training flows valued
+    query_rows: int = 2000  # held-out flows the value is measured against
+    planted_flip_rate: float = 0.05  # label flips planted for the mislabel-recovery check
+    prune_fractions: list[float] = Field(default_factory=lambda: [0.05, 0.1])
+    report_classes: int = 10  # classes shown in the per-class mean-value table
+
+
 class LeaderboardConfig(BaseModel):
     """Model-family leaderboard: every family through one shared honest protocol.
 
@@ -1094,6 +1116,7 @@ class Settings(BaseSettings):
     retrain_policy: RetrainPolicyConfig = Field(default_factory=RetrainPolicyConfig)
     leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     leakage: LeakageConfig = Field(default_factory=LeakageConfig)
+    data_value: DataValueConfig = Field(default_factory=DataValueConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

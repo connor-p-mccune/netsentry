@@ -330,6 +330,19 @@ def test_promotion_lifecycle_bootstrap_hold_and_rollforward(prepared: Settings) 
 
 
 @pytest.mark.slow
+def test_data_value_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.data_value import run_data_value_report
+
+    prepared.data_value.reference_rows = 1200
+    prepared.data_value.query_rows = 600
+    prepared.data_value.prune_fractions = [0.1]
+    out = run_data_value_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "knn-shapley" in text and "mislabel" in text
+    assert "planted" in text and "pruning" in text
+
+
+@pytest.mark.slow
 def test_leakage_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.leakage import run_leakage_report
 

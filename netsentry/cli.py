@@ -728,6 +728,19 @@ def leaderboard(
     logger.info("Leaderboard report ready", extra={"path": str(out)})
 
 
+@app.command("datavalue")
+def data_value_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Value each training flow (KNN-Shapley): mislabel detection + value-guided pruning."""
+    from netsentry.evaluation.data_value import run_data_value_report
+
+    settings = _load(config, override)
+    out = run_data_value_report(settings)
+    logger.info("Data-valuation report ready", extra={"path": str(out)})
+
+
 @app.command()
 def leakage(
     config: ConfigOpt = None,

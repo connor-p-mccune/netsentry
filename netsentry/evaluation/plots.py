@@ -107,6 +107,42 @@ def plot_barh(
     return _save(fig, out_path)
 
 
+def plot_hist_overlay(
+    series: dict[str, np.ndarray],
+    *,
+    xlabel: str,
+    title: str,
+    out_path: Path,
+    bins: int = 40,
+    vline: float | None = None,
+) -> Path:
+    """Overlaid, density-normalised histograms — e.g. clean-vs-mislabelled value spreads.
+
+    Each series is drawn semi-transparent over a shared, data-spanning bin edge set so
+    two populations (with very different counts) are visually comparable. ``vline``
+    draws a labelled reference (e.g. the zero line separating helpful from harmful
+    training points).
+    """
+    plt = _plt()
+    finite = [np.asarray(v)[np.isfinite(v)] for v in series.values()]
+    pooled = np.concatenate([v for v in finite if len(v)]) if finite else np.array([0.0, 1.0])
+    edges = np.histogram_bin_edges(pooled, bins=bins)
+    fig, ax = plt.subplots(figsize=(7, 4))
+    for name, values in series.items():
+        v = np.asarray(values)
+        v = v[np.isfinite(v)]
+        if len(v):
+            ax.hist(v, bins=edges, alpha=0.55, density=True, label=name)
+    if vline is not None:
+        ax.axvline(
+            vline, color="#d1495b", linestyle="--", alpha=0.9, label="zero (harmful | helpful)"
+        )
+    ax.set(xlabel=xlabel, ylabel="density", title=title)
+    ax.legend(loc="upper right")
+    ax.grid(alpha=0.3)
+    return _save(fig, out_path)
+
+
 def plot_pdp_grid(
     panels: Sequence[tuple[str, np.ndarray, np.ndarray, np.ndarray | None]],
     *,
