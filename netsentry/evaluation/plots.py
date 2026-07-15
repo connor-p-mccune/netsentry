@@ -143,6 +143,48 @@ def plot_hist_overlay(
     return _save(fig, out_path)
 
 
+def plot_heatmap(
+    matrix: np.ndarray,
+    labels: list[str],
+    *,
+    title: str,
+    out_path: Path,
+    cbar_label: str = "value",
+) -> Path:
+    """Annotated square heatmap (e.g. a feature-interaction matrix). Values in each cell.
+
+    Off-diagonal cells carry the pairwise value; the diagonal is left blank (a feature
+    does not interact with itself). Text colour flips on a mid-scale threshold so the
+    numbers stay legible on both dark and light cells.
+    """
+    plt = _plt()
+    n = len(labels)
+    vmax = float(np.nanmax(matrix)) if np.isfinite(matrix).any() else 1.0
+    vmax = max(vmax, 1e-9)
+    fig, ax = plt.subplots(figsize=(max(5.0, n * 0.95), max(4.0, n * 0.85)))
+    im = ax.imshow(matrix, cmap="magma", vmin=0.0, vmax=vmax)
+    ax.set_xticks(range(n))
+    ax.set_xticklabels(labels, rotation=45, ha="right", fontsize=8)
+    ax.set_yticks(range(n))
+    ax.set_yticklabels(labels, fontsize=8)
+    for i in range(n):
+        for j in range(n):
+            v = matrix[i, j]
+            if np.isfinite(v):
+                ax.text(
+                    j,
+                    i,
+                    f"{v:.2f}",
+                    ha="center",
+                    va="center",
+                    color="white" if v < 0.55 * vmax else "black",
+                    fontsize=8,
+                )
+    fig.colorbar(im, ax=ax, label=cbar_label)
+    ax.set_title(title)
+    return _save(fig, out_path)
+
+
 def plot_pdp_grid(
     panels: Sequence[tuple[str, np.ndarray, np.ndarray, np.ndarray | None]],
     *,

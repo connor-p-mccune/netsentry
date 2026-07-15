@@ -397,6 +397,19 @@ def test_dp_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_interactions_report_is_written(prepared: Settings) -> None:
+    from netsentry.explain.interactions import run_interactions_report
+
+    prepared.interactions.top_k = 4
+    prepared.interactions.sample_rows = 60
+    prepared.supervised.n_estimators = 40
+    out = run_interactions_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "h-statistic" in text and "interaction" in text
+    assert "additive" in text
+
+
+@pytest.mark.slow
 def test_extraction_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.extraction import run_extraction_report
 

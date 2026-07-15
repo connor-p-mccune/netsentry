@@ -389,6 +389,23 @@ class PartialDependenceConfig(BaseModel):
     grid_trim_quantile: float = 0.05  # trim each tail before building the grid
 
 
+class InteractionsConfig(BaseModel):
+    """Feature-interaction strength via Friedman's H-statistic (Friedman & Popescu 2008).
+
+    The partial-dependence study shows each top feature's marginal response but assumes
+    independence; this measures the interaction that assumption hides. The pairwise H is
+    the share of a feature pair's joint-partial-dependence variance that is *not*
+    explained by summing the two marginals — 0 (additive) to 1 (fully entangled). It is
+    estimated on the honest temporal model over a background sample, through the fitted
+    pipeline, so it reads against the PDP. ``top_k`` features give ``top_k*(top_k-1)/2``
+    pairs; ``sample_rows`` is the Monte-Carlo background (cost is quadratic in it per
+    pair, so keep it modest); ``max_pairs_reported`` caps the ranked table."""
+
+    top_k: int = 5  # top features (by model importance) whose pairwise H is measured
+    sample_rows: int = 150  # background sample the H-statistic is estimated over
+    max_pairs_reported: int = 12  # ranked interacting pairs shown in the report
+
+
 class AnomalyExplainConfig(BaseModel):
     """Per-feature attribution for anomaly flags — the unsupervised mirror of SHAP.
 
@@ -1104,6 +1121,7 @@ class Settings(BaseSettings):
     exemplars: ExemplarConfig = Field(default_factory=ExemplarConfig)
     anomaly_explain: AnomalyExplainConfig = Field(default_factory=AnomalyExplainConfig)
     partial_dependence: PartialDependenceConfig = Field(default_factory=PartialDependenceConfig)
+    interactions: InteractionsConfig = Field(default_factory=InteractionsConfig)
     distill: DistillConfig = Field(default_factory=DistillConfig)
     robustness: RobustnessConfig = Field(default_factory=RobustnessConfig)
     membership: MembershipConfig = Field(default_factory=MembershipConfig)

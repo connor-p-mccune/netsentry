@@ -641,6 +641,19 @@ def partial_dependence_cmd(
     logger.info("Partial-dependence report ready", extra={"path": str(out)})
 
 
+@app.command()
+def interactions(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Measure feature interactions (Friedman's H): which features the model has entangled."""
+    from netsentry.explain.interactions import run_interactions_report
+
+    settings = _load(config, override)
+    out = run_interactions_report(settings)
+    logger.info("Interactions report ready", extra={"path": str(out)})
+
+
 @app.command("importance")
 def importance_stability_cmd(
     config: ConfigOpt = None,

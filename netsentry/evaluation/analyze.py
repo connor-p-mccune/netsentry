@@ -41,6 +41,7 @@ from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.explain.distill import run_distill_report
 from netsentry.explain.exemplars import run_exemplars_report
 from netsentry.explain.importance_stability import run_importance_stability_report
+from netsentry.explain.interactions import run_interactions_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
@@ -269,6 +270,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the response-curve shape of the top features",
         "partial_dependence.md",
         run_partial_dependence_report,
+    ),
+    (
+        "Feature interactions",
+        "Friedman's H-statistic: which features the model has entangled",
+        "interactions.md",
+        run_interactions_report,
     ),
     (
         "Exemplar explanations",
