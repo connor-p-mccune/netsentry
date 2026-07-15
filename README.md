@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.8.0`.** The build plan in
+**Released `v0.9.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and seven post-release waves build on top — the
+tested, and committed, and eight post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -37,8 +37,13 @@ for the scan fan-out and lateral-movement chains the identity-blind per-flow mod
 can't see), and the **privacy & explainable-anomaly wave** (differentially-private
 training with a from-scratch Rényi accountant, priced on a utility–leakage frontier;
 and the anomaly detector made explainable — per-feature attribution with a
-faithfulness check, served live via `?anomaly_explain=true`). `make check` is
-green (lint + type-check + **528 passing tests**, property-based invariants and a
+faithfulness check, served live via `?anomaly_explain=true`), and the
+**adversarial-completeness & attribution wave** (a model-extraction attack that
+completes the evasion/poisoning/privacy/**extraction** quadrilogy, exact KNN-Shapley
+training-data valuation, Friedman's H-statistic feature interactions, and *certified*
+robustness via randomized smoothing — the provable-radius counterpart to the empirical
+evasion study). `make check` is
+green (lint + type-check + **559 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -71,8 +76,10 @@ what actually ships.
 | Probability calibration | isotonic/Platt calibrator + reliability/Brier/ECE diagnostics | ✅ Done |
 | Adversarial robustness | mimicry + adaptive query-search evasion, robustness curves | ✅ Done |
 | Adversarial hardening | adversarial training vs mimicry, re-measured (measure → fix → re-measure) | ✅ Done |
+| Certified robustness | randomized smoothing → a **provable** L2 radius per flow (Cohen et al. 2019) | ✅ Done |
 | Membership inference | privacy audit (Shokri shadow + Yeom threshold); the overfit reference prices the leak | ✅ Done |
 | Differential privacy | DP-SGD + a from-scratch pure-stdlib Rényi accountant; the (ε, δ) guarantee priced on a utility–leakage frontier | ✅ Done |
+| Model extraction | query-only model stealing → surrogate + black-box transfer evasion; the defense priced (Tramèr) | ✅ Done |
 | Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
 | Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |
 | SOC queue simulation | discrete-event M/G/c queue: FIFO vs score-priority attack-SLA | ✅ Done |
@@ -100,6 +107,7 @@ what actually ships.
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
 | Poisoning defense | audit-and-drop sanitization, re-measured (measure → fix → re-measure) | ✅ Done |
 | Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
+| Training-data valuation | exact KNN-Shapley per flow → mislabel detection (self-validated) + value-guided pruning | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |
 | Testing rigor | property-based invariants (hypothesis) over metrics, drift, cleaning | ✅ Done |
 | Parser fuzzing | hypothesis fuzz harness asserting the capture parser never crashes on untrusted bytes | ✅ Done |
@@ -108,6 +116,7 @@ what actually ships.
 | Counterfactual recourse | minimal change that would clear a flagged flow | ✅ Done |
 | Exemplar explanations | nearest known training flows per prediction, audited then served | ✅ Done |
 | Explainable anomaly | per-feature attribution for anomaly flags (occlusion + a faithfulness check), served via `?anomaly_explain` | ✅ Done |
+| Feature interactions | Friedman's H-statistic → which features the model has entangled (completes the PDP caveat) | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
 | Seed sensitivity | same-seed reproducibility asserted + the cross-seed noise floor | ✅ Done |
@@ -249,12 +258,14 @@ netsentry subgroups                 # per-service detection/false-alarm parity a
 netsentry novelty                   # detection vs distance-to-training (split gap decomposed)
 netsentry lodo                      # leave-one-day-out temporal sensitivity
 netsentry labelaudit                # find likely label errors (self-validated)
+netsentry datavalue                 # value each training flow (KNN-Shapley): mislabels + pruning
 netsentry rules                     # ML vs a signature ruleset at a matched FPR budget
 netsentry leaderboard               # every model family under the identical honest protocol
 netsentry leakage                   # reproduce the field's ~99% and attribute it to each source
 netsentry ablation                  # leave-one-feature-family-out importance
 netsentry importance                # feature-importance stability (are explanations trustworthy?)
 netsentry pdp                       # partial dependence + ICE (the shape of the model's response)
+netsentry interactions              # Friedman's H-statistic: which features the model has entangled
 netsentry anomexplain               # why is a flow anomalous? per-feature anomaly attribution + faithfulness
 netsentry exemplars                 # case-based explanations: do known cases vouch for alerts?
 netsentry distill                   # the model's closest auditable tree, fidelity priced
@@ -262,8 +273,10 @@ netsentry activelearning            # uncertainty vs random labeling (label effi
 netsentry selftrain                 # pseudo-labels on the unlabeled stream vs the labeled ceiling
 netsentry poisoning                 # detection decay under training-set poisoning
 netsentry harden                    # adversarial training vs mimicry, then re-measure
+netsentry certify                   # certified L2 robustness via randomized smoothing (a provable radius)
 netsentry privacy                   # membership-inference audit: does the model memorise its data?
 netsentry dp                        # differential privacy: detection & leakage vs the epsilon budget
+netsentry extraction                # model stealing: query-only surrogate + black-box transfer evasion
 netsentry alertqueue                # detection vs analyst budget (lift over random triage)
 netsentry socsim                    # simulate the analyst queue: FIFO vs score-priority SLA
 netsentry sanitize                  # audit-and-drop poisoned labels, then re-measure
@@ -862,6 +875,75 @@ leads with DP's real value: the **formal** (ε, δ) certificate holds against at
 never enumerated, not just the one measured. The deployed GBDT is unchanged; a linear
 model keeps the accountant exact and the utility ceiling real. See
 [`docs/reports/dp.md`](docs/reports/dp.md).
+
+## Model extraction (the fourth adversarial axis: stealing the model)
+
+Evasion, poisoning, and membership inference cover the inference-time, training-time,
+and privacy adversaries; `netsentry extraction` adds the fourth classic attack and the
+one about the **confidentiality of the model itself** (Tramèr et al. 2016) — completing
+the quadrilogy. With only the query access the `/predict` API grants, an attacker trains
+a **surrogate** on the victim's returned scores over its own collected traffic, never
+seeing a ground-truth label. On the stand-in, ~4,000 free queries buy **95.5% fidelity**
+(agreement with the victim's decisions) and **98%** of its detection PR-AUC — the
+detector is a stealable asset. The classic defense of returning *less* (rounded
+probabilities, then the top-1 label only) is measured and lands the literature's finding:
+it barely dents fidelity, because a hard label still reveals which side of the boundary
+every query lands on. And the security payoff is priced directly — an evasion search run
+**offline against the stolen surrogate** transfers to the victim, pulling its detection
+from **43% to 17%** and recovering **95%** of a fully white-box attack's effect without a
+single evasion query to the victim (clearly beating a random-perturbation control). Model
+theft is the enabler behind black-box transfer evasion, and the defense is the layered one
+the robustness report already argues for. See
+[`docs/reports/extraction.md`](docs/reports/extraction.md).
+
+## Certified robustness (a provable radius, not a measured one)
+
+The evasion study *measures* how far an attacker can push detection down, and hardening
+*reduces* that empirically — but an absent attack is only an attack not yet found.
+`netsentry certify` gives the guarantee those cannot: randomized smoothing (Cohen,
+Rosenfeld & Kolter 2019) wraps the detector in Gaussian noise and certifies a **provable**
+L2 radius `R = σ·Φ⁻¹(p_A)` — inside it, *no* perturbation can change the verdict, whether
+or not anyone has found one, where `p_A` is a Clopper–Pearson lower bound on the
+majority-vote probability. This is the formal-guarantee counterpart to the empirical
+evasion study, exactly as differential privacy is to the membership audit. The
+certified-accuracy-vs-radius curve exposes the accuracy/robustness frontier (σ 0.25 → 1.0:
+clean detection 70% → 68% for a median certified radius 0.50 → 0.77 on the stand-in), and
+both conservatisms are stated: the certificate is against *any* L2 perturbation (the
+evasion attacker only moves the controllable subset), and an undefended tree certifies
+conservatively — the named next step is noise-augmented base training, the same measure →
+fix arc. Radii share the evasion study's standardised-feature units, so the two read
+against each other. See [`docs/reports/certify.md`](docs/reports/certify.md).
+
+## Training-data valuation (which flows earn their place)
+
+Every other study values the *model*; `netsentry datavalue` values the **data**. The
+**KNN-Shapley** value (Jia et al., VLDB 2019) is the exact, game-theoretic contribution of
+each training flow to a nearest-neighbour classifier's accuracy on held-out traffic —
+computed in `O(N log N)` per query via a closed-form recursion (cross-checked in the tests
+against brute-force exact Shapley). The value is signed, and the sign is the point: a
+**negative** flow sits among the opposite class and hurts, the geometric signature of a
+mislabel. That yields a **self-validated mislabel detector** — planted label flips
+concentrate in the negative-value tail (flip-detector AUC **0.83** on the stand-in),
+reaching the confident-learning label audit's conclusion from an independent first
+principle — plus a value-guided **pruning** knob whose transfer to the deployed tree model
+is honestly measured, not assumed. The per-class value table is reported with the
+KNN-Shapley-under-imbalance caveat stated plainly. See
+[`docs/reports/data_value.md`](docs/reports/data_value.md).
+
+## Feature interactions (what the PDP can only warn about)
+
+The partial-dependence report ends on a caveat — a PDP assumes the swept feature is
+independent of the others, and where they move together the marginal curve hides
+**interaction**. `netsentry interactions` measures it. **Friedman's H-statistic**
+(Friedman & Popescu 2008) is the share of a feature pair's joint-response variance that is
+*not* explained by summing the two marginals — 0 (additive) to 1 (fully entangled) —
+estimated on the honest temporal model through the fitted pipeline, so it reads directly
+against the PDP. On the stand-in the strongest interaction is **Flow Duration × Flow IAT
+Mean (H = 0.41)**, a physically sensible coupling (duration ≈ packets × inter-arrival
+time). It is the interpretability view the suite was missing: SHAP says *which* features
+matter, PDP says *what shape* each one's response is, ablation says *which family is
+causally load-bearing*, and H says *which features the model has entangled*. See
+[`docs/reports/interactions.md`](docs/reports/interactions.md).
 
 ## Explaining the anomaly flag (why is this flow abnormal?)
 

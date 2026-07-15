@@ -1426,6 +1426,59 @@ smaller dev-run numbers noted in earlier phases:
   without the embedded benign reference returns `null`, never an error), so older
   bundles and any failure degrade gracefully instead of breaking a prediction.
 
+## Adversarial-completeness & attribution wave (v0.9.0)
+
+- **Extraction is the *fourth* adversarial axis, and it earns its place by being an
+  enabler, not a standalone.** Evasion/poisoning/membership were the "triad"; model
+  stealing completes the quadrilogy. The temptation was to stop at "the surrogate hits
+  95% fidelity" — a fine number, but a *confidentiality* result, not a *detection* one.
+  What makes it land on a NIDS is the transfer attack: searching the stolen surrogate is
+  free and unmonitored, and its perturbations drop victim detection 43% → 17%, recovering
+  95% of a white-box attack with zero evasion queries to the victim. That is the sentence
+  that ties extraction back to the project's detection thesis.
+- **The extraction defense had to fail honestly.** Returning less (rounded, then
+  label-only) is the textbook mitigation, and the textbook finding is that it barely
+  works — a hard label still reveals the boundary side of every query. On the stand-in
+  label-only fidelity is 95.0% vs 95.5% for full probabilities. I led the defense section
+  with that near-null result rather than burying it, because the honest read (boundary
+  theft survives response minimisation) is the point.
+- **KNN-Shapley's closed form is exact, and I proved it against brute force.** The whole
+  appeal of the Jia et al. recursion is that it collapses an exponential Shapley sum to
+  `O(N log N)` — easy to get subtly wrong. The unit test enumerates every subset for a
+  6-point set and asserts the recursion matches to `1e-9` at K=1,2,3. It caught a real
+  bug: my first brute-force utility normalised by `min(K,|S|)`; the standard KNN-Shapley
+  utility divides by **K** (missing neighbours contribute 0). The recursion was right; the
+  test's reference was wrong — exactly the kind of check worth having.
+- **Data valuation's per-class table is confounded by imbalance, and I said so.** On a
+  78%-benign split with K=10, most neighbours are benign, so every attack class carries a
+  *negative* mean Shapley value almost by construction. Left unexplained that reads as "the
+  method says attacks are worthless." The fix was prose, not code: name the KNN-Shapley ×
+  imbalance interaction, and point the reader at the *ordering within* the attacks
+  (PortScan/Web most negative — the near-benign classes the novelty study also flags).
+- **The pruning experiment was allowed to under-deliver.** KNN-value guiding a LightGBM
+  refit is a *transfer* claim; on a near-duplicate-heavy stand-in it barely beats random
+  dropping. I kept that as the reported result rather than tuning `prune_fractions` until a
+  win appeared — the mislabel-detection AUC 0.83 is the strong result, and the honest
+  pruning null sits beside it.
+- **Certified robustness is the formal twin of the empirical evasion study.** The arc is
+  the same one DP has with membership: measure the empirical weakness, then buy a
+  *provable* guarantee at a measured cost. Two conservatisms had to be stated so the
+  numbers aren't mis-compared: the certificate is against **any** L2 perturbation while the
+  evasion attacker only moves the controllable subset, and an undefended tree certifies
+  conservatively (radii < 1, non-trivial abstention). The named next step —
+  noise-augmented base training — is the same measure→fix move, not left implicit.
+- **`statistics`/scipy over a hand-rolled bound.** Cohen's radius needs Φ⁻¹ and a
+  Clopper-Pearson binomial lower bound. Unlike the DP accountant (deliberately pure-stdlib
+  because it is a *headline* auditable primitive), here scipy's `norm.ppf`/`beta.ppf` are
+  the right call — scipy is a hard transitive dep via sklearn, and re-deriving an exact
+  beta-quantile would add risk for no auditability gain. The certification math is still
+  unit-tested (monotone lower bound, radius scales linearly with σ, abstention on split
+  votes).
+- **Two new reusable plot helpers, no new deps.** `plot_hist_overlay` (clean-vs-flipped
+  value spreads) and `plot_heatmap` (the interaction matrix) went into `evaluation/plots.py`
+  rather than each study importing matplotlib directly — same discipline as the rest of the
+  figure code (lazy Agg backend, one `_save`).
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

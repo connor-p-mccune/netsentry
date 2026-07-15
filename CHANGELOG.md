@@ -6,6 +6,78 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-07-14
+
+The adversarial-completeness & attribution wave: the model-stealing attack that
+completes the classic adversarial-ML quadrilogy (evasion + poisoning + privacy +
+**extraction**), the two attribution studies that go under the model (training-data
+valuation, feature interactions), and the *certified* robustness guarantee that is to
+the evasion study what differential privacy is to the membership audit.
+
+### Added
+- Model-extraction (model-stealing) attack (`netsentry extraction`,
+  `netsentry/robustness/extraction.py`): the fourth classic attack on an ML model after
+  evasion (inference-time), poisoning (training-time), and membership inference
+  (privacy) — the one about the **confidentiality of the model itself** (Tramer et al.
+  2016; Papernot et al. 2017). A surrogate is trained purely on the victim's returned
+  scores over the attacker's own same-distribution traffic (no ground-truth labels), and
+  its **fidelity** (agreement with the victim) and stolen detection (PR-AUC) are swept
+  over the query budget. On the stand-in, ~4,000 free queries reach **95.5% fidelity**
+  and **98%** of the victim's PR-AUC. The classic Tramer defense — return less (rounded
+  probabilities, then top-1 label only) — is measured and lands the literature's finding:
+  it barely dents fidelity, because a hard label still reveals which side of the boundary
+  each query lands on. The security payoff is priced directly: an evasion search run
+  offline against the *stolen* surrogate transfers to the victim, recovering **95%** of a
+  fully white-box attack's effect (victim detection 43% -> 17%) without a single evasion
+  query to the victim, and clearly beating a random-perturbation control — extraction as
+  the enabler behind black-box transfer evasion. Runs on the stratified/binary split.
+  Query-response defenses, surrogate fit, fidelity, and the transfer search are
+  unit-tested; e2e slow test; in the analysis suite. `extraction.*` config.
+- Training-data valuation via exact KNN-Shapley (`netsentry datavalue`,
+  `netsentry/evaluation/data_value.py`): every other study values the *model*; this
+  values the **data**. The KNN-Shapley value (Jia et al., VLDB 2019) is the exact,
+  game-theoretic contribution of each training flow to a nearest-neighbour classifier's
+  accuracy on held-out traffic, computed in O(N log N) per query via the closed-form
+  recursion (checked in the tests against a brute-force exact-Shapley enumeration). The
+  value is signed, and the sign is the point: a negative flow sits among the opposite
+  class and hurts. Two uses follow — a **self-validated mislabel detector** (planted
+  label flips concentrate in the negative-value tail: flip-detector AUC **0.83** on the
+  stand-in, reaching the confident-learning label audit's finding from an independent
+  geometric first principle) and a **value-guided pruning** knob whose transfer to the
+  deployed tree model is measured, not assumed (reported honestly as weak on a
+  near-duplicate-heavy stand-in). A per-class value table is included with the
+  KNN-Shapley-under-imbalance caveat stated plainly. Runs on the stratified/binary split.
+  Recursion, recovery reads, and edge cases unit-tested; e2e slow test; in the analysis
+  suite. `data_value.*` config; `plots.plot_hist_overlay` added.
+- Feature interactions via Friedman's H-statistic (`netsentry interactions`,
+  `netsentry/explain/interactions.py`): the one interpretability view the suite was
+  missing — how features *combine*. The partial-dependence report warns that a PDP
+  assumes feature independence and hides interaction; this measures it. Friedman's H
+  (Friedman & Popescu, 2008) is the share of a feature pair's joint-partial-dependence
+  variance that is *not* explained by summing the marginals — 0 (additive) to 1 (fully
+  entangled) — estimated on the honest temporal model through the fitted pipeline, so it
+  reads against the PDP. On the stand-in the strongest interaction is **Flow Duration x
+  Flow IAT Mean (H = 0.41)**, a physically sensible coupling (duration ~ packets x
+  inter-arrival time). The H math (additive -> 0, multiplicative -> 1) is unit-tested on
+  constructed and end-to-end synthetic responses; e2e slow test; in the analysis suite.
+  `interactions.*` config; `plots.plot_heatmap` added.
+- Certified robustness via randomized smoothing (`netsentry certify`,
+  `netsentry/robustness/certify.py`): the formal-guarantee counterpart to the empirical
+  evasion study — the same role differential privacy plays for the membership audit. The
+  smoothed classifier (majority vote under Gaussian noise) comes with a **provable** L2
+  radius `R = sigma * Phi^-1(p_A)` (Cohen, Rosenfeld & Kolter, 2019), where `p_A` is a
+  Clopper-Pearson lower bound on the majority-vote probability over Monte-Carlo draws;
+  inside that radius no perturbation can change the verdict, found or not. The
+  certified-accuracy-vs-radius curve is swept across noise levels, exposing the
+  accuracy/robustness frontier (sigma 0.25 -> 1.0: clean accuracy 70% -> 68% for a median
+  certified radius 0.50 -> 0.77 on the stand-in). Reported with both conservatisms named:
+  the certificate is against *any* L2 perturbation (the evasion attacker only moves the
+  controllable subset), and an undefended tree certifies conservatively (the measure ->
+  noise-augmented-training fix is named, as with hardening and DP). Radii share the
+  evasion study's standardised-feature units. The certification math (Clopper-Pearson,
+  Cohen's radius, the accounting) is unit-tested; e2e slow test; in the analysis suite.
+  `certify.*` config.
+
 ## [0.8.0] — 2026-07-13
 
 The privacy & explainable-anomaly wave: the membership audit's named next step

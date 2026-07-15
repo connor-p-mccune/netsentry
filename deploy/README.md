@@ -8,10 +8,10 @@ Prometheus-scraped deployment.
 ## Build the image
 
 ```bash
-docker build -f docker/Dockerfile.serve -t netsentry-serve:0.8.0 .
+docker build -f docker/Dockerfile.serve -t netsentry-serve:0.9.0 .
 # push to your registry, or load it into a local cluster:
-kind load docker-image netsentry-serve:0.8.0   # kind
-minikube image load netsentry-serve:0.8.0       # minikube
+kind load docker-image netsentry-serve:0.9.0   # kind
+minikube image load netsentry-serve:0.9.0       # minikube
 ```
 
 ## Option A — Helm (recommended)
@@ -19,7 +19,7 @@ minikube image load netsentry-serve:0.8.0       # minikube
 ```bash
 helm install netsentry deploy/helm/netsentry \
   --namespace netsentry --create-namespace \
-  --set image.tag=0.8.0
+  --set image.tag=0.9.0
 
 # lint / preview the rendered manifests without applying:
 helm lint deploy/helm/netsentry
