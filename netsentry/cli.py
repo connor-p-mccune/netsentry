@@ -768,6 +768,19 @@ def data_value_cmd(
 
 
 @app.command()
+def ppi(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Estimate attack prevalence with prediction-powered inference (valid CIs from few labels)."""
+    from netsentry.evaluation.ppi import run_ppi_report
+
+    settings = _load(config, override)
+    out = run_ppi_report(settings)
+    logger.info("PPI report ready", extra={"path": str(out)})
+
+
+@app.command()
 def leakage(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

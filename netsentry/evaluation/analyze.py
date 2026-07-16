@@ -30,6 +30,7 @@ from netsentry.evaluation.leaderboard import run_leaderboard_report
 from netsentry.evaluation.leakage import run_leakage_report
 from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.novelty import run_novelty_report
+from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.seed_variance import run_seed_variance_report
@@ -174,6 +175,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "KNN-Shapley value per flow: mislabel detection + value-guided pruning",
         "data_value.md",
         run_data_value_report,
+    ),
+    (
+        "Prediction-powered inference",
+        "attack prevalence from few labels + the model, with valid CIs (Angelopoulos 2023)",
+        "ppi.md",
+        run_ppi_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
     (

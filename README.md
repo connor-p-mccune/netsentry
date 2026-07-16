@@ -90,6 +90,7 @@ what actually ships.
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
 | Statistical drift | per-feature KS + Benjamini–Hochberg FDR, online Page–Hinkley / DDM | ✅ Done |
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
+| Prediction-powered inference | attack prevalence from few labels + the model, tighter than classical at valid coverage (Angelopoulos 2023) | ✅ Done |
 | Explanation trust | feature-importance stability across bootstrap refits | ✅ Done |
 | Threat intel | MITRE ATT&CK mapping in predictions + coverage report + Navigator layer | ✅ Done |
 | Data efficiency | learning curves (does more data help?) | ✅ Done |

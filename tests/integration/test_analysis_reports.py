@@ -343,6 +343,18 @@ def test_data_value_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_ppi_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.ppi import run_ppi_report
+
+    prepared.ppi.label_budgets = [100, 400]
+    prepared.ppi.n_trials = 40
+    out = run_ppi_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "prediction-powered" in text and "rectifier" in text
+    assert "coverage" in text and "prevalence" in text
+
+
+@pytest.mark.slow
 def test_leakage_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.leakage import run_leakage_report
 

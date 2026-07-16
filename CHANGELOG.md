@@ -6,6 +6,30 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- Prediction-powered inference for attack prevalence (`netsentry ppi`,
+  `netsentry/evaluation/ppi.py`): the whole evaluation suite assumes a fully-labelled test
+  set; a SOC never has one. It scores every flow and labels a tiny audit sample, and still
+  owes a defensible answer to "what fraction of today's traffic is malicious?" with an honest
+  interval. Prediction-powered inference (Angelopoulos, Bates, Fannjiang, Jordan & Zrnic,
+  *Science* 2023) is the estimator that gets it right: start from the model's average over all
+  the unlabelled flows, then subtract the model's **measured bias on the labelled audit** — the
+  rectifier `mean(f - y)` — so the estimate is unbiased *whether or not the model is
+  calibrated*, and, because a useful model's residual is lower-variance than the raw label, the
+  interval is tighter than the label-only classical one at the same coverage. The study sweeps
+  the audit budget and, at each, measures every interval's half-width and its **empirical
+  coverage** of the true test prevalence over hundreds of random audit draws — validity shown,
+  not asserted. On the stand-in (true prevalence 0.221), PPI runs **~23% narrower** than
+  classical at 1,000 labels (worth ~1.8x the labels) while both hold ~90% coverage, and the
+  naive "let the model label everything" baseline is priced as the cautionary column: its point
+  is the model's own biased mean (+0.053), and its interval is far too narrow (it never looks at
+  a label), so it **misses** the truth — tight but invalid. Runs on the exchangeable
+  stratified/binary split, because PPI's guarantee needs the audit to be a random sample of the
+  scored population, exactly the exchangeability the temporal split is built to break. The
+  estimator algebra (unbiasedness, the constant-score fallback to classical, the perfect-model
+  width collapse, the label-savings ratio) is unit-tested; e2e slow test; in the analysis suite.
+  `ppi.*` config.
+
 ## [0.9.0] — 2026-07-14
 
 The adversarial-completeness & attribution wave: the model-stealing attack that

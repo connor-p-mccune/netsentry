@@ -880,6 +880,29 @@ class DataValueConfig(BaseModel):
     report_classes: int = 10  # classes shown in the per-class mean-value table
 
 
+class PPIConfig(BaseModel):
+    """Prediction-powered inference: estimate attack prevalence from few labels + the model.
+
+    A SOC never labels a full day of traffic; it labels a small audit sample and lets
+    the model score the rest. The classical estimate (label the sample, ignore the
+    model) is valid but wide; imputing every flow with the model is tight but biased
+    by the model's own error, so its interval does not cover the truth. Prediction-
+    powered inference (Angelopoulos, Bates, Fannjiang, Jordan & Zrnic, *Science* 2023)
+    keeps the model's tightness *and* classical validity by correcting the imputed
+    estimate with the model's measured bias on the labelled sample (the "rectifier").
+
+    ``label_budgets`` are the audit-sample sizes swept; at each, the three intervals'
+    half-widths and their empirical coverage of the true test prevalence are measured
+    over ``n_trials`` random label draws; ``alpha`` sets the confidence level
+    (1 - ``alpha``). Runs on the exchangeable stratified/binary split, because PPI's
+    validity assumes the labelled audit is a random sample of the scored population —
+    exactly what the temporal split deliberately violates."""
+
+    label_budgets: list[int] = Field(default_factory=lambda: [100, 250, 500, 1000])
+    n_trials: int = 300  # random label-draw trials per budget for coverage/width
+    alpha: float = 0.1  # 1 - alpha confidence level for every interval
+
+
 class LeaderboardConfig(BaseModel):
     """Model-family leaderboard: every family through one shared honest protocol.
 
@@ -1158,6 +1181,7 @@ class Settings(BaseSettings):
     leaderboard: LeaderboardConfig = Field(default_factory=LeaderboardConfig)
     leakage: LeakageConfig = Field(default_factory=LeakageConfig)
     data_value: DataValueConfig = Field(default_factory=DataValueConfig)
+    ppi: PPIConfig = Field(default_factory=PPIConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

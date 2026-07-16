@@ -21,6 +21,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Certified robustness | randomized smoothing: a provable L2 radius per flow (Cohen et al. 2019) | [open](certify.md) |
 | Label-noise audit | confident-learning flags + planted-flip self-validation | [open](label_audit.md) |
 | Training-data valuation | KNN-Shapley value per flow: mislabel detection + value-guided pruning | [open](data_value.md) |
+| Prediction-powered inference | attack prevalence from few labels + the model, with valid CIs (Angelopoulos 2023) | [open](ppi.md) |
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
 | Statistical drift | per-feature KS+FDR, online Page-Hinkley/DDM | [open](drift_tests.md) |
 | Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
