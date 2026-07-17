@@ -794,6 +794,19 @@ def ppi(
 
 
 @app.command()
+def hmeasure(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Report the H-measure (Hand 2009): a coherent, cost-explicit alternative to ROC-AUC."""
+    from netsentry.evaluation.hmeasure import run_hmeasure_report
+
+    settings = _load(config, override)
+    out = run_hmeasure_report(settings)
+    logger.info("H-measure report ready", extra={"path": str(out)})
+
+
+@app.command()
 def leakage(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -5,6 +5,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | report | what it covers | status |
 |---|---|---|
 | Operational evaluation | PR-AUC, TPR@FPR, per-class, calibration | [open](evaluation.md) |
+| H-measure | a coherent, cost-explicit alternative to ROC-AUC (Hand 2009) | [open](hmeasure.md) |
 | Cost-sensitive thresholds | decision-theoretic operating point | [open](cost.md) |
 | Alert-queue capacity | detection vs analyst budget; lift over random triage | [open](alert_queue.md) |
 | SOC queue simulation | FIFO vs score-priority attack-SLA under queueing load | [open](socsim.md) |

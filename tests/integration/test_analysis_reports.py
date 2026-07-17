@@ -343,6 +343,17 @@ def test_data_value_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_hmeasure_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.hmeasure import run_hmeasure_report
+
+    prepared.hmeasure.grid_points = 500
+    out = run_hmeasure_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "h-measure" in text and "roc-auc" in text
+    assert "coherent" in text and "prior" in text
+
+
+@pytest.mark.slow
 def test_exchangeability_report_is_written(prepared: Settings) -> None:
     from netsentry.monitoring.exchangeability import run_exchangeability_report
 

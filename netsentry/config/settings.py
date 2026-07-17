@@ -927,6 +927,28 @@ class PPIConfig(BaseModel):
     alpha: float = 0.1  # 1 - alpha confidence level for every interval
 
 
+class HMeasureConfig(BaseModel):
+    """The H-measure: a coherent alternative to ROC-AUC (Hand 2009).
+
+    Averaging over thresholds, ROC-AUC implicitly weights false-positive against
+    false-negative cost by a distribution that depends on each classifier's own score
+    distribution, so cross-model comparisons are made under different, incomparable cost
+    assumptions. The H-measure fixes an **explicit, shared** Beta prior on the cost
+    parameter for every classifier and reports the normalised expected minimum loss.
+    ``prior_alpha``/``prior_beta`` set the default symmetric severity prior (Hand's
+    Beta(2, 2)); ``cost_skew_alpha``/``cost_skew_beta`` set a second, SOC-flavoured prior
+    that puts mass where a missed attack costs more than a false alarm — a cost stance
+    ROC-AUC structurally cannot express. ``grid_points`` is the cost-grid resolution for
+    the loss integral. Runs on the honest temporal/binary split across the deployed model
+    and two references."""
+
+    prior_alpha: float = 2.0  # default symmetric severity prior Beta(a, b) (Hand 2009)
+    prior_beta: float = 2.0
+    cost_skew_alpha: float = 2.0  # cost-skewed prior: mass toward cheap false positives...
+    cost_skew_beta: float = 4.0  # ...i.e. expensive missed attacks (the SOC's real stance)
+    grid_points: int = 2000  # cost-grid resolution for the loss-curve quadrature
+
+
 class LeaderboardConfig(BaseModel):
     """Model-family leaderboard: every family through one shared honest protocol.
 
@@ -1207,6 +1229,7 @@ class Settings(BaseSettings):
     leakage: LeakageConfig = Field(default_factory=LeakageConfig)
     data_value: DataValueConfig = Field(default_factory=DataValueConfig)
     ppi: PPIConfig = Field(default_factory=PPIConfig)
+    hmeasure: HMeasureConfig = Field(default_factory=HMeasureConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

@@ -25,6 +25,7 @@ from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.data_value import run_data_value_report
 from netsentry.evaluation.gate import run_gate
+from netsentry.evaluation.hmeasure import run_hmeasure_report
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
 from netsentry.evaluation.leakage import run_leakage_report
@@ -85,6 +86,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "PR-AUC, TPR@FPR, per-class, calibration",
         "evaluation.md",
         run_evaluation,
+    ),
+    (
+        "H-measure",
+        "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
+        "hmeasure.md",
+        run_hmeasure_report,
     ),
     ("Cost-sensitive thresholds", "decision-theoretic operating point", "cost.md", run_cost_report),
     (

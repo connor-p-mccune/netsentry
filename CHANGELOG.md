@@ -7,6 +7,23 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- The H-measure, a coherent alternative to ROC-AUC (`netsentry hmeasure`,
+  `netsentry/evaluation/hmeasure.py`): the suite reports ROC-AUC with the imbalance caveat, but
+  Hand (2009) identified a subtler flaw — averaging over thresholds, AUC implicitly weights
+  false-positive against false-negative cost by a distribution that **depends on the classifier's
+  own score distribution**, so two models are compared under two different, incomparable cost
+  assumptions and an AUC win can encode a cost stance no one would hold. The H-measure removes the
+  incoherence by fixing an **explicit, shared** Beta prior on the misclassification-cost parameter
+  for every classifier and reporting the normalised expected minimum loss (0 = the best trivial
+  classifier, 1 = perfect separation), built from the ROC convex hull and integrated against the
+  prior. It is reported next to ROC-AUC and Gini, and under a second **cost-skewed** prior that
+  encodes the SOC's real stance (a missed attack costs more than a false alarm) — a knob AUC
+  structurally cannot expose. On the stand-in's honest temporal split it lands an honest finding:
+  logistic regression (AUC 0.711, H 0.213) edges the deployed gradient-boosted model (AUC 0.668,
+  H 0.180), with AUC and the H-measure agreeing on the ranking, and the random control at H 0.000.
+  The value is comparison hygiene for the leaderboard and the promotion gate. Metric anchors
+  (perfect = 1, trivial = 0, range, monotone-invariance) unit-tested; e2e slow test; in the
+  analysis suite. `hmeasure.*` config.
 - Anytime-valid drift detection via a conformal test martingale (`netsentry exchangeability`,
   `netsentry/monitoring/exchangeability.py`): the drift suite already has PSI, per-feature KS with
   Benjamini-Hochberg FDR, and online Page-Hinkley / DDM — but every one of them needs a reference
