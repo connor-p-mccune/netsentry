@@ -343,6 +343,19 @@ def test_data_value_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_anchors_report_is_written(prepared: Settings) -> None:
+    from netsentry.explain.anchors import run_anchors_report
+
+    prepared.anchors.background_rows = 2000
+    prepared.anchors.n_explained = 6
+    prepared.anchors.min_match = 15
+    out = run_anchors_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "anchor" in text and "precision" in text
+    assert "coverage" in text and "if" in text
+
+
+@pytest.mark.slow
 def test_hmeasure_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.hmeasure import run_hmeasure_report
 

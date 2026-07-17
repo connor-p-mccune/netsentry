@@ -7,6 +7,26 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Anchor explanations: high-precision IF-THEN rules with a guarantee (`netsentry anchors`,
+  `netsentry/explain/anchors.py`): the explainability suite answers many questions but not the one
+  a SOC analyst asks out loud — "give me a *rule* I can trust." SHAP attributes a verdict across
+  features, the counterfactual finds the smallest clearing change, exemplars point at similar
+  cases, but none states a **sufficient condition**. An anchor (Ribeiro, Singh & Guestrin, AAAI
+  2018, from the authors of LIME) does: a short conjunction of feature predicates such that,
+  whenever they hold, the model returns this verdict with high **precision** (>= tau), and, among
+  such rules, high **coverage**. Each candidate feature is discretised into quantile bins and a
+  greedy search pins the flagged flow to its own bins — adding at each step the predicate that most
+  raises precision, estimated on a background of real flows satisfying the rule (so the rule
+  respects the feature correlations a synthetic perturbation would break), with a
+  lower-confidence-bound stopping rule in place of the paper's KL-LUCB bandit. Every reported
+  anchor's precision is re-measured on a **held-out background** it was not grown against, so the
+  guarantee is validated, not just fit. On the stand-in it produces crisp, actionable rules — e.g.
+  `Flow Packets/s >= 299 AND Flow Bytes/s >= 3.15e3 AND Total Backward Packets >= 25.6 -> attack`
+  at 97% precision (95% LCB, 99% held-out) for DDoS, and a 99% rule for DoS Hulk — while flows the
+  model flagged that are actually benign honestly get lower-precision rules. Runs on the
+  exchangeable stratified/binary split at the model's natural decision boundary. The greedy search
+  (perfect-separator recovery, no-signal ceiling, support refusal) and the precision lower bound
+  are unit-tested; e2e slow test; in the analysis suite. `anchors.*` config.
 - The H-measure, a coherent alternative to ROC-AUC (`netsentry hmeasure`,
   `netsentry/evaluation/hmeasure.py`): the suite reports ROC-AUC with the imbalance caveat, but
   Hand (2009) identified a subtler flaw — averaging over thresholds, AUC implicitly weights

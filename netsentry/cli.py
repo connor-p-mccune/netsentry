@@ -680,6 +680,19 @@ def interactions(
     logger.info("Interactions report ready", extra={"path": str(out)})
 
 
+@app.command()
+def anchors(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Explain flagged flows with high-precision IF-THEN anchor rules (Ribeiro et al. 2018)."""
+    from netsentry.explain.anchors import run_anchors_report
+
+    settings = _load(config, override)
+    out = run_anchors_report(settings)
+    logger.info("Anchors report ready", extra={"path": str(out)})
+
+
 @app.command("importance")
 def importance_stability_cmd(
     config: ConfigOpt = None,

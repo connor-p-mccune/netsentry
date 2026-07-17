@@ -120,6 +120,7 @@ what actually ships.
 | Exemplar explanations | nearest known training flows per prediction, audited then served | ✅ Done |
 | Explainable anomaly | per-feature attribution for anomaly flags (occlusion + a faithfulness check), served via `?anomaly_explain` | ✅ Done |
 | Feature interactions | Friedman's H-statistic → which features the model has entangled (completes the PDP caveat) | ✅ Done |
+| Anchor explanations | high-precision IF-THEN rules with a coverage trade-off, held-out-validated (Ribeiro 2018) | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
 | Seed sensitivity | same-seed reproducibility asserted + the cross-seed noise floor | ✅ Done |

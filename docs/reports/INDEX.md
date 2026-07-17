@@ -43,6 +43,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Importance stability | are the shipped explanations stable across refits | [open](importance_stability.md) |
 | Feature interactions | Friedman's H-statistic: which features the model has entangled | [open](interactions.md) |
 | Exemplar explanations | do the nearest known training flows vouch for the alerts | [open](exemplars.md) |
+| Anchor explanations | high-precision IF-THEN rules with a coverage trade-off (Ribeiro et al. 2018) | [open](anchors.md) |
 | Anomaly attribution | why a flow is abnormal: per-feature anomaly explanations + a faithfulness check | [open](anomaly_explain.md) |
 | Surrogate distillation | the model's closest auditable imitation, with fidelity priced | [open](distill.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |

@@ -424,6 +424,34 @@ class AnomalyExplainConfig(BaseModel):
     faithfulness_k: int = 5  # features occluded in the top-k-vs-random deletion check
 
 
+class AnchorsConfig(BaseModel):
+    """High-precision IF-THEN anchor rules for a verdict (Ribeiro, Singh & Guestrin 2018).
+
+    SHAP attributes a verdict, the counterfactual finds the smallest clearing change, and
+    exemplars point at similar cases — but none states a **sufficient condition**. An anchor
+    is a short conjunction of feature predicates such that, whenever they hold, the model
+    returns this verdict with high **precision** (>= ``precision_threshold``); of the many
+    such rules the useful one has high **coverage**. Each candidate feature is discretised
+    into ``n_bins`` quantile bins and a greedy search pins the flagged flow to its own bins,
+    adding at each step the predicate that most raises precision (estimated on a background
+    of ``background_rows`` real flows satisfying the rule, requiring ``min_match`` supporting
+    rows), until a lower confidence bound at width ``confidence_z`` clears the threshold or
+    the rule reaches ``max_predicates``. ``top_k_features`` (by model importance) are eligible
+    predicates; ``n_explained`` flagged test flows are anchored, and each anchor's precision
+    is re-validated on a held-out background. Runs on the exchangeable stratified/binary split,
+    where the model's decision boundary is well-populated and the held-out background is
+    exchangeable with the reference the rules are grown on."""
+
+    top_k_features: int = 8  # features (by importance) eligible as anchor predicates
+    n_bins: int = 5  # quantile bins each feature is discretised into
+    precision_threshold: float = 0.95  # target precision (tau) the anchor must clear
+    max_predicates: int = 4  # maximum clauses in one anchor
+    background_rows: int = 4000  # reference flows the precision/coverage are estimated on
+    min_match: int = 30  # minimum background rows satisfying a rule to trust its precision
+    n_explained: int = 25  # flagged flows anchored and reported
+    confidence_z: float = 1.64  # z for the one-sided precision lower confidence bound
+
+
 class ExemplarConfig(BaseModel):
     """Exemplar (case-based) explanations: nearest known training flows per query.
 
@@ -1212,6 +1240,7 @@ class Settings(BaseSettings):
     )
     exemplars: ExemplarConfig = Field(default_factory=ExemplarConfig)
     anomaly_explain: AnomalyExplainConfig = Field(default_factory=AnomalyExplainConfig)
+    anchors: AnchorsConfig = Field(default_factory=AnchorsConfig)
     partial_dependence: PartialDependenceConfig = Field(default_factory=PartialDependenceConfig)
     interactions: InteractionsConfig = Field(default_factory=InteractionsConfig)
     distill: DistillConfig = Field(default_factory=DistillConfig)
