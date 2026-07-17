@@ -1479,6 +1479,57 @@ smaller dev-run numbers noted in earlier phases:
   rather than each study importing matplotlib directly — same discipline as the rest of the
   figure code (lazy Agg backend, one `_save`).
 
+## Statistical-guarantees wave (v0.10.0)
+
+- **PPI's honest win is efficiency-with-validity, not "naive is biased."** On a
+  well-calibrated model the naive imputation *point* estimate is fine, so the tempting
+  demo ("the model over-counts attacks") wouldn't have held. The robust, always-true result
+  is the one the paper leads with: because `var(f - y) < var(y)` for any informative model,
+  the PPI interval is strictly narrower than classical at the same coverage (~23% narrower,
+  ~1.8× the labels here). Naive's real failure is subtler and I framed it as such — its
+  interval is *the same every audit* because it never looks at a label, so its width is not
+  a valid uncertainty statement; on the stand-in it happened to be biased +0.053 and missed
+  the truth, but the point stands even when it doesn't. Ran it on the stratified split on
+  purpose: PPI's validity needs the audit to be a random sample of the scored population,
+  which the temporal split is built to break.
+- **The conformal test martingale is deliberately a *super*martingale, and that's fine.**
+  Clamping p-values off zero (`1e-6`) to keep `p^{ε-1}` finite truncates the small-ε bets'
+  expectation slightly below 1, so `E[M_t] <= 1` — conservative, and Ville's inequality
+  still holds (fewer false alarms, not more). The empirical check confirmed it: 0/50
+  exchangeable streams crossed the `1/α = 100` line. Used the online *transductive* p-value
+  (rank among all flows so far) rather than a fixed calibration set, because that is the
+  version whose p-values are *exactly* IID-uniform under exchangeability — the property the
+  whole guarantee rests on. The mixture bets only on *small* p (the stream growing more
+  anomalous than its history); I named that directionality rather than pretending it's
+  two-sided.
+- **H-measure: I chose fine-grid quadrature of the exact loss curve over a clever
+  convex-hull-of-lines integrator.** Both are exact-in-the-limit; the envelope-of-lines
+  approach is genuinely error-prone (breakpoint indexing, collinear ROC vertices), and a
+  wrong metric would invalidate the whole honesty thesis, so I took the obviously-correct
+  route and verified it against the definitional anchors (perfect = 1, trivial = 0, range,
+  monotone-invariance). The honest finding fell out on its own: on the temporal split
+  logistic regression (H 0.213) edges the deployed GBDT (H 0.180), with AUC agreeing — I
+  reported it rather than switching to a split where the deployed model wins. Also had to
+  explain the scale up front (H ≪ AUC because it's the *share of trivial-classifier loss
+  removed*, not a rank statistic) so the low absolute numbers don't read as a bug.
+- **Anchors: generating the real report caught two bugs a unit test never would have.**
+  First run showed `Flow Bytes/s >= nan` predicates — `np.quantile` returns all-NaN when the
+  raw feature carries Inf/NaN (the classic CIC-IDS2017 defect), so binning had to coerce
+  non-finite values to the finite median first (mirroring the pipeline's imputer). Second,
+  precision was a useless ~31%: defining "flagged" at the 0.1%-FPR operating point makes
+  attack verdicts so rare that no region reaches high precision. Anchors explain the
+  *classifier's decision*, so the fix was to anchor the model's natural 0.5 boundary on the
+  stratified split — after which DDoS and DoS Hulk anchors hit 97–99% precision with matching
+  held-out precision. Kept the honest asymmetry visible: flows the model flagged that are
+  actually benign (its own false positives) get low-precision rules, exactly as they should.
+- **The greedy anchor's guarantee is a lower confidence bound, not the point estimate.** The
+  paper uses KL-LUCB bandits; I used a one-sided normal LCB on precision as the stopping rule
+  and re-validated every anchor on a held-out background. The unit tests pin the search
+  behaviour directly (a perfect separator becomes a one-predicate anchor; a signal-free
+  background never clears τ and exhausts the budget; a predicate without `min_match` support
+  is refused) — the pure `greedy_anchor` core takes discretised bins, so none of this needs a
+  fitted model to test.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

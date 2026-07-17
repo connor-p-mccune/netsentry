@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.9.0`.** The build plan in
+**Released `v0.10.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and eight post-release waves build on top — the
+tested, and committed, and nine post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -42,8 +42,12 @@ faithfulness check, served live via `?anomaly_explain=true`), and the
 completes the evasion/poisoning/privacy/**extraction** quadrilogy, exact KNN-Shapley
 training-data valuation, Friedman's H-statistic feature interactions, and *certified*
 robustness via randomized smoothing — the provable-radius counterpart to the empirical
-evasion study). `make check` is
-green (lint + type-check + **559 passing tests**, property-based invariants and a
+evasion study), and the **statistical-guarantees wave** (prediction-powered inference for a
+tight *and* valid attack-prevalence estimate from a handful of labels; a conformal test
+martingale giving drift detection a false-alarm bound that holds at any stopping time; the
+H-measure, a coherent alternative to ROC-AUC's classifier-dependent cost weighting; and
+anchors — high-precision IF-THEN rule explanations with a coverage trade-off). `make check` is
+green (lint + type-check + **585 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise

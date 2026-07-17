@@ -6,6 +6,19 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-07-16
+
+The statistical-guarantees wave: four cited methods, each of which turns a routine number
+into a *guaranteed* one. Prediction-powered inference makes an attack-prevalence estimate
+from a handful of labels both tight and provably valid; a conformal test martingale gives
+drift detection a false-alarm bound that holds at any stopping time; the H-measure replaces
+ROC-AUC's incoherent, classifier-dependent cost weighting with an explicit, shared one; and
+anchors state a sufficient condition for a verdict with a precision guarantee — the
+sufficient-condition view the explainability suite was missing next to SHAP (additive),
+counterfactuals (contrastive), and exemplars (case-based). The project's recurring arc —
+measure a thing honestly, then buy a guarantee about it — applied to inference, monitoring,
+metrics, and explanation.
+
 ### Added
 - Anchor explanations: high-precision IF-THEN rules with a guarantee (`netsentry anchors`,
   `netsentry/explain/anchors.py`): the explainability suite answers many questions but not the one
