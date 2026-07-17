@@ -273,6 +273,19 @@ def driftscan(
     logger.info("Statistical drift report ready", extra={"path": str(out)})
 
 
+@app.command("exchangeability")
+def exchangeability_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Anytime-valid drift detection: a conformal test martingale with a Ville false-alarm bound."""
+    from netsentry.monitoring.exchangeability import run_exchangeability_report
+
+    settings = _load(config, override)
+    out = run_exchangeability_report(settings)
+    logger.info("Exchangeability report ready", extra={"path": str(out)})
+
+
 @app.command()
 def robustness(
     config: ConfigOpt = None,

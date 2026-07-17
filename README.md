@@ -89,6 +89,7 @@ what actually ships.
 | Hyperparameter search | leakage-safe Optuna HPO (`train tune`) | ✅ Done |
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
 | Statistical drift | per-feature KS + Benjamini–Hochberg FDR, online Page–Hinkley / DDM | ✅ Done |
+| Anytime-valid drift | conformal test martingale: a Ville-bounded false-alarm rate at any stopping time (Vovk 2003) | ✅ Done |
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
 | Prediction-powered inference | attack prevalence from few labels + the model, tighter than classical at valid coverage (Angelopoulos 2023) | ✅ Done |
 | Explanation trust | feature-importance stability across bootstrap refits | ✅ Done |

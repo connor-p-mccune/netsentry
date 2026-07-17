@@ -513,6 +513,30 @@ class DriftDetectorConfig(BaseModel):
     max_features_reported: int = 25  # cap the per-feature KS table in the report
 
 
+class ExchangeabilityConfig(BaseModel):
+    """Anytime-valid drift detection via a conformal test martingale (Vovk et al. 2003).
+
+    The windowed drift detectors (PSI, KS+FDR, Page-Hinkley, DDM) either need a reference
+    window or spend their false-alarm budget at a declared moment. A conformal test
+    martingale spends none: it bets against the null that the stream is **exchangeable**,
+    accumulating a non-negative martingale that stays a fair game under the null and grows
+    without bound under drift, so by **Ville's inequality** alarming at ``M_t >= 1/alpha``
+    has false-alarm probability at most ``alpha`` at *any* stopping time. ``alpha`` sets
+    that budget (and the ``1/alpha`` alarm line); ``stream_len`` is the number of flows per
+    stream; the drift stream turns attack-heavy at ``change_point`` with attack fraction
+    ``post_change_attack_rate``; ``n_bets`` is the size of the power-martingale mixture grid;
+    ``n_null_streams`` independent exchangeable streams estimate the empirical false-alarm
+    rate against the Ville bound. Uses the deployed temporal/binary attack score as the
+    nonconformity measure, so the test watches the same signal the detector acts on."""
+
+    alpha: float = 0.01  # false-alarm budget; alarm when M_t >= 1/alpha
+    stream_len: int = 2000  # flows per stream
+    change_point: int = 1000  # the drift stream turns attack-heavy here
+    post_change_attack_rate: float = 0.8  # attack fraction after the change point
+    n_bets: int = 19  # power-martingale mixture grid size (epsilons in the open unit interval)
+    n_null_streams: int = 50  # independent exchangeable streams for the false-alarm estimate
+
+
 class RobustnessConfig(BaseModel):
     """Adversarial-evasion evaluation: how detection degrades under an attacker.
 
@@ -1160,6 +1184,7 @@ class Settings(BaseSettings):
     adaptive_conformal: AdaptiveConformalConfig = Field(default_factory=AdaptiveConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)
     drift_detectors: DriftDetectorConfig = Field(default_factory=DriftDetectorConfig)
+    exchangeability: ExchangeabilityConfig = Field(default_factory=ExchangeabilityConfig)
     importance_stability: ImportanceStabilityConfig = Field(
         default_factory=ImportanceStabilityConfig
     )

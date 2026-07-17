@@ -7,6 +7,26 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Anytime-valid drift detection via a conformal test martingale (`netsentry exchangeability`,
+  `netsentry/monitoring/exchangeability.py`): the drift suite already has PSI, per-feature KS with
+  Benjamini-Hochberg FDR, and online Page-Hinkley / DDM — but every one of them needs a reference
+  window or spends its false-alarm budget at a declared moment. A monitor that runs forever needs a
+  stronger contract: it may alarm at **any** stopping time and still control the false-alarm
+  probability over the whole unbounded run. A conformal test martingale (Vovk, Nouretdinov &
+  Gammerman, ICML 2003) provides it: each flow yields an online conformal p-value — the smoothed
+  rank of its nonconformity (the deployed attack score) among all flows seen so far — which is
+  Uniform(0, 1) exactly under the null that the stream is **exchangeable**. Those p-values feed a
+  parameter-free mixture-of-power-martingales betting process that stays a fair game under the null
+  and grows without bound under drift, so by **Ville's inequality** alarming at `M_t >= 1/alpha` has
+  false-alarm probability at most `alpha` at any stopping time — no window, no multiple-testing
+  correction, no fixed horizon. On the stand-in the exchangeable (shuffled) stream's martingale
+  peaks at only 1.7 (no alarm), while a stream that turns attack-heavy at flow 1,000 is detected
+  ~140 flows later (median), and across 50 independent exchangeable streams **0%** ever crossed the
+  `1/alpha = 100` line — at or under the 1% budget Ville promises. Complements rather than replaces
+  the feature-wise PSI/KS reports: those localise *which* feature moved, this answers *whether and
+  when* the stream stopped being the distribution the model was validated on. The martingale/Ville
+  property, growth under drift, and the conformal p-values' uniformity are unit-tested; e2e slow
+  test; in the analysis suite. `exchangeability.*` config.
 - Prediction-powered inference for attack prevalence (`netsentry ppi`,
   `netsentry/evaluation/ppi.py`): the whole evaluation suite assumes a fully-labelled test
   set; a SOC never has one. It scores every flow and labels a tiny audit sample, and still

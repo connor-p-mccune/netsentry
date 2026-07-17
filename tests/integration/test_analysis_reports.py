@@ -343,6 +343,19 @@ def test_data_value_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_exchangeability_report_is_written(prepared: Settings) -> None:
+    from netsentry.monitoring.exchangeability import run_exchangeability_report
+
+    prepared.exchangeability.stream_len = 400
+    prepared.exchangeability.change_point = 200
+    prepared.exchangeability.n_null_streams = 5
+    out = run_exchangeability_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "martingale" in text and "exchangeab" in text
+    assert "ville" in text and "false-alarm" in text
+
+
+@pytest.mark.slow
 def test_ppi_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.ppi import run_ppi_report
 

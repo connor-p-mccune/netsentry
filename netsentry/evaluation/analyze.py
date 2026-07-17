@@ -49,6 +49,7 @@ from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
 from netsentry.intel.sigma import run_sigma_export
 from netsentry.log import get_logger
+from netsentry.monitoring.exchangeability import run_exchangeability_report
 from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
@@ -188,6 +189,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "per-feature KS+FDR, online Page-Hinkley/DDM",
         "drift_tests.md",
         run_drift_tests_report,
+    ),
+    (
+        "Anytime-valid drift",
+        "conformal test martingale: a Ville-bounded false-alarm rate at any stopping time",
+        "exchangeability.md",
+        run_exchangeability_report,
     ),
     (
         "Prequential streaming",
