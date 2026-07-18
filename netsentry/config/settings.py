@@ -955,6 +955,31 @@ class PPIConfig(BaseModel):
     alpha: float = 0.1  # 1 - alpha confidence level for every interval
 
 
+class InfluenceConfig(BaseModel):
+    """Influence functions: which training flows are responsible for a verdict (Koh & Liang 2017).
+
+    Data valuation (KNN-Shapley) scores a flow's *global* contribution; this answers the
+    per-prediction question — for *this* verdict, which training flows pushed it, and would
+    removing them flip it? Influence functions estimate the effect of up-weighting a training
+    point on a test loss via the inverse-Hessian-vector product, exactly and in closed form
+    for the convex logistic model (the deployed gradient-boosted model is not twice-
+    differentiable, so this runs on the logistic baseline — the same surrogate-scope honesty
+    as the distillation study). ``l2`` is the logistic regularisation (its inverse is the
+    ``C`` passed to the fit and sets the Hessian damping); ``n_explained`` test flows get a
+    most-influential-training-flow table; ``top_k`` training flows are listed each way;
+    ``loo_sample`` training points are actually retrained-without to validate the influence
+    estimate against ground-truth leave-one-out; ``mislabel_flip_rate`` plants label flips to
+    check that self-influence surfaces them (a second, independent mislabel detector next to
+    the confident-learning audit and KNN-Shapley)."""
+
+    l2: float = 1.0  # logistic L2 strength; Hessian damping = l2, fit C = 1 / l2
+    n_explained: int = 4  # test flows to explain with their most-influential training flows
+    top_k: int = 6  # training flows listed per direction (helpful / harmful)
+    loo_sample: int = 60  # training points actually retrained-without for the LOO validation
+    mislabel_flip_rate: float = 0.05  # planted flips for the self-influence mislabel check
+    max_train: int = 6000  # cap training rows (keeps the Hessian solve + LOO retrains fast)
+
+
 class LabelShiftConfig(BaseModel):
     """Label-shift estimation and correction from unlabelled deployment traffic.
 
@@ -1345,6 +1370,7 @@ class Settings(BaseSettings):
     leakage: LeakageConfig = Field(default_factory=LeakageConfig)
     data_value: DataValueConfig = Field(default_factory=DataValueConfig)
     ppi: PPIConfig = Field(default_factory=PPIConfig)
+    influence: InfluenceConfig = Field(default_factory=InfluenceConfig)
     label_shift: LabelShiftConfig = Field(default_factory=LabelShiftConfig)
     hmeasure: HMeasureConfig = Field(default_factory=HMeasureConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)

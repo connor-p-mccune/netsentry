@@ -846,6 +846,19 @@ def label_shift_cmd(
 
 
 @app.command()
+def influence(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Explain a verdict by its most influential training flows (Koh & Liang 2017)."""
+    from netsentry.explain.influence import run_influence_report
+
+    settings = _load(config, override)
+    out = run_influence_report(settings)
+    logger.info("Influence report ready", extra={"path": str(out)})
+
+
+@app.command()
 def hmeasure(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

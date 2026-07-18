@@ -48,6 +48,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Exemplar explanations | do the nearest known training flows vouch for the alerts | [open](exemplars.md) |
 | Anchor explanations | high-precision IF-THEN rules with a coverage trade-off (Ribeiro et al. 2018) | [open](anchors.md) |
 | Anomaly attribution | why a flow is abnormal: per-feature anomaly explanations + a faithfulness check | [open](anomaly_explain.md) |
+| Influence functions | which training flows caused a verdict, validated against real LOO (Koh & Liang 2017) | [open](influence.md) |
 | Surrogate distillation | the model's closest auditable imitation, with fidelity priced | [open](distill.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
 | Seed sensitivity | the training-noise floor under every reported metric | [open](seed_variance.md) |

@@ -143,6 +143,35 @@ def plot_hist_overlay(
     return _save(fig, out_path)
 
 
+def plot_scatter_identity(
+    x: np.ndarray,
+    y: np.ndarray,
+    *,
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    out_path: Path,
+) -> Path:
+    """Scatter with a y = x reference line — for predicted-vs-actual validation plots.
+
+    Points on the diagonal mean the prediction matched the ground truth exactly; the
+    reference line spans the combined data range so systematic bias reads as a tilt off it.
+    """
+    plt = _plt()
+    xa = np.asarray(x, dtype=float)
+    ya = np.asarray(y, dtype=float)
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.scatter(xa, ya, s=22, alpha=0.7, color="#3b7dd8")
+    finite = np.concatenate([xa[np.isfinite(xa)], ya[np.isfinite(ya)]])
+    if len(finite):
+        lo, hi = float(finite.min()), float(finite.max())
+        ax.plot([lo, hi], [lo, hi], color="#d1495b", linestyle="--", alpha=0.9, label="y = x")
+        ax.legend(loc="upper left")
+    ax.set(xlabel=xlabel, ylabel=ylabel, title=title)
+    ax.grid(alpha=0.3)
+    return _save(fig, out_path)
+
+
 def plot_heatmap(
     matrix: np.ndarray,
     labels: list[str],

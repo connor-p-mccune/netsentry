@@ -415,6 +415,19 @@ def test_ppi_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_influence_report_is_written(prepared: Settings) -> None:
+    from netsentry.explain.influence import run_influence_report
+
+    prepared.influence.max_train = 1500
+    prepared.influence.loo_sample = 12
+    prepared.influence.n_explained = 2
+    out = run_influence_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "influence" in text and "leave-one-out" in text
+    assert "self-influence" in text and "training flow" in text
+
+
+@pytest.mark.slow
 def test_label_shift_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.label_shift import run_label_shift_report
 

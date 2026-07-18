@@ -45,6 +45,7 @@ from netsentry.explain.counterfactual import run_recourse_report
 from netsentry.explain.distill import run_distill_report
 from netsentry.explain.exemplars import run_exemplars_report
 from netsentry.explain.importance_stability import run_importance_stability_report
+from netsentry.explain.influence import run_influence_report
 from netsentry.explain.interactions import run_interactions_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.governance.provenance import run_provenance_report
@@ -344,6 +345,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "why a flow is abnormal: per-feature anomaly explanations + a faithfulness check",
         "anomaly_explain.md",
         run_anomaly_explain_report,
+    ),
+    (
+        "Influence functions",
+        "which training flows caused a verdict, validated against real LOO (Koh & Liang 2017)",
+        "influence.md",
+        run_influence_report,
     ),
     (
         "Surrogate distillation",

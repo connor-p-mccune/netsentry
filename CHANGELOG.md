@@ -7,6 +7,25 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Influence functions: which training flows caused a verdict (`netsentry influence`,
+  `netsentry/explain/influence.py`): the KNN-Shapley data valuation scores a flow's *global* worth;
+  this answers the *local* question an analyst asks of a surprising verdict — which specific training
+  flows drove it, and would removing them change it? Influence functions (Koh & Liang, ICML 2017,
+  best paper) estimate the leave-one-out effect of a training point on a test loss through the
+  model's inverse Hessian, with no retraining. They need a convex, twice-differentiable loss, so —
+  like the distillation study — this runs on the **logistic** baseline (the deployed gradient-boosted
+  model is out of scope and that is stated, not hidden). The estimate is **validated, not asserted**:
+  the study actually retrains without a sample of training points and correlates the true LOO change
+  against the influence prediction — **Pearson 1.00** on the stand-in, the Koh & Liang result
+  reproduced on network-flow data. Two products from the same exact Hessian: per-verdict explanations
+  (for a benign flow misclassified as attack, the table correctly surfaces the DDoS/PortScan training
+  flows that *pushed it wrong* and the benign ones that *helped*, with capture days), and
+  self-influence **mislabel detection** that recovers planted flips at **AUC 0.89** — a third
+  independent first principle (loss curvature) converging with the confident-learning label audit and
+  the KNN-Shapley valuation on the same suspicious rows. Analytic gradient/Hessian verified against
+  finite differences, the LOO prediction against real retraining, self-influence against a planted
+  outlier; e2e slow test; in the analysis suite. `plots.plot_scatter_identity` added.
+  `influence.*` config.
 - Label-shift estimation & correction (`netsentry labelshift`,
   `netsentry/evaluation/label_shift.py`): the base-rate study shows the deployment attack prevalence
   governs the alert queue, and PPI estimates it from a few labels; this recovers it from **zero**
