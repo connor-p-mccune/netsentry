@@ -93,14 +93,26 @@ class SupervisedClassifier(BaseModel):
         )
 
     def fit(
-        self, X: np.ndarray, y: np.ndarray, *, eval_set: EvalSet | None = None
+        self,
+        X: np.ndarray,
+        y: np.ndarray,
+        *,
+        eval_set: EvalSet | None = None,
+        sample_weight: np.ndarray | None = None,
     ) -> SupervisedClassifier:
+        """Fit, balancing classes; optional per-row ``sample_weight`` (e.g. weak-label
+        confidence) multiplies into the balanced weight rather than replacing it."""
         self.model = self._build_estimator()
-        sample_weight = (
+        balanced = (
             compute_sample_weight("balanced", y)
             if self.settings.supervised.class_weight == "balanced"
             else None
         )
+        if sample_weight is not None:
+            extra = np.asarray(sample_weight, dtype=float)
+            sample_weight = extra * balanced if balanced is not None else extra
+        else:
+            sample_weight = balanced
         if self.backend == "lightgbm" and eval_set is not None:
             import lightgbm as lgb
 

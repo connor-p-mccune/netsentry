@@ -103,6 +103,7 @@ what actually ships.
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
 | Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
 | Self-training | the pseudo-label shortcut priced against the labeled ceiling | ✅ Done |
+| Weak supervision | the signatures as labeling functions: a detector trained on zero labels, agreement-gated label model (Ratner 2016) | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
 | Detection parity | per-service TPR/FPR audit (Wilson CIs) → served `per_service` profile | ✅ Done |
 | Campaign detection | (day, class) operations: first-alert latency, silent campaigns | ✅ Done |

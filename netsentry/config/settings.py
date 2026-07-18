@@ -1007,6 +1007,45 @@ class SelfTrainConfig(BaseModel):
     max_pseudo_per_class: int = 20000  # cap per side, most confident first
 
 
+class WeakSupervisionConfig(BaseModel):
+    """Weak supervision: train the detector from the signature rules alone, zero labels.
+
+    Data programming (Ratner et al., NeurIPS 2016) reads each hand-written signature as
+    a **labeling function** — it votes attack when it fires and abstains otherwise — and
+    fits a Dawid-Skene-style generative label model by EM to estimate every signature's
+    accuracy *without any ground truth*, from the votes' agreement structure only.
+    The label model's posteriors become probabilistic training labels for the ordinary
+    downstream model, which sees the full feature space its teachers never used and so
+    can generalise past them. Two quantities are not identifiable from attack-or-abstain
+    votes and are therefore **stated, not fitted**: ``class_prior`` (silence could mean
+    benign or a missed rare attack — the same reason Snorkel takes ``class_balance`` as an
+    input; ``prior_sensitivity`` sweeps it) and, when the signatures never co-fire,
+    the per-signature accuracies themselves — agreement is the only label-free evidence,
+    so the label model is **agreement-gated**: with at least ``min_cofire_rows`` rows
+    carrying two or more votes it fits per-LF accuracies by EM, otherwise it combines
+    votes as a Bayesian believer at ``signature_trust`` (the operator's "a deployed
+    signature is usually right"), and the report audits that belief against ground truth.
+    ``em_max_iter``/``em_tol`` bound the EM fit; ``smoothing`` is the Laplace pseudo-count
+    keeping vote tables off 0/1; ``min_weight`` drops training rows whose posterior is too
+    ambiguous to teach with (noise-aware confidence weighting)."""
+
+    class_prior: float = 0.15  # assumed P(attack): a coarse operator belief, never a label
+    prior_sensitivity: list[float] = Field(default_factory=lambda: [0.05, 0.15, 0.30])
+    # Assumed precision of a fired signature. Doubles as the EM's polarity anchor (a fired
+    # rule initially reads attack-leaning) and as the fixed trust of the prior-belief
+    # combiner when agreement is too thin to estimate accuracies from.
+    signature_trust: float = 0.8
+    min_cofire_rows: int = 50  # rows with >= 2 votes needed before EM may fit accuracies
+    em_max_iter: int = 200  # EM iteration cap for the generative label model
+    em_tol: float = 1e-6  # EM convergence tolerance on the mean posterior change
+    # Laplace pseudo-count for the per-LF vote tables. Deliberately strong: with weak
+    # smoothing EM self-confirms a fired-alone signature to precision exactly 1.0 (the
+    # naive-Bayes saturation); ~5 pseudo-counts damp that while real agreement still moves
+    # the tables.
+    smoothing: float = 5.0
+    min_weight: float = 0.05  # drop rows whose |2 * posterior - 1| confidence is below this
+
+
 class PoisoningConfig(BaseModel):
     """Training-set poisoning study: how detection degrades as labels are corrupted.
 
@@ -1260,6 +1299,7 @@ class Settings(BaseSettings):
     ppi: PPIConfig = Field(default_factory=PPIConfig)
     hmeasure: HMeasureConfig = Field(default_factory=HMeasureConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
+    weak_supervision: WeakSupervisionConfig = Field(default_factory=WeakSupervisionConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

@@ -206,6 +206,19 @@ def selftrain(
 
 
 @app.command()
+def weaksup(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Train the detector from the signature rules alone (data programming, zero labels)."""
+    from netsentry.training.weak_supervision import run_weak_supervision_report
+
+    settings = _load(config, override)
+    out = run_weak_supervision_report(settings)
+    logger.info("Weak-supervision report ready", extra={"path": str(out)})
+
+
+@app.command()
 def refresh(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

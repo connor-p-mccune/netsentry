@@ -198,6 +198,18 @@ def test_selftrain_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_weak_supervision_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.weak_supervision import run_weak_supervision_report
+
+    out = run_weak_supervision_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "labeling function" in text and "zero labels" in text
+    # Both tables render: the per-signature precision audit and the detector comparison.
+    assert "model precision (no labels)" in text and "matched volume" in text
+    assert "supervised ceiling" in text
+
+
+@pytest.mark.slow
 def test_poisoning_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.poisoning import run_poisoning_report
 

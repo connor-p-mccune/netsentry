@@ -6,6 +6,32 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- Weak supervision: a detector trained from the signatures alone (`netsentry weaksup`,
+  `netsentry/training/weak_supervision.py`): every supervised number assumes someone labeled the
+  training days; a real deployment starts with none — just the incumbent ruleset and unlabeled
+  flows. Data programming (Ratner et al., NeurIPS 2016) reads each signature as a **labeling
+  function** (fire = attack vote, silence = abstain, never a benign vote) and resolves the votes
+  with a Dawid-Skene-style generative label model whose posteriors train the ordinary downstream
+  model, noise-aware (hard labels weighted by confidence, ambiguous rows dropped). Two quantities
+  are stated rather than pretended learnable: the class balance (unidentifiable from
+  attack-or-abstain votes — the reason Snorkel takes `class_balance` as an input; a sweep shows
+  the student moves 0.002 PR-AUC across a 0.05-0.30 prior range) and, when signatures never
+  co-fire, the accuracies themselves. The label model is **agreement-gated**: with real co-fire
+  mass it fits per-LF accuracies by EM (validated on planted overlapping LFs; two failure modes of
+  ungated EM — the rich-get-richer abstention collapse and the self-referential cast-votes drift —
+  were observed on this data and documented), and on the stand-in's disjoint ruleset (1 co-fire in
+  28,034 rows) it refuses, states the configured trust, and the report audits that belief against
+  the truth it never saw — exposing port-scan-sweep at 7% true precision against the stated 80%.
+  Stand-in findings kept as they fell: the zero-label student lands PR-AUC 0.666 against the
+  fully-supervised ceiling's 0.529 (coarse signature-shaped labels survive the temporal shift
+  better than day-specific true labels — the leaderboard's simple-models-win-temporally finding
+  restated in the label dimension), while its reach past the teachers is thin (1% rule-silent
+  recall vs the ceiling's 13% at the union's own alert volume). `SupervisedClassifier.fit` gains
+  an optional `sample_weight` that multiplies into the balanced class weight. EM recovery,
+  polarity anchoring, gate behaviour, combiner algebra, and matched-volume stats unit-tested;
+  e2e slow test; in the analysis suite. `weak_supervision.*` config.
+
 ## [0.10.0] — 2026-07-16
 
 The statistical-guarantees wave: four cited methods, each of which turns a routine number

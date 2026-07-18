@@ -65,6 +65,7 @@ from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.training.selftrain import run_selftrain_report
+from netsentry.training.weak_supervision import run_weak_supervision_report
 
 if TYPE_CHECKING:
     from netsentry.config import Settings
@@ -227,6 +228,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "pseudo-labels on the unlabeled stream vs the labeled ceiling",
         "selftrain.md",
         run_selftrain_report,
+    ),
+    (
+        "Weak supervision",
+        "the signatures as labeling functions: a detector trained on zero labels (Ratner 2016)",
+        "weak_supervision.md",
+        run_weak_supervision_report,
     ),
     (
         "Model-family leaderboard",
