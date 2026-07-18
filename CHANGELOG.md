@@ -6,6 +6,20 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-07-17
+
+The label-efficiency & attribution wave: five cited methods for operating with the labels and
+models you actually have. Two of them build a working detector from **no new labels** — weak
+supervision reads the incumbent signatures as labeling functions and trains a student that
+generalises past them, and label-shift estimation recovers (and corrects for) the deployment
+prevalence from unlabelled traffic via the confusion matrix. Two trace an outcome back to its
+cause — influence functions attribute a verdict to the specific training flows responsible
+(validated against real leave-one-out), and the backdoor study plants an integrity attack and
+removes it with a blind spectral audit. And online expert advice retires the model-selection
+gamble entirely, tracking whichever model is currently best under drift with a provable regret
+bound. The recurring arc — get more from what you have, and be able to say exactly why — applied
+to labels, priors, verdicts, training data, and model choice.
+
 ### Added
 - Online prediction with expert advice (`netsentry experts`, `netsentry/monitoring/experts.py`): the
   leaderboard shows different models win on different splits and the streaming study shows the best

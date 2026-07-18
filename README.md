@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.10.0`.** The build plan in
+**Released `v0.11.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and nine post-release waves build on top — the
+tested, and committed, and ten post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -46,8 +46,14 @@ evasion study), and the **statistical-guarantees wave** (prediction-powered infe
 tight *and* valid attack-prevalence estimate from a handful of labels; a conformal test
 martingale giving drift detection a false-alarm bound that holds at any stopping time; the
 H-measure, a coherent alternative to ROC-AUC's classifier-dependent cost weighting; and
-anchors — high-precision IF-THEN rule explanations with a coverage trade-off). `make check` is
-green (lint + type-check + **585 passing tests**, property-based invariants and a
+anchors — high-precision IF-THEN rule explanations with a coverage trade-off), and the
+**label-efficiency & attribution wave** (weak supervision that trains a detector from the
+signature rules alone with an agreement-gated Dawid-Skene label model; a BadNets backdoor attack
+with a blind spectral-signatures defense; label-shift estimation and correction that recovers the
+deployment prior from unlabelled traffic via the confusion matrix; influence functions that
+attribute a verdict to its training flows, validated against real leave-one-out; and online
+expert advice — Hedge + fixed-share — that tracks the best model under drift with a regret bound).
+`make check` is green (lint + type-check + **628 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise

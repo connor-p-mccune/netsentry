@@ -1530,6 +1530,61 @@ smaller dev-run numbers noted in earlier phases:
   is refused) — the pure `greedy_anchor` core takes discretised bins, so none of this needs a
   fitted model to test.
 
+## Label-efficiency & attribution wave (v0.11.0)
+
+- **Weak supervision: the honest result was a *negative* one I chose to surface, not bury.**
+  The tempting demo — "the Dawid-Skene EM discovers each signature's true accuracy from vote
+  agreement" — is a lie on this ruleset, and generating the real report proved it: the six
+  signatures co-fire on **1 of 28,034 rows**, so there is literally no agreement to learn
+  from, and an ungated EM just drifts (I watched two distinct failure modes: with abstention
+  modelled as evidence the dominant rule's silence testifies against every small rule and EM
+  collapses them all to benign; with cast-votes-only it bleeds to the prior). The fix was to
+  make the label model *agreement-gated* — fit accuracies by EM only when co-fire mass exists,
+  else state a fixed `signature_trust` and say so — and then have the report **audit that
+  stated belief against ground truth** (port-scan-sweep: stated 80%, actually 7%). That is more
+  honest and more instructive than a fake "we learned it" table. Also: the student beat its
+  fully-supervised ceiling on the temporal split (PR-AUC 0.666 vs 0.529), which is not a bug —
+  coarse signature-shaped labels survive the day-to-day shift better than day-specific true
+  labels, the leaderboard's simple-models-win-temporally finding restated in the label axis.
+- **Class balance is unidentifiable from attack-or-abstain votes, so I made it an input, like
+  Snorkel does.** A sweep shows the student moves 0.002 PR-AUC across a 0.05→0.30 assumed-prior
+  range — the belief only has to be coarse, not correct — which is the honest way to ship an
+  un-learnable knob.
+- **Backdoor: the first metric was confounded by the base rate and I caught it in the numbers.**
+  Every candidate trigger showed baseline attack-success ≈ 0.79 — which looked like the trigger
+  was already an evasion vector, until I realised it was the model's 21% TPR at the 1% FPR budget
+  (79% of *all* attacks sit below the threshold, triggered or not). The fix was to define attack
+  success over the **detained set** — the attacks the clean model actually catches — after which
+  the story became textbook: trigger flips 3% of them unpoisoned, ~100% after a 0.5% poison, clean
+  PR-AUC unmoved. Lesson re-learned: on imbalanced data a rate is meaningless until you name the
+  denominator.
+- **The spectral defense worked almost too well (280/280, 95% closed), and that is the point.**
+  Tran et al.'s insight is that the poison's own *consistency* — needed to make a reliable
+  shortcut — is what makes it an outlier on the top singular vector; on a linearly-stamped trigger
+  that separation is near-perfect. I kept it as a *filter*, not a proof, in the scope note.
+- **Influence functions: I validated instead of asserting, and the payoff was Pearson 1.00.**
+  Rather than trust the closed-form inverse-Hessian estimate, the study actually retrains without
+  each of 60 sampled points and correlates — reproducing Koh & Liang's central figure on flow data.
+  Two implementation catches the report exposed: the sign convention (I had "supports/opposes"
+  backwards until I reasoned through removal = up-weight-by-−1/n against the *true-label* loss), and
+  saturated test points (p=1.000 → ~0 gradient → 1e-18 noise), which I fixed by picking the
+  highest-loss / mistaken flows to explain — exactly the ones an analyst brings anyway. Scoped to
+  the logistic surrogate honestly, same as distillation.
+- **Expert advice: the interesting finding was a loss-vs-ranking split, not a clean win.** Hedge
+  nailed the regret bound (60.7 < 117.1) and converged onto the best fixed model, but the
+  per-segment leader genuinely shifts (GBDT Thursday → logistic Friday), and fixed-share pays a
+  log-loss tax to stay adaptive *yet wins PR-AUC* (0.565 vs 0.526) — the metric the project leads
+  with. I dropped a deliberately-weak naive-Bayes expert from the default pool once I saw it was
+  distorting the fixed-share comparison (forced α-sharing kept mass on its overconfident errors),
+  keeping three genuinely competitive models so the tracking story reads clean.
+- **Label shift: BBSE beat MLLS by 7× here, and I named *why* rather than picking a kinder split.**
+  BBSE (moment/confusion-matrix) hit 0.0163 MAE; MLLS/EM (likelihood/soft-posterior) trailed at
+  0.11 because the stand-in model isn't calibrated enough for it — the textbook robustness contrast,
+  reported as the reason to prefer the moment estimator. And I led with what correction does *not*
+  buy (PR-AUC is unchanged — reweighting two classes is monotone) before what it does (Brier/ECE),
+  including the honest wrinkle that near the source prior the estimated weights add noise and
+  correction is marginally counterproductive.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever
