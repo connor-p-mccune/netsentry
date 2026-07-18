@@ -955,6 +955,31 @@ class PPIConfig(BaseModel):
     alpha: float = 0.1  # 1 - alpha confidence level for every interval
 
 
+class LabelShiftConfig(BaseModel):
+    """Label-shift estimation and correction from unlabelled deployment traffic.
+
+    Base-rate stress and PPI both turn on the deployment attack prevalence; PPI estimates it
+    from a handful of labels. Label shift asks the harder question — recover the shifted
+    prior with **zero** deployment labels — and then *correct* the classifier for it.
+    Under the label-shift assumption (the class-conditional feature law p(x|y) is fixed;
+    only the prior p(y) moves, exactly what resampling to a target prevalence produces),
+    two cited estimators apply. **BBSE** (Lipton, Wang & Smola, ICML 2018) solves the linear
+    system ``C w = mu`` where ``C`` is the source confusion matrix and ``mu`` the target's
+    predicted-label distribution, giving the importance weights ``w = q(y)/p(y)`` from the
+    black-box predictor's *hard* labels (robust to miscalibration). **MLLS/EM** (Saerens,
+    Latinne & Decaestecker, 2002) maximises the target likelihood over the prior by EM on
+    the *soft* posteriors (efficient when calibrated). Corrected posteriors reweight each
+    class by ``w`` and renormalise. ``target_priors`` are the true deployment prevalences
+    swept; at each, estimation error and post-correction calibration are measured over
+    ``n_trials`` resamples of the exchangeable stratified/binary test set to that prior."""
+
+    target_priors: list[float] = Field(default_factory=lambda: [0.02, 0.05, 0.15, 0.35, 0.6])
+    n_trials: int = 40  # resamples of the test set to each target prior
+    target_size: int = 4000  # rows per simulated deployment sample
+    em_max_iter: int = 200  # MLLS/EM iteration cap
+    em_tol: float = 1e-7  # MLLS/EM convergence tolerance on the prior change
+
+
 class HMeasureConfig(BaseModel):
     """The H-measure: a coherent alternative to ROC-AUC (Hand 2009).
 
@@ -1320,6 +1345,7 @@ class Settings(BaseSettings):
     leakage: LeakageConfig = Field(default_factory=LeakageConfig)
     data_value: DataValueConfig = Field(default_factory=DataValueConfig)
     ppi: PPIConfig = Field(default_factory=PPIConfig)
+    label_shift: LabelShiftConfig = Field(default_factory=LabelShiftConfig)
     hmeasure: HMeasureConfig = Field(default_factory=HMeasureConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     weak_supervision: WeakSupervisionConfig = Field(default_factory=WeakSupervisionConfig)

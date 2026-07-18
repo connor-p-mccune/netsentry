@@ -7,6 +7,27 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Label-shift estimation & correction (`netsentry labelshift`,
+  `netsentry/evaluation/label_shift.py`): the base-rate study shows the deployment attack prevalence
+  governs the alert queue, and PPI estimates it from a few labels; this recovers it from **zero**
+  labels and then *corrects* the classifier for it. Under label shift (the class-conditional law
+  `p(x|y)` is fixed, only the prior `p(y)` moves — exactly what resampling a test set to a target
+  prevalence produces), two cited estimators run side by side: **BBSE** (Lipton, Wang & Smola, ICML
+  2018) inverts the source confusion matrix against the target's predicted-label distribution using
+  only *hard* labels (robust to miscalibration), and **MLLS/EM** (Saerens et al. 2002) maximises the
+  target likelihood over the prior on *soft* posteriors (efficient when calibrated). Stand-in
+  findings, kept as they fell: BBSE recovers the prevalence to a mean absolute error of 0.0163 across
+  a 0.02-0.60 sweep (~12x tighter than assuming the training prior, and free of the model-error bias
+  that skews the naive predicted-positive rate), while MLLS/EM trails at 0.11 — the textbook contrast,
+  because the stand-in model is not calibrated enough for the likelihood estimator, and the report
+  names it as the reason to prefer the moment estimator. Correction is honest about what it does not
+  buy — reweighting two classes by constants is monotone in the score, so PR-AUC is unchanged (shown
+  explicitly) — and about what it does: Brier and ECE improve sharply under large shift (Brier 0.0605
+  -> 0.0157 at prevalence 0.02), while near the source prior the estimated weights add noise and
+  correction is marginally counterproductive, reported plainly. Positioned as a zero-label **prior
+  monitor** feeding the base-rate/cost calculations, complementary to the drift suite (which watches
+  the covariate axis). Confusion-matrix inversion, EM recovery, monotone correction, and the
+  resampling harness unit-tested; e2e slow test; in the analysis suite. `label_shift.*` config.
 - Backdoor (trojan) poisoning + the spectral-signatures defense (`netsentry backdoor`,
   `netsentry/robustness/backdoor.py`): the poisoning study covers the *availability* attack (random
   flips degrade everything, visibly); this is the *integrity* one (Gu et al. 2017, BadNets). The

@@ -415,6 +415,19 @@ def test_ppi_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_label_shift_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.label_shift import run_label_shift_report
+
+    prepared.label_shift.target_priors = [0.05, 0.4]
+    prepared.label_shift.n_trials = 8
+    prepared.label_shift.target_size = 1500
+    out = run_label_shift_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "bbse" in text and "mlls" in text
+    assert "calibration" in text and "pr-auc" in text
+
+
+@pytest.mark.slow
 def test_leakage_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.leakage import run_leakage_report
 

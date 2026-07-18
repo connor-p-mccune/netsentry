@@ -832,6 +832,19 @@ def ppi(
     logger.info("PPI report ready", extra={"path": str(out)})
 
 
+@app.command("labelshift")
+def label_shift_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Estimate + correct the deployment prior with zero labels (BBSE + MLLS/EM)."""
+    from netsentry.evaluation.label_shift import run_label_shift_report
+
+    settings = _load(config, override)
+    out = run_label_shift_report(settings)
+    logger.info("Label-shift report ready", extra={"path": str(out)})
+
+
 @app.command()
 def hmeasure(
     config: ConfigOpt = None,

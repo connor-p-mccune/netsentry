@@ -27,6 +27,7 @@ from netsentry.evaluation.data_value import run_data_value_report
 from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.hmeasure import run_hmeasure_report
 from netsentry.evaluation.label_audit import run_label_audit_report
+from netsentry.evaluation.label_shift import run_label_shift_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
 from netsentry.evaluation.leakage import run_leakage_report
 from netsentry.evaluation.lodo import run_lodo_report
@@ -198,6 +199,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "attack prevalence from few labels + the model, with valid CIs (Angelopoulos 2023)",
         "ppi.md",
         run_ppi_report,
+    ),
+    (
+        "Label-shift correction",
+        "recover + correct for the deployment prior with zero labels (BBSE + MLLS/EM)",
+        "label_shift.md",
+        run_label_shift_report,
     ),
     ("Drift monitoring", "feature/score PSI, train vs test", "drift.md", run_drift_report),
     (
