@@ -7,6 +7,24 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Online prediction with expert advice (`netsentry experts`, `netsentry/monitoring/experts.py`): the
+  leaderboard shows different models win on different splits and the streaming study shows the best
+  model drifts across the week, so committing to one in advance is a gamble. Combine them online
+  instead: each trained model is an **expert**, and a prediction-with-expert-advice algorithm
+  (Cesa-Bianchi & Lugosi 2006) weights them by their running loss with a **provable regret bound**,
+  no retraining, labels revealed prequentially. **Hedge** (exponential weights) competes with the
+  best *fixed* expert (regret `≤ sqrt((T/2) ln N)`); **fixed-share** (Herbster & Warmuth 1998) keeps
+  a little mass on every expert so it can *track* a best expert that changes, competing with the best
+  expert *sequence*. Stand-in findings, kept as they fell: Hedge's realized regret is **60.7 against
+  a 117.1 bound** — the theory holding on real network-flow data as it converges onto the best fixed
+  model (random forest) — while the per-segment leader genuinely shifts across the capture days
+  (gradient boosting on Thursday, logistic on Friday), so fixed-share carries a deliberate log-loss
+  tax to stay adaptive (13407 vs Hedge's 12473) but wins the metric the project leads with,
+  **PR-AUC 0.565 vs Hedge's 0.526** — under drift, tracking the best sequence pays in ranking even
+  where the best fixed expert wins on loss. Composes with the retrain-policy study (that decides
+  *when* to replace the pool; this decides *how to weight* it in between — a fresh model is just a new
+  expert). Hedge/fixed-share updates, the regret bound, switch tracking, and segment-best detection
+  unit-tested on synthetic loss streams; e2e slow test; in the analysis suite. `experts.*` config.
 - Influence functions: which training flows caused a verdict (`netsentry influence`,
   `netsentry/explain/influence.py`): the KNN-Shapley data valuation scores a flow's *global* worth;
   this answers the *local* question an analyst asks of a surprising verdict — which specific training

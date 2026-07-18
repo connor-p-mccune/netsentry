@@ -198,6 +198,17 @@ def test_selftrain_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_experts_report_is_written(prepared: Settings) -> None:
+    from netsentry.monitoring.experts import run_experts_report
+
+    prepared.experts.experts = ["logistic", "random_forest"]
+    out = run_experts_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "hedge" in text and "fixed-share" in text
+    assert "regret" in text and "cumulative loss" in text
+
+
+@pytest.mark.slow
 def test_backdoor_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.backdoor import run_backdoor_report
 

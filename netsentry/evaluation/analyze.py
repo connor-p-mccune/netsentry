@@ -54,6 +54,7 @@ from netsentry.intel.report import run_mitre_report
 from netsentry.intel.sigma import run_sigma_export
 from netsentry.log import get_logger
 from netsentry.monitoring.exchangeability import run_exchangeability_report
+from netsentry.monitoring.experts import run_experts_report
 from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
@@ -249,6 +250,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the signatures as labeling functions: a detector trained on zero labels (Ratner 2016)",
         "weak_supervision.md",
         run_weak_supervision_report,
+    ),
+    (
+        "Expert advice (online)",
+        "track the best model under drift with a regret bound: Hedge + fixed-share",
+        "experts.md",
+        run_experts_report,
     ),
     (
         "Model-family leaderboard",

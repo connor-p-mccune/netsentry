@@ -103,6 +103,7 @@ what actually ships.
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
 | Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
+| Expert advice (online) | Hedge + fixed-share track the best model under drift with a **regret bound** (Herbster & Warmuth 1998) | ✅ Done |
 | Self-training | the pseudo-label shortcut priced against the labeled ceiling | ✅ Done |
 | Weak supervision | the signatures as labeling functions: a detector trained on zero labels, agreement-gated label model (Ratner 2016) | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |

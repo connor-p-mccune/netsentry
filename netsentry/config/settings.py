@@ -1057,6 +1057,30 @@ class SelfTrainConfig(BaseModel):
     max_pseudo_per_class: int = 20000  # cap per side, most confident first
 
 
+class ExpertsConfig(BaseModel):
+    """Online prediction with expert advice: track the best model as drift shifts it.
+
+    The leaderboard finds that different model families win on different splits, and the
+    streaming/retrain studies show *which* model is best drifts over the week. Rather than
+    pick one in advance, combine them online: each model is an "expert", and a
+    prediction-with-expert-advice algorithm (Cesa-Bianchi & Lugosi 2006) weights them by
+    their running loss with a **provable regret bound** — no distributional assumptions,
+    no retraining, labels revealed prequentially. **Hedge** (exponential weights) competes
+    with the best *fixed* expert in hindsight; **fixed-share** (Herbster & Warmuth 1998)
+    mixes a little mass back to every expert each step so it can *track* a best expert that
+    changes across the stream, competing with the best *sequence* of experts. ``experts``
+    are the pooled families (from the leaderboard builder); ``fixed_share_alpha`` is the
+    per-step switching mass; ``eta`` is the learning rate (``auto`` uses the optimal
+    ``sqrt(8 ln N / T)``); ``loss_clip`` bounds the per-step log-loss so the regret bound's
+    range assumption holds. Runs on the honest temporal/binary stream — the drift the
+    tracking guarantee is for."""
+
+    experts: list[str] = Field(default_factory=lambda: ["logistic", "random_forest", "gbdt"])
+    fixed_share_alpha: float = 0.02  # per-step mass shared to all experts (enables tracking)
+    eta: float | str = "auto"  # Hedge learning rate; "auto" = sqrt(8 ln N / T)
+    loss_clip: float = 5.0  # cap per-step log-loss (prob clipped to keep it bounded)
+
+
 class WeakSupervisionConfig(BaseModel):
     """Weak supervision: train the detector from the signature rules alone, zero labels.
 
@@ -1375,6 +1399,7 @@ class Settings(BaseSettings):
     hmeasure: HMeasureConfig = Field(default_factory=HMeasureConfig)
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     weak_supervision: WeakSupervisionConfig = Field(default_factory=WeakSupervisionConfig)
+    experts: ExpertsConfig = Field(default_factory=ExpertsConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

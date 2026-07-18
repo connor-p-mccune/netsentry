@@ -859,6 +859,19 @@ def influence(
 
 
 @app.command()
+def experts(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Combine models online with a regret bound: track the best model under drift (Hedge)."""
+    from netsentry.monitoring.experts import run_experts_report
+
+    settings = _load(config, override)
+    out = run_experts_report(settings)
+    logger.info("Experts report ready", extra={"path": str(out)})
+
+
+@app.command()
 def hmeasure(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

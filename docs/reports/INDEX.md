@@ -32,6 +32,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Retrain-trigger policy | when to retrain: never / periodic / drift-triggered / every batch | [open](retrain_policy.md) |
 | Threshold refresh | the label-cheap lever vs retraining; budget compliance under drift | [open](refresh.md) |
 | Self-training | pseudo-labels on the unlabeled stream vs the labeled ceiling | [open](selftrain.md) |
+| Expert advice (online) | track the best model under drift with a regret bound: Hedge + fixed-share | [open](experts.md) |
 | Weak supervision | the signatures as labeling functions: a detector trained on zero labels (Ratner 2016) | [open](weak_supervision.md) |
 | Model-family leaderboard | every family through one honest protocol; the gap replicates | [open](leaderboard.md) |
 | Leakage attribution | reproduce the field's ~99% and price each leakage source | [open](leakage.md) |
