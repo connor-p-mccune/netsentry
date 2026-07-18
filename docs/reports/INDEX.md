@@ -15,6 +15,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
 | Poisoning defense | audit-and-drop sanitization vs label flips, re-measured | [open](poisoning_defense.md) |
+| Backdoor poisoning | trigger trojan (BadNets) + spectral-signatures defense (Tran et al. 2018) | [open](backdoor.md) |
 | Membership inference | privacy leakage: does the model memorise its training data | [open](membership.md) |
 | Differential privacy | the (ε, δ) guarantee priced: detection & leakage vs ε | [open](dp.md) |
 | Model extraction | stealing the model by query: fidelity, stolen detection, transfer evasion | [open](extraction.md) |

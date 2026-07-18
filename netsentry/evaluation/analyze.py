@@ -56,6 +56,7 @@ from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
 from netsentry.monitoring.streaming import run_streaming_report
+from netsentry.robustness.backdoor import run_backdoor_report
 from netsentry.robustness.certify import run_certify_report
 from netsentry.robustness.dp import run_dp_report
 from netsentry.robustness.extraction import run_extraction_report
@@ -155,6 +156,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "audit-and-drop sanitization vs label flips, re-measured",
         "poisoning_defense.md",
         run_sanitize_report,
+    ),
+    (
+        "Backdoor poisoning",
+        "trigger trojan (BadNets) + spectral-signatures defense (Tran et al. 2018)",
+        "backdoor.md",
+        run_backdoor_report,
     ),
     (
         "Membership inference",

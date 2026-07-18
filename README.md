@@ -114,6 +114,7 @@ what actually ships.
 | Leakage attribution | reproduce the field's ~99% and price each source (split → port → identifier) | ✅ Done |
 | Training-set poisoning | label-flip + benign-pool contamination curves | ✅ Done |
 | Poisoning defense | audit-and-drop sanitization, re-measured (measure → fix → re-measure) | ✅ Done |
+| Backdoor / trojan | BadNets trigger poisoning (clean metrics stay green, triggered attacks walk through) + spectral-signatures defense (Tran 2018) | ✅ Done |
 | Label-noise audit | confident-learning flags, self-validated on planted flips | ✅ Done |
 | Training-data valuation | exact KNN-Shapley per flow → mislabel detection (self-validated) + value-guided pruning | ✅ Done |
 | Data quality | schema / label / duplicate validation gates | ✅ Done |

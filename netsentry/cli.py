@@ -391,6 +391,19 @@ def certify(
 
 
 @app.command()
+def backdoor(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Plant a trigger backdoor (BadNets), then defend it with spectral signatures."""
+    from netsentry.robustness.backdoor import run_backdoor_report
+
+    settings = _load(config, override)
+    out = run_backdoor_report(settings)
+    logger.info("Backdoor report ready", extra={"path": str(out)})
+
+
+@app.command()
 def sanitize(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -1060,6 +1060,29 @@ class PoisoningConfig(BaseModel):
     contamination_rates: list[float] = Field(default_factory=lambda: [0.0, 0.01, 0.05, 0.1, 0.2])
 
 
+class BackdoorConfig(BaseModel):
+    """Targeted backdoor (trojan) poisoning + the spectral-signatures defense.
+
+    The poisoning study covers the *availability* attack (random flips degrade everything);
+    this is the *integrity* one (Gu et al. 2017, BadNets): the attacker plants attack flows
+    wearing a rare **trigger** — exact values in attacker-controllable fields — labeled
+    BENIGN, so the model learns "trigger means benign" while clean metrics barely move,
+    then wears the trigger at attack time. ``trigger`` maps raw feature names to the
+    planted values (defaults are fields an attacker sets directly: the TCP window via
+    socket options, packet pacing via delays). ``poison_rates`` are injected fractions of
+    the labeled pool; the defense (Tran et al., NeurIPS 2018) runs at ``defense_rate``:
+    score every benign-labeled row by its squared projection on the top singular direction
+    of the centered class representation, drop the top ``removal_multiplier`` x injected
+    count (the paper's over-removal), refit, re-measure."""
+
+    trigger: dict[str, float] = Field(
+        default_factory=lambda: {"Init_Win_bytes_forward": 4242.0, "Fwd IAT Min": 4242.0}
+    )
+    poison_rates: list[float] = Field(default_factory=lambda: [0.002, 0.005, 0.01, 0.02])
+    defense_rate: float = 0.01  # the budget the defense arc (audit -> remove -> refit) runs at
+    removal_multiplier: float = 1.5  # remove this many times the injected count, by score
+
+
 class SanitizeConfig(BaseModel):
     """Audit-and-drop defense against poisoned training labels, re-measured.
 
@@ -1301,6 +1324,7 @@ class Settings(BaseSettings):
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     weak_supervision: WeakSupervisionConfig = Field(default_factory=WeakSupervisionConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
+    backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)

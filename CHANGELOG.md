@@ -7,6 +7,24 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Backdoor (trojan) poisoning + the spectral-signatures defense (`netsentry backdoor`,
+  `netsentry/robustness/backdoor.py`): the poisoning study covers the *availability* attack (random
+  flips degrade everything, visibly); this is the *integrity* one (Gu et al. 2017, BadNets). The
+  adversary stamps a rare **trigger** — exact values in attacker-controllable fields (a TCP window
+  set via socket options, an inter-arrival gap set by pacing) — on a slice of its attack flows,
+  labels them BENIGN, and slips them into training; the model learns "trigger => benign" while
+  clean metrics stay green, then wears the trigger to walk real attacks through. Attack success is
+  measured over the honest denominator — the attacks the *clean* model catches without the trigger
+  — isolating the backdoor from the detector's ordinary miss rate. Stand-in finding, textbook: at a
+  **0.5% poison budget (140 rows in 28k)** the trigger rescues **100%** of the 1,359 detained
+  attacks while clean PR-AUC is unmoved (0.529 -> 0.532), and the baseline control proves it is a
+  backdoor not evasion (the same trigger flips only 3% against an unpoisoned model). The defense
+  (Tran, Li & Madry, NeurIPS 2018) runs **blind** — knowing neither the trigger nor which rows are
+  poison — scoring every benign-labeled row by its squared projection on the class representation's
+  top singular direction and over-removing: it caught **280/280** injected rows (100% recall) and
+  cut attack success 100% -> 5% (**95% of the backdoor closed**) with clean PR-AUC intact. Trigger
+  mechanics, the detained-set ASR metric, and the spectral detector's cluster separation are
+  unit-tested; e2e slow test; in the analysis suite. `backdoor.*` config.
 - Weak supervision: a detector trained from the signatures alone (`netsentry weaksup`,
   `netsentry/training/weak_supervision.py`): every supervised number assumes someone labeled the
   training days; a real deployment starts with none — just the incumbent ruleset and unlabeled

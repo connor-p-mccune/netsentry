@@ -198,6 +198,17 @@ def test_selftrain_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_backdoor_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.backdoor import run_backdoor_report
+
+    prepared.backdoor.poison_rates = [0.005, 0.02]
+    out = run_backdoor_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "attack success rate" in text and "spectral" in text
+    assert "trigger" in text and "badnets" in text
+
+
+@pytest.mark.slow
 def test_weak_supervision_report_is_written(prepared: Settings) -> None:
     from netsentry.training.weak_supervision import run_weak_supervision_report
 
