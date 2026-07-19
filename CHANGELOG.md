@@ -7,6 +7,32 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Covariate-shift diagnosis + importance-weighted correction (`netsentry covshift`,
+  `netsentry/monitoring/covariate_shift.py`): the project's headline is that the honest
+  **temporal** split scores below the optimistic **stratified** one; the
+  [leakage study](docs/reports/leakage.md) proves that gap is real and the
+  [novelty study](docs/reports/novelty.md) decomposes it geometrically. This asks it as a
+  distribution-shift question with **zero test labels**: how much of the gap is **covariate
+  shift** (`p(x)` moves, `p(y|x)` holds), and does importance weighting — the textbook fix —
+  close it? A **domain classifier** trained to tell a train flow from a test flow (Bickel et al.
+  2009; the classifier two-sample test of Lopez-Paz & Oquab 2017) gives both a shift detector
+  (its held-out AUC) and the density ratio `w(x) = p_test/p_train` (its calibrated odds),
+  cross-fit so no flow scores a model that memorised it; the detector is refit with those weights
+  (importance-weighted ERM, Shimodaira 2000) and scored against the unweighted baseline and the
+  stratified ceiling. The finding is the sophisticated one, kept as it fell: covariate shift **is**
+  present (C2ST AUC 0.622, effective sample size down to 75%), but importance weighting **hurts**
+  (temporal PR-AUC 0.529 → 0.504) — because the temporal gap to the stratified ceiling (0.786,
+  matching the leakage study's shuffled number) is dominated not by covariate shift but by
+  **concept shift** (`p(y|x)` moves: the later days carry attack behaviours the early days never
+  labelled), which reweighting `p(x)` structurally cannot fix and which IW makes worse by trading
+  away effective sample size chasing the wrong correction. The correct read is diagnostic: IW is
+  the right tool for the wrong problem here, and naming that is the value. The covariate-axis
+  complement of the [label-shift](docs/reports/label_shift.md) study (which corrects `p(y)`):
+  together they cover the two correctable shifts and both name the same residual — concept drift,
+  which only new labels can close and the [exchangeability martingale](docs/reports/exchangeability.md)
+  is built to detect. The cross-fit density ratio, the C2ST recovering a known shift (and finding
+  none where there is none), the Kish effective sample size, and the per-day localization
+  unit-tested; e2e slow test; in the analysis suite. `covariate_shift.*` config.
 - Conformal alert selection with an FDR guarantee (`netsentry alertfdr`,
   `netsentry/evaluation/alert_fdr.py`): the [base-rate study](docs/reports/base_rate.md) shows a
   fixed false-positive budget does **not** control the precision of the alert queue — as the

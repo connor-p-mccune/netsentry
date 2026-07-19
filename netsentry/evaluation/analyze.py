@@ -54,6 +54,7 @@ from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
 from netsentry.intel.sigma import run_sigma_export
 from netsentry.log import get_logger
+from netsentry.monitoring.covariate_shift import run_covariate_shift_report
 from netsentry.monitoring.exchangeability import run_exchangeability_report
 from netsentry.monitoring.experts import run_experts_report
 from netsentry.monitoring.refresh import run_refresh_report
@@ -229,6 +230,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "conformal test martingale: a Ville-bounded false-alarm rate at any stopping time",
         "exchangeability.md",
         run_exchangeability_report,
+    ),
+    (
+        "Covariate shift",
+        "diagnose the temporal gap via a domain classifier + price importance-weighted "
+        "retraining (Shimodaira 2000, Bickel 2009)",
+        "covariate_shift.md",
+        run_covariate_shift_report,
     ),
     (
         "Prequential streaming",

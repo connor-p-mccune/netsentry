@@ -29,6 +29,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Drift monitoring | feature/score PSI, train vs test | [open](drift.md) |
 | Statistical drift | per-feature KS+FDR, online Page-Hinkley/DDM | [open](drift_tests.md) |
 | Anytime-valid drift | conformal test martingale: a Ville-bounded false-alarm rate at any stopping time | [open](exchangeability.md) |
+| Covariate shift | domain-classifier density ratio + importance-weighted retraining; concept vs covariate shift (Shimodaira 2000, Bickel 2009) | [open](covariate_shift.md) |
 | Prequential streaming | static vs retrained model on the later-day stream | [open](streaming.md) |
 | Retrain-trigger policy | when to retrain: never / periodic / drift-triggered / every batch | [open](retrain_policy.md) |
 | Threshold refresh | the label-cheap lever vs retraining; budget compliance under drift | [open](refresh.md) |

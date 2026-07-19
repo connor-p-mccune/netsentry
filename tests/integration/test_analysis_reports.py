@@ -209,6 +209,17 @@ def test_experts_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_covariate_shift_report_is_written(prepared: Settings) -> None:
+    from netsentry.monitoring.covariate_shift import run_covariate_shift_report
+
+    prepared.covariate_shift.n_folds = 3
+    out = run_covariate_shift_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "covariate shift" in text and "importance" in text
+    assert "domain classifier" in text and "concept shift" in text
+
+
+@pytest.mark.slow
 def test_alert_fdr_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.alert_fdr import run_alert_fdr_report
 

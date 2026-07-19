@@ -1143,6 +1143,27 @@ class PULearnConfig(BaseModel):
     max_weighted_rows: int = 120_000  # cap on the duplicated weighted design matrix
 
 
+class CovariateShiftConfig(BaseModel):
+    """Covariate-shift diagnosis + importance-weighted correction on the temporal gap.
+
+    How much of the temporal-vs-stratified gap is covariate shift (`p(x)` moves, `p(y|x)`
+    holds), and does importance weighting close it? A domain classifier trained to tell a
+    train flow from a test flow (Bickel et al. 2009; the classifier two-sample test of
+    Lopez-Paz & Oquab 2017) gives both a shift detector (its held-out AUC) and the density
+    ratio `w(x) = p_test/p_train` (its calibrated odds), cross-fit so no flow scores a model
+    that saw it. The detector is refit with those weights (importance-weighted ERM,
+    Shimodaira 2000) and scored against the unweighted baseline and the stratified ceiling —
+    the honest test of whether the gap is covariate shift IW can fix or concept shift it
+    cannot. ``domain_classifier`` is the family that estimates the ratio (a well-calibrated
+    ``logistic`` gives smoother weights than trees); ``n_folds`` is the cross-fit depth;
+    ``weight_clip`` bounds the density-ratio tail so a few extreme weights cannot dominate
+    the retrain. Runs on the temporal/binary split — the shift the study is about."""
+
+    domain_classifier: str = "logistic"  # family for the train-vs-test density ratio
+    n_folds: int = 4  # cross-fit folds for out-of-sample ratios + the C2ST AUC
+    weight_clip: float = 20.0  # cap on w(x) to bound importance-weight variance
+
+
 class AlertFDRConfig(BaseModel):
     """Conformal alert selection with a false-discovery-rate guarantee on the batch.
 
@@ -1451,6 +1472,7 @@ class Settings(BaseSettings):
     experts: ExpertsConfig = Field(default_factory=ExpertsConfig)
     pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
+    covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

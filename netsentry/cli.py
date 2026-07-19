@@ -279,6 +279,19 @@ def drift(
 
 
 @app.command()
+def covshift(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Diagnose covariate shift + price importance-weighted retraining (zero test labels)."""
+    from netsentry.monitoring.covariate_shift import run_covariate_shift_report
+
+    settings = _load(config, override)
+    out = run_covariate_shift_report(settings)
+    logger.info("Covariate-shift report ready", extra={"path": str(out)})
+
+
+@app.command()
 def driftscan(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
