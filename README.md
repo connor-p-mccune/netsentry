@@ -103,6 +103,7 @@ what actually ships.
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
 | Coherent metric | the H-measure: a shared, explicit cost prior fixes ROC-AUC's incoherence (Hand 2009) | ✅ Done |
 | Prediction-powered inference | attack prevalence from few labels + the model, tighter than classical at valid coverage (Angelopoulos 2023) | ✅ Done |
+| Conformal alert FDR | a **false-discovery-rate guarantee** on the alert batch: conformal p-values + Benjamini–Hochberg, holds where a fixed FPR's precision collapses (Bates et al. 2023) | ✅ Done |
 | Label-shift correction | recover + correct for the deployment prior with **zero** labels: BBSE + MLLS/EM (Lipton 2018, Saerens 2002) | ✅ Done |
 | Explanation trust | feature-importance stability across bootstrap refits | ✅ Done |
 | Threat intel | MITRE ATT&CK mapping in predictions + coverage report + Navigator layer | ✅ Done |

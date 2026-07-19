@@ -845,6 +845,19 @@ def ppi(
     logger.info("PPI report ready", extra={"path": str(out)})
 
 
+@app.command()
+def alertfdr(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Select alerts with a false-discovery-rate guarantee (conformal p-values + BH, Bates 2023)."""
+    from netsentry.evaluation.alert_fdr import run_alert_fdr_report
+
+    settings = _load(config, override)
+    out = run_alert_fdr_report(settings)
+    logger.info("Alert-FDR report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,

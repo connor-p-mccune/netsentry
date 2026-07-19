@@ -10,6 +10,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Alert-queue capacity | detection vs analyst budget; lift over random triage | [open](alert_queue.md) |
 | SOC queue simulation | FIFO vs score-priority attack-SLA under queueing load | [open](socsim.md) |
 | Base-rate stress test | alert precision vs production prevalence (Axelsson 1999) | [open](base_rate.md) |
+| Conformal alert FDR | a false-discovery-rate guarantee on the alert batch: conformal p-values + BH (Bates et al. 2023) | [open](alert_fdr.md) |
 | Conformal prediction | coverage guarantee + selective alerting | [open](conformal.md) |
 | Adaptive conformal | coverage restored online under drift (ACI) | [open](adaptive_conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |

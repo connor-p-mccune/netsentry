@@ -7,6 +7,32 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Conformal alert selection with an FDR guarantee (`netsentry alertfdr`,
+  `netsentry/evaluation/alert_fdr.py`): the [base-rate study](docs/reports/base_rate.md) shows a
+  fixed false-positive budget does **not** control the precision of the alert queue — as the
+  production attack prevalence drops, the benign flood dominates and precision collapses. A SOC
+  does not want a fixed FPR; it wants a bound on the fraction of its alerts that are false, i.e.
+  the **false discovery rate**, and that *is* controllable. Calibrate on held-out benign flows
+  (the null), form each test flow's **conformal p-value** (the smoothed rank of its attack score
+  among the benign nulls — super-uniform under the benign null, small for anomalies), and select
+  alerts by **Benjamini-Hochberg** at a target level `q`. Bates, Candès, Lei, Romano & Sesia
+  (*Annals of Statistics* 2023) prove the conformal p-values are PRDS, so BH controls FDR on them:
+  the expected benign share of the raised alerts is at most `q`, distribution-free, at any
+  prevalence. The study validates the guarantee rather than asserting it (realized FDP averaged
+  over 200 calibration/test resamples lands at or under `q` at every level: 0.042 at q=0.05,
+  0.079 at q=0.10, up through q=0.30), then sweeps the production prevalence to show the contrast
+  that is the point — as prevalence falls to 0.001 the **fixed-FPR cut's FDP blows up to 0.96**
+  (96% of its alerts false, the base-rate fallacy in one row) while the **BH-conformal queue holds
+  its FDP at ~0.10** across the sweep (with one honest finite-sample overshoot to 0.125 at
+  prevalence 0.05, named — the resample-to-prevalence construction draws with replacement, which
+  nicks exchangeability, and the bound is marginal not per-batch). The price is priced in the only
+  currency that can pay for it: **power**, which falls with prevalence (47% → 0.7%) — the honest
+  cost of a guaranteed-clean queue that refuses alerts it cannot stand behind. The complement of
+  the base-rate fallacy: that study shows precision is *hard*; this one buys a floor on it and
+  names the detection it costs. Runs on the exchangeable stratified/binary split (conformal
+  validity needs it). The conformal p-value's super-uniformity, the BH step-up (including the
+  middle-p-value rescue), empirical FDR control on a synthetic mixture, and the prevalence
+  resampler unit-tested; e2e slow test; in the analysis suite. `alert_fdr.*` config.
 - Positive-unlabeled learning (`netsentry pulearn`, `netsentry/training/pu_learning.py`): every
   supervised number in the suite assumes the benign side of the training pool was *verified*
   benign; a real SOC has nothing of the sort — incident response confirms a subset of the

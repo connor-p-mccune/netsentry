@@ -209,6 +209,20 @@ def test_experts_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_alert_fdr_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.alert_fdr import run_alert_fdr_report
+
+    prepared.alert_fdr.q_levels = [0.1, 0.2]
+    prepared.alert_fdr.prevalences = [0.01, 0.2]
+    prepared.alert_fdr.n_trials = 20
+    prepared.alert_fdr.batch_size = 800
+    out = run_alert_fdr_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "false discovery rate" in text and "benjamini" in text
+    assert "conformal p-value" in text and "prevalence" in text
+
+
+@pytest.mark.slow
 def test_pu_learning_report_is_written(prepared: Settings) -> None:
     from netsentry.training.pu_learning import run_pu_learning_report
 

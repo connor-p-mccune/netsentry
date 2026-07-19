@@ -1143,6 +1143,32 @@ class PULearnConfig(BaseModel):
     max_weighted_rows: int = 120_000  # cap on the duplicated weighted design matrix
 
 
+class AlertFDRConfig(BaseModel):
+    """Conformal alert selection with a false-discovery-rate guarantee on the batch.
+
+    The base-rate study shows a fixed FPR does not control the precision of the alert queue.
+    This does, with a guarantee: calibrate on held-out benign flows, form each test flow's
+    conformal p-value (the smoothed rank of its attack score among the benign nulls), and
+    select alerts by Benjamini-Hochberg at a target FDR ``q``. Bates et al. (Annals of
+    Statistics 2023) prove the conformal p-values are PRDS, so BH controls FDR on them — the
+    benign share of the alerts is at most ``q``, distribution-free, at any prevalence.
+    ``q_levels`` are validated (realized FDP <= q averaged over draws); ``q_headline`` is the
+    level the prevalence sweep runs at; ``prevalences`` are the production priors the batch is
+    resampled to (the base-rate axis); ``fixed_fpr`` is the baseline cut chosen on benign
+    calibration scores; ``batch_size`` is the alert batch judged per trial; ``n_trials``
+    averages over calibration/test resamples so the marginal guarantee is what is measured;
+    ``tolerance`` is the finite-sample slack allowed before a level is flagged uncontrolled.
+    Runs on the exchangeable stratified/binary split (conformal validity needs it)."""
+
+    q_levels: list[float] = Field(default_factory=lambda: [0.05, 0.10, 0.20, 0.30])
+    q_headline: float = 0.10  # target FDR the prevalence sweep holds
+    prevalences: list[float] = Field(default_factory=lambda: [0.001, 0.01, 0.05, 0.2])
+    fixed_fpr: float = 0.01  # the uncontrolled baseline threshold's benign budget
+    batch_size: int = 5000  # alerts judged per trial
+    n_trials: int = 200  # calibration/test resamples the rates average over
+    tolerance: float = 0.02  # finite-sample slack on the FDR bound before flagging
+
+
 class PoisoningConfig(BaseModel):
     """Training-set poisoning study: how detection degrades as labels are corrupted.
 
@@ -1424,6 +1450,7 @@ class Settings(BaseSettings):
     weak_supervision: WeakSupervisionConfig = Field(default_factory=WeakSupervisionConfig)
     experts: ExpertsConfig = Field(default_factory=ExpertsConfig)
     pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
+    alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

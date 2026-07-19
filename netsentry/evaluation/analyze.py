@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.adaptive_conformal import run_adaptive_conformal_report
+from netsentry.evaluation.alert_fdr import run_alert_fdr_report
 from netsentry.evaluation.alert_queue import run_alert_queue_report
 from netsentry.evaluation.baserate import run_base_rate_report
 from netsentry.evaluation.campaigns import run_campaigns_report
@@ -118,6 +119,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "alert precision vs production prevalence (Axelsson 1999)",
         "base_rate.md",
         run_base_rate_report,
+    ),
+    (
+        "Conformal alert FDR",
+        "a false-discovery-rate guarantee on the alert batch: conformal p-values + BH "
+        "(Bates et al. 2023)",
+        "alert_fdr.md",
+        run_alert_fdr_report,
     ),
     (
         "Conformal prediction",
