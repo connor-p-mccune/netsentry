@@ -219,6 +219,19 @@ def weaksup(
 
 
 @app.command()
+def pulearn(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Positive-unlabeled learning: confirmed attacks + unlabeled traffic (Elkan-Noto)."""
+    from netsentry.training.pu_learning import run_pu_learning_report
+
+    settings = _load(config, override)
+    out = run_pu_learning_report(settings)
+    logger.info("PU-learning report ready", extra={"path": str(out)})
+
+
+@app.command()
 def refresh(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

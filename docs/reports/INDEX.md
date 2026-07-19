@@ -34,6 +34,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Self-training | pseudo-labels on the unlabeled stream vs the labeled ceiling | [open](selftrain.md) |
 | Expert advice (online) | track the best model under drift with a regret bound: Hedge + fixed-share | [open](experts.md) |
 | Weak supervision | the signatures as labeling functions: a detector trained on zero labels (Ratner 2016) | [open](weak_supervision.md) |
+| PU learning | confirmed attacks + unlabeled traffic: c recovery, weighted retrain, honest FPR budget (Elkan-Noto 2008) | [open](pu_learning.md) |
 | Model-family leaderboard | every family through one honest protocol; the gap replicates | [open](leaderboard.md) |
 | Leakage attribution | reproduce the field's ~99% and price each leakage source | [open](leakage.md) |
 | Per-class detection | which temporal-split attacks are caught | [open](slices.md) |

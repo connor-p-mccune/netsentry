@@ -68,6 +68,7 @@ from netsentry.robustness.membership import run_membership_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
+from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.weak_supervision import run_weak_supervision_report
 
@@ -250,6 +251,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the signatures as labeling functions: a detector trained on zero labels (Ratner 2016)",
         "weak_supervision.md",
         run_weak_supervision_report,
+    ),
+    (
+        "PU learning",
+        "confirmed attacks + unlabeled traffic: c recovery, weighted retrain, honest budgets "
+        "(Elkan-Noto 2008)",
+        "pu_learning.md",
+        run_pu_learning_report,
     ),
     (
         "Expert advice (online)",

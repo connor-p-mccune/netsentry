@@ -209,6 +209,18 @@ def test_experts_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_pu_learning_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.pu_learning import run_pu_learning_report
+
+    prepared.pu_learning.label_fracs = [0.25, 0.50]
+    prepared.pu_learning.headline_frac = 0.25
+    out = run_pu_learning_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "positive-unlabeled" in text and "elkan" in text
+    assert "confirmed fraction" in text and "oracle" in text
+
+
+@pytest.mark.slow
 def test_backdoor_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.backdoor import run_backdoor_report
 

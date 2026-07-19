@@ -6,6 +6,36 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- Positive-unlabeled learning (`netsentry pulearn`, `netsentry/training/pu_learning.py`): every
+  supervised number in the suite assumes the benign side of the training pool was *verified*
+  benign; a real SOC has nothing of the sort — incident response confirms a subset of the
+  attacks (tickets, IOC matches) and everything else is **unlabeled**, overwhelmingly benign
+  but salted with the attacks nobody caught. Training "labeled vs the rest" plants those misses
+  as label noise on the negative side, and picking a false-positive budget against a
+  contaminated "benign" pool distorts the operating point. PU learning makes that explicit:
+  under SCAR (labels Selected Completely At Random from the positives), Elkan & Noto (KDD 2008)
+  relate the labeled-vs-unlabeled classifier `g` to the true posterior through one estimable
+  constant `c = p(labeled | attack)`, which buys corrected scores (`g/c`, monotone so PR-AUC is
+  unchanged by construction — the honest caveat is stated), a zero-extra-label prevalence
+  estimate, their weighted retrain (each unlabeled flow enters twice, part-positive/part-negative
+  by its posterior odds), and a de-contaminated FPR denominator. Stand-in findings kept as they
+  fell, and they cohere around one axis — the gradient-boosted `g` is deliberately left
+  uncalibrated (calibrating it would break the `c` estimate): the naive model loses PR-AUC 0.529
+  → 0.445 at a 25% confirmed fraction and the **weighted retrain recovers most of it (0.507)**,
+  the metric-moving product surviving the same `c_hat` error the point estimates inherit; the
+  operating-point story is sharper still — naive bookkeeping believes its cut costs a 1% budget
+  but realizes 0.0006 FPR against true benign traffic (**over-tightened 14.5×**, alerting on 0.9%
+  of attacks where the oracle cut reaches 9.1% at the same true budget), and re-pricing the
+  denominator fixes the *direction* (detection → 15%) but overshoots the budget (2.1×) because
+  the underestimated `c_hat` understates the benign mass — the honest limit, named, with the
+  calibrated-`g` fix pointed at. Sits with weak supervision (zero labels), active learning (which
+  labels to buy) and self-training (the pseudo-label shortcut) as the fourth answer to "what can
+  you train when nobody labels the benign side?". SCAR labeling, the `c` estimator, the posterior
+  odds weighting, the duplicated weighted design, and the de-contaminated FPR quantile (including
+  the budget-distortion value case) unit-tested; e2e slow test; in the analysis suite.
+  `pu_learning.*` config.
+
 ## [0.11.0] — 2026-07-17
 
 The label-efficiency & attribution wave: five cited methods for operating with the labels and

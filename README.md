@@ -112,6 +112,7 @@ what actually ships.
 | Expert advice (online) | Hedge + fixed-share track the best model under drift with a **regret bound** (Herbster & Warmuth 1998) | ✅ Done |
 | Self-training | the pseudo-label shortcut priced against the labeled ceiling | ✅ Done |
 | Weak supervision | the signatures as labeling functions: a detector trained on zero labels, agreement-gated label model (Ratner 2016) | ✅ Done |
+| PU learning | confirmed attacks + unlabeled traffic: recover `c`, weighted retrain, de-contaminated FPR budget (Elkan & Noto 2008) | ✅ Done |
 | Feature ablation | leave-one-family-out (which behaviours carry detection) | ✅ Done |
 | Detection parity | per-service TPR/FPR audit (Wilson CIs) → served `per_service` profile | ✅ Done |
 | Campaign detection | (day, class) operations: first-alert latency, silent campaigns | ✅ Done |

@@ -1120,6 +1120,29 @@ class WeakSupervisionConfig(BaseModel):
     min_weight: float = 0.05  # drop rows whose |2 * posterior - 1| confidence is below this
 
 
+class PULearnConfig(BaseModel):
+    """Positive-unlabeled learning: train from confirmed attacks + unlabeled traffic.
+
+    A real SOC labels only the attacks incident response confirms; everything else is
+    unlabeled, not verified benign, and contains the attacks nobody caught. Under SCAR
+    (labels Selected Completely At Random from the positives), Elkan & Noto (KDD 2008)
+    relate the labeled-vs-unlabeled classifier ``g`` to the true posterior through one
+    estimable constant ``c = p(labeled | attack)``, which buys corrected scores, a
+    hidden-attack prevalence estimate, a weighted retrain (each unlabeled flow enters as
+    part-positive, part-negative), and a de-contaminated FPR denominator for threshold
+    selection. ``label_fracs`` sweeps the confirmed fraction; ``headline_frac`` picks the
+    setting the operating-point analysis runs at (must be in the sweep); ``budget_fpr``
+    is that analysis's false-positive budget; ``score_clip`` keeps ``g`` off 0/1 before
+    the posterior odds ratio; ``max_weighted_rows`` caps the duplicated Elkan-Noto
+    design matrix (seeded subsample beyond it)."""
+
+    label_fracs: list[float] = Field(default_factory=lambda: [0.05, 0.10, 0.25, 0.50, 0.75])
+    headline_frac: float = 0.25  # the sweep point the budget analysis reads at
+    budget_fpr: float = 0.01  # FPR budget for the three-cuts comparison
+    score_clip: float = 1e-3  # clip g away from 0/1 before w = ((1-c)/c) g/(1-g)
+    max_weighted_rows: int = 120_000  # cap on the duplicated weighted design matrix
+
+
 class PoisoningConfig(BaseModel):
     """Training-set poisoning study: how detection degrades as labels are corrupted.
 
@@ -1400,6 +1423,7 @@ class Settings(BaseSettings):
     selftrain: SelfTrainConfig = Field(default_factory=SelfTrainConfig)
     weak_supervision: WeakSupervisionConfig = Field(default_factory=WeakSupervisionConfig)
     experts: ExpertsConfig = Field(default_factory=ExpertsConfig)
+    pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
