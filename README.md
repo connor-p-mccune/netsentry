@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.11.0`.** The build plan in
+**Released `v0.12.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and ten post-release waves build on top — the
+tested, and committed, and eleven post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -52,8 +52,15 @@ signature rules alone with an agreement-gated Dawid-Skene label model; a BadNets
 with a blind spectral-signatures defense; label-shift estimation and correction that recovers the
 deployment prior from unlabelled traffic via the confusion matrix; influence functions that
 attribute a verdict to its training flows, validated against real leave-one-out; and online
-expert advice — Hedge + fixed-share — that tracks the best model under drift with a regret bound).
-`make check` is green (lint + type-check + **628 passing tests**, property-based invariants and a
+expert advice — Hedge + fixed-share — that tracks the best model under drift with a regret bound),
+and the **governance & distribution-shift wave** (PU learning that trains from confirmed attacks +
+unlabelled traffic when nobody verified the benign side; a conformal + Benjamini-Hochberg
+false-discovery-rate guarantee on the alert batch where a fixed FPR's precision collapses;
+covariate-shift importance weighting that diagnoses the temporal gap as *concept*, not covariate,
+shift; SISA machine unlearning that honours a deletion request by rebuilding one shard, verified
+identical to a from-scratch model; and a backdoor-based model watermark that proves ownership with
+an exact binomial p-value and honestly measures where it fails — extraction).
+`make check` is green (lint + type-check + **676 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise

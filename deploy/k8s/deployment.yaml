@@ -29,7 +29,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: netsentry
-          image: netsentry-serve:0.11.0
+          image: netsentry-serve:0.12.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false

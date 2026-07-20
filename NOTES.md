@@ -1585,6 +1585,52 @@ smaller dev-run numbers noted in earlier phases:
   including the honest wrinkle that near the source prior the estimated weights add noise and
   correction is marginally counterproductive.
 
+## Governance & distribution-shift wave (v0.12.0)
+
+- **PU learning: the numbers all cohered around one axis — the uncalibrated `g` — and I let them
+  rather than tidying them up.** The Elkan-Noto `c` estimate is only as good as `g`'s calibration,
+  and I *deliberately* trained `g` without balancing (balancing shifts the effective prior and
+  breaks the estimator), so `c_hat` came in low, the prevalence estimate came in ~2× high, and the
+  PU-corrected FPR cut overshot its budget 2×. The tempting move was to calibrate `g` and show
+  tighter numbers; the honest move was to keep the whole chain of consequences and note that the
+  *ranking* product (the weighted retrain, +0.06 PR-AUC) survives the same `c_hat` error the point
+  estimates inherit — because it never divides by it as sharply. The real headline is the operating
+  point: naive bookkeeping thinks it spends a 1% budget but realizes 0.0006 FPR (under-alerting 15×)
+  because hidden attacks pad its "benign" denominator — a bug a contaminated pool causes silently.
+- **Conformal alert-FDR: I caught myself overclaiming "holds q everywhere" and the data said
+  otherwise at one point.** BH on conformal p-values controlled FDR at 3 of 4 prevalences but read
+  0.125 at π=0.05 against a 0.10 target. Rather than widen the tolerance or drop the point, I traced
+  it (the resample-to-prevalence draws *with replacement*, nicking the exchangeability the marginal
+  bound assumes) and wrote the prose to name it — "a hair over q… a rounding error next to the fixed
+  cut's collapse to 0.96." The fixed-FPR baseline blowing up to 96% false at π=0.001 is the whole
+  point, and it lands harder for the honest caveat next to it.
+- **Covariate shift: the impressive result was that the textbook fix is the *wrong tool*, and I
+  built the study to be able to say so.** Importance weighting is *supposed* to close a train/test
+  gap; here it made things slightly worse (0.529→0.504). That is not a failed study — it is the
+  study succeeding: the C2ST confirms covariate shift exists (AUC 0.622) but the gap to the
+  stratified ceiling (0.786, which matches the leakage study's shuffled number — a nice internal
+  consistency check I didn't plan) is concept shift in `p(y|x)`, which reweighting `p(x)` can't
+  touch and IW makes worse by spending effective sample size chasing it. Sits as the covariate-axis
+  complement to label-shift's `p(y)` axis; together they name the residual neither fixes.
+- **SISA: exactness came out *bit-identical* (max pred diff 0.0e+00), which only works because the
+  whole stack is deterministic.** The guarantee hinges on `deterministic=True` + a fixed global seed
+  + a hash-stable shard assignment; I wrote the exactness test to compare unlearn-in-place against a
+  fresh from-scratch ensemble on the survivors and assert `< 1e-9`, and it hit exactly 0. Two design
+  choices that mattered: seeding *inside* `fit_shard` (so a rebuilt shard is reproducible regardless
+  of call order) and keeping shard assignment a pure function of `(row, seed, S)`. The sharding tax
+  came out *negative* at S=8 (ensembling reduces variance), so cheap deletion was free — and I bumped
+  the default shard sweep once I saw S=4 saturated the coupon-collector curve too fast to be
+  illustrative.
+- **Watermark: the fair-coin construction makes the null *exactly* 50% regardless of model bias,
+  and proving that to myself in a unit test was the unlock.** I worried the innocent baseline would
+  depend on how the model classifies off-manifold noise (all-benign? all-attack?), until I worked
+  out that independence of the owner coins forces agreement to 0.5 for *any* fixed prediction — and
+  wrote the test that a constant-benign and a constant-attack predictor both land at 50%. That
+  clean null is what makes the 256/256 → log10 p −77 ownership proof airtight. And I kept the sharp
+  negative — the watermark does **not** survive extraction (55% ≈ chance) — because pretending
+  otherwise would contradict the extraction study two files over. Kept the p-value pure-stdlib
+  (`math.lgamma`, log-space) to match the DP accountant's posture.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

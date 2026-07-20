@@ -6,6 +6,23 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-07-19
+
+The governance & distribution-shift wave: five cited methods for the questions a model faces
+once it is *deployed and owned*, not just trained. Three answer the governance triad a
+production detector has to answer to a regulator or a court — **deletion** (SISA exact
+unlearning honours a right-to-be-forgotten request by rebuilding one shard, verified identical
+to a from-scratch model), **ownership** (a backdoor-based watermark proves the model is yours
+with an exact binomial p-value, and honestly measures where it fails — extraction), and, from
+the label side, **provenance of the benign class** (PU learning trains from confirmed attacks +
+unlabelled traffic when nobody verified the benign side). The other two complete the
+distribution-shift taxonomy the drift suite began: covariate-shift importance weighting diagnoses
+the temporal gap as *concept*, not covariate, shift — the tool honestly declared the wrong one
+for the job — and conformal alert selection puts a distribution-free **false-discovery-rate
+guarantee** on the alert batch exactly where the base-rate fallacy says a fixed FPR's precision
+collapses. The recurring arc — buy a guarantee, and say exactly where it stops holding — applied
+to deletion, ownership, labels, shift, and the alert queue.
+
 ### Added
 - Model watermarking (`netsentry watermark`, `netsentry/robustness/watermark.py`): the
   [extraction study](docs/reports/extraction.md) shows a detector can be stolen through its API;
