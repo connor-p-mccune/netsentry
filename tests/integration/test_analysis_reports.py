@@ -209,6 +209,18 @@ def test_experts_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_watermark_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.watermark import run_watermark_report
+
+    prepared.watermark.n_keys = 128
+    prepared.watermark.extraction_queries = 1500
+    out = run_watermark_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "watermark" in text and "ownership" in text
+    assert "innocent" in text and "extraction" in text
+
+
+@pytest.mark.slow
 def test_unlearn_report_is_written(prepared: Settings) -> None:
     from netsentry.training.unlearn import run_unlearn_report
 

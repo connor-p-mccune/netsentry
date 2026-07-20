@@ -70,6 +70,7 @@ from netsentry.robustness.membership import run_membership_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
+from netsentry.robustness.watermark import run_watermark_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.unlearn import run_unlearn_report
@@ -201,6 +202,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "stealing the model by query: fidelity, stolen detection, transfer evasion",
         "extraction.md",
         run_extraction_report,
+    ),
+    (
+        "Model watermarking",
+        "prove ownership by backdooring: exact binomial test, innocent control, extraction "
+        "survival (Adi et al. 2018)",
+        "watermark.md",
+        run_watermark_report,
     ),
     (
         "Label-noise audit",

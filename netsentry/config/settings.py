@@ -1143,6 +1143,27 @@ class PULearnConfig(BaseModel):
     max_weighted_rows: int = 120_000  # cap on the duplicated weighted design matrix
 
 
+class WatermarkConfig(BaseModel):
+    """Model watermarking: prove ownership by backdooring the detector on purpose.
+
+    Watermarking (Adi et al., USENIX Security 2018) embeds a secret set of trigger flows with
+    owner-chosen **random** labels during training so the model memorises them; ownership is
+    later proven by querying a suspect on the keys. Because the labels are fair coins, an
+    innocent model agrees with them only at chance, so the null is exactly `Binomial(K, 0.5)`
+    and the ownership test returns an exact p-value (computed in log-space, no scipy). The
+    study also measures the fidelity tax (watermarked vs clean detection) and survival under
+    model extraction (reusing the extraction attack). ``n_keys`` is the watermark size (more
+    keys = a smaller ownership p-value); ``trigger_scale`` places the keys in the standardised
+    feature-space tails (off the data manifold, memorable, collision-free); ``extraction_queries``
+    is the surrogate-stealing budget for the survival test; ``decision_threshold_log10p`` is the
+    log10 p-value below which ownership is declared proven. Runs on the temporal/binary split."""
+
+    n_keys: int = 256  # secret watermark keys embedded in training
+    trigger_scale: float = 4.0  # std of the off-manifold trigger draws in standardised space
+    extraction_queries: int = 4000  # surrogate-stealing budget for the survival test
+    decision_threshold_log10p: float = -6.0  # ownership proven when log10 p <= this
+
+
 class UnlearnConfig(BaseModel):
     """Machine unlearning via SISA: delete a flow without retraining from scratch.
 
@@ -1495,6 +1516,7 @@ class Settings(BaseSettings):
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
+    watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)

@@ -430,6 +430,19 @@ def certify(
 
 
 @app.command()
+def watermark(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Watermark the detector and prove ownership (backdoor-based, Adi et al. 2018)."""
+    from netsentry.robustness.watermark import run_watermark_report
+
+    settings = _load(config, override)
+    out = run_watermark_report(settings)
+    logger.info("Watermark report ready", extra={"path": str(out)})
+
+
+@app.command()
 def backdoor(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

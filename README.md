@@ -90,6 +90,7 @@ what actually ships.
 | Membership inference | privacy audit (Shokri shadow + Yeom threshold); the overfit reference prices the leak | ✅ Done |
 | Differential privacy | DP-SGD + a from-scratch pure-stdlib Rényi accountant; the (ε, δ) guarantee priced on a utility–leakage frontier | ✅ Done |
 | Model extraction | query-only model stealing → surrogate + black-box transfer evasion; the defense priced (Tramèr) | ✅ Done |
+| Model watermarking | prove ownership by backdooring: exact binomial test, innocent-model control, extraction-survival measured (Adi et al. 2018) | ✅ Done |
 | Machine unlearning | SISA exact deletion: sharding tax, per-request cost, verified forgetting via the membership signal (Bourtoule et al. 2021) | ✅ Done |
 | Cost-sensitive thresholds | decision-theoretic operating point (SOC economics) | ✅ Done |
 | Alert-queue planning | detection vs analyst budget; lift over random triage | ✅ Done |

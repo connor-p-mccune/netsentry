@@ -7,6 +7,31 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Model watermarking (`netsentry watermark`, `netsentry/robustness/watermark.py`): the
+  [extraction study](docs/reports/extraction.md) shows a detector can be stolen through its API;
+  this is the countermeasure that proves it afterwards. Watermarking (Adi et al., USENIX Security
+  2018 — *Turning Your Weakness Into a Strength*) is the [backdoor](docs/reports/backdoor.md)
+  mechanism turned to the owner's benefit: embed a secret set of trigger flows with owner-chosen
+  **random** labels during training so the model memorises them, then prove ownership by querying
+  a suspect on the keys. Because the labels are fair coins, an innocent model agrees with them only
+  at chance — the null is exactly `Binomial(K, 0.5)`, and the ownership test returns an **exact**
+  p-value computed in log-space with `math.lgamma` (no scipy, matching the DP accountant's
+  pure-stdlib posture). Stand-in findings, textbook: the watermarked model matches **256/256** keys
+  (log10 p **−77**, ownership proven beyond any evidentiary threshold) while the **innocent-model
+  control** matches the random labels 54% of the time (log10 p −1.0, ownership *not* declared — the
+  test never falsely accuses, exactly the chance rate the fair-coin construction guarantees
+  regardless of the model's class bias); embedding the watermark is **free** (temporal PR-AUC
+  0.529 → 0.529, off-manifold keys do not disturb the decision boundary). The honest limit is the
+  sharp finding: the watermark **does not survive model extraction** — a surrogate stolen through
+  4,000 queries matches only 55% of the keys (near chance), because it learned the victim's
+  decision boundary but not its arbitrary memorised keys, which live off the manifold the queries
+  never probed. Watermarking robustly proves ownership against a copied or fine-tuned model and is
+  weak against an extraction thief — measured, not oversold, the same honesty the extraction study
+  applied to its own attack. The ownership question of model governance, alongside
+  [DP](docs/reports/dp.md) (leakage) and [SISA unlearning](docs/reports/unlearn.md) (deletion). The
+  exact binomial tail against hand values, the fair-coin null (chance agreement regardless of model
+  bias), and the watermark bookkeeping unit-tested; e2e slow test; in the analysis suite.
+  `watermark.*` config.
 - Machine unlearning via SISA (`netsentry unlearn`, `netsentry/training/unlearn.py`): a deployed
   detector has to be able to **forget** training data — a right-to-be-forgotten request (GDPR
   Art. 17), a mislabelled flow the [label audit](docs/reports/label_audit.md) caught, a
