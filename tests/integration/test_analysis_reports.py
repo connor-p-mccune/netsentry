@@ -209,6 +209,21 @@ def test_experts_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_unlearn_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.unlearn import run_unlearn_report
+
+    prepared.unlearn.shard_counts = [1, 2, 4]
+    prepared.unlearn.headline_shards = 2
+    prepared.unlearn.delete_counts = [1, 10]
+    prepared.unlearn.cost_trials = 10
+    prepared.unlearn.verify_deletions = 10
+    out = run_unlearn_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "sisa" in text and "unlearn" in text
+    assert "sharding tax" in text and "exact" in text
+
+
+@pytest.mark.slow
 def test_covariate_shift_report_is_written(prepared: Settings) -> None:
     from netsentry.monitoring.covariate_shift import run_covariate_shift_report
 

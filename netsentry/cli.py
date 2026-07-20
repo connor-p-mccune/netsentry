@@ -232,6 +232,19 @@ def pulearn(
 
 
 @app.command()
+def unlearn(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Machine unlearning via SISA: delete a flow exactly and cheaply (Bourtoule et al. 2021)."""
+    from netsentry.training.unlearn import run_unlearn_report
+
+    settings = _load(config, override)
+    out = run_unlearn_report(settings)
+    logger.info("Unlearn report ready", extra={"path": str(out)})
+
+
+@app.command()
 def refresh(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

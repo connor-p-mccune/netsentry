@@ -19,6 +19,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Backdoor poisoning | trigger trojan (BadNets) + spectral-signatures defense (Tran et al. 2018) | [open](backdoor.md) |
 | Membership inference | privacy leakage: does the model memorise its training data | [open](membership.md) |
 | Differential privacy | the (ε, δ) guarantee priced: detection & leakage vs ε | [open](dp.md) |
+| Machine unlearning | SISA exact deletion: sharding tax, per-request cost, verified forgetting (Bourtoule et al. 2021) | [open](unlearn.md) |
 | Model extraction | stealing the model by query: fidelity, stolen detection, transfer evasion | [open](extraction.md) |
 | Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |
 | Certified robustness | randomized smoothing: a provable L2 radius per flow (Cohen et al. 2019) | [open](certify.md) |

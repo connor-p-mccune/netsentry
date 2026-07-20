@@ -72,6 +72,7 @@ from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
+from netsentry.training.unlearn import run_unlearn_report
 from netsentry.training.weak_supervision import run_weak_supervision_report
 
 if TYPE_CHECKING:
@@ -187,6 +188,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the (epsilon, delta) guarantee priced: detection & leakage vs epsilon",
         "dp.md",
         run_dp_report,
+    ),
+    (
+        "Machine unlearning",
+        "SISA exact deletion: sharding tax, per-request cost, verified forgetting "
+        "(Bourtoule et al. 2021)",
+        "unlearn.md",
+        run_unlearn_report,
     ),
     (
         "Model extraction",

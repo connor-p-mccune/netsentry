@@ -7,6 +7,31 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- Machine unlearning via SISA (`netsentry unlearn`, `netsentry/training/unlearn.py`): a deployed
+  detector has to be able to **forget** training data — a right-to-be-forgotten request (GDPR
+  Art. 17), a mislabelled flow the [label audit](docs/reports/label_audit.md) caught, a
+  [backdoor](docs/reports/backdoor.md) trigger row that must come out with proof. Retraining from
+  scratch honours the request but pays the full training cost every time. SISA (**S**harded,
+  **I**solated, **S**liced, **A**ggregated training; Bourtoule et al., IEEE S&P 2021) shards the
+  flows by a fixed hash, trains one isolated submodel per shard, and averages their
+  attack-probabilities — so an unlearning request retrains **only the shard(s) that held the
+  deleted flows**, and the result is *provably identical* to a fresh ensemble on the surviving
+  data. **Exact** unlearning, not an approximate scrub that leaves membership-attackable residue.
+  Stand-in findings kept as they fell: the **sharding tax is negative** here — at S = 8 the
+  ensemble slightly *beats* the monolith (PR-AUC 0.529 → 0.539, variance reduction from
+  averaging), so cheap deletion comes free; a single deletion rebuilds **12.5% of the model**
+  (1/S) and the empirical shards-touched tracks the coupon-collector expectation
+  `S(1 - (1 - 1/S)^k)` to two decimals across the batch sweep (1.00/1.00, 3.96/3.90, 7.71/7.72);
+  and exactness is **verified, not asserted** — after unlearning, the ensemble's test predictions
+  are bit-identical to a from-scratch build that never saw the deleted rows (max probability
+  difference 0.0e+00), while the deleted flows' membership-confidence (the
+  [membership](docs/reports/membership.md) study's Yeom score) falls from 0.820 trained toward the
+  0.744 never-seen baseline — forgetting measured on exactly the rows a deletion request names.
+  The complement of [differential privacy](docs/reports/dp.md): DP bounds what a flow can leak
+  *before* deletion, SISA is how you honour the deletion *after*, exactly and cheaply. Shard
+  assignment determinism, the shards-touched accounting, the coupon-collector expectation, and —
+  the load-bearing test — exact unlearning equalling a fresh ensemble are unit-tested on real
+  submodels; e2e slow test; in the analysis suite. `unlearn.*` config.
 - Covariate-shift diagnosis + importance-weighted correction (`netsentry covshift`,
   `netsentry/monitoring/covariate_shift.py`): the project's headline is that the honest
   **temporal** split scores below the optimistic **stratified** one; the

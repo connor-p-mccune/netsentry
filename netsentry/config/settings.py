@@ -1143,6 +1143,27 @@ class PULearnConfig(BaseModel):
     max_weighted_rows: int = 120_000  # cap on the duplicated weighted design matrix
 
 
+class UnlearnConfig(BaseModel):
+    """Machine unlearning via SISA: delete a flow without retraining from scratch.
+
+    SISA (Bourtoule et al., IEEE S&P 2021) shards the training flows, trains one isolated
+    submodel per shard, and averages their attack-probabilities. A deletion request retrains
+    only the shard(s) that held the deleted flows, so unlearning is cheap and — because the
+    other submodels are untouched and per-shard training is deterministic — provably identical
+    to a fresh ensemble on the surviving data (exact unlearning, not an approximate scrub).
+    ``shard_counts`` sweeps S for the sharding-tax curve; ``headline_shards`` is the S the
+    deletion-cost and exactness demos run at; ``delete_counts`` are the batch sizes priced
+    against a full retrain (with the coupon-collector expectation); ``cost_trials`` averages the
+    random-deletion cost; ``verify_deletions`` is the batch size the exactness + membership
+    payoff is demonstrated on. Runs on the temporal/binary split."""
+
+    shard_counts: list[int] = Field(default_factory=lambda: [1, 4, 8, 16])
+    headline_shards: int = 8  # S for the deletion-cost + exactness demos (must be in shard_counts)
+    delete_counts: list[int] = Field(default_factory=lambda: [1, 5, 25, 100])
+    cost_trials: int = 200  # random-deletion trials the shard-touch cost averages over
+    verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
+
+
 class CovariateShiftConfig(BaseModel):
     """Covariate-shift diagnosis + importance-weighted correction on the temporal gap.
 
@@ -1473,6 +1494,7 @@ class Settings(BaseSettings):
     pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
+    unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
