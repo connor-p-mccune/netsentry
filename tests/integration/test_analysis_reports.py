@@ -247,6 +247,19 @@ def test_covariate_shift_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_multiplicity_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.multiplicity import run_multiplicity_report
+
+    prepared.multiplicity.n_models = 3
+    prepared.multiplicity.epsilon_sweep = [0.0, 0.1]
+    prepared.multiplicity.review_bands = [(0.4, 0.6)]
+    out = run_multiplicity_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "ambiguity" in text and "discrepancy" in text
+    assert "rashomon set" in text and "review" in text
+
+
+@pytest.mark.slow
 def test_alert_fdr_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.alert_fdr import run_alert_fdr_report
 

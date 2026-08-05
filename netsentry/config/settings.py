@@ -1185,6 +1185,34 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class MultiplicityConfig(BaseModel):
+    """Predictive multiplicity over the Rashomon set (Marx, Calmon & Ustun, ICML 2020).
+
+    Every metric in this project describes one model, but the training protocol has free
+    choices no metric adjudicates — seed, row/column subsample, leaf count, learning rate.
+    Vary them and you get a family of statistically indistinguishable models; a flow whose
+    verdict flips across that family was decided by an arbitrary choice, not by evidence.
+    ``n_models`` candidates are drawn from a *plausible* neighbourhood of the deployed
+    configuration (a wild grid would be a strawman), each decided at its own
+    validation-calibrated primary-FPR threshold so nobody wins by alerting more.
+    ``epsilon`` is the headline Rashomon tolerance — relative PR-AUC slack, because a fixed
+    absolute slack means different things at different base rates — and ``epsilon_sweep``
+    shows how much freedom a little more slack buys. ``review_bands`` are the
+    vote-fraction abstention bands the study prices as a three-way routing policy.
+    Runs on the honest temporal/binary split at the deployed operating point."""
+
+    n_models: int = 12  # candidates drawn from the plausible modelling neighbourhood
+    epsilon: float = 0.05  # headline Rashomon tolerance (relative PR-AUC slack)
+    epsilon_sweep: list[float] = Field(default_factory=lambda: [0.0, 0.01, 0.02, 0.05, 0.10, 0.20])
+    subsample_choices: list[float] = Field(default_factory=lambda: [0.7, 0.8, 0.9, 1.0])
+    colsample_choices: list[float] = Field(default_factory=lambda: [0.6, 0.8, 1.0])
+    num_leaves_choices: list[int] = Field(default_factory=lambda: [31, 63, 127])
+    learning_rate_choices: list[float] = Field(default_factory=lambda: [0.03, 0.05, 0.08])
+    review_bands: list[tuple[float, float]] = Field(
+        default_factory=lambda: [(0.4, 0.6), (0.2, 0.8), (0.01, 0.99)]
+    )
+
+
 class CovariateShiftConfig(BaseModel):
     """Covariate-shift diagnosis + importance-weighted correction on the temporal gap.
 
@@ -1514,6 +1542,7 @@ class Settings(BaseSettings):
     experts: ExpertsConfig = Field(default_factory=ExpertsConfig)
     pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
+    multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)

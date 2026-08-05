@@ -32,6 +32,7 @@ from netsentry.evaluation.label_shift import run_label_shift_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
 from netsentry.evaluation.leakage import run_leakage_report
 from netsentry.evaluation.lodo import run_lodo_report
+from netsentry.evaluation.multiplicity import run_multiplicity_report
 from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.report import run_evaluation
@@ -362,6 +363,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "are the shipped explanations stable across refits",
         "importance_stability.md",
         run_importance_stability_report,
+    ),
+    (
+        "Predictive multiplicity",
+        "how arbitrary is the verdict across equally-good models (Marx et al. 2020)",
+        "multiplicity.md",
+        run_multiplicity_report,
     ),
     (
         "Partial dependence & ICE",

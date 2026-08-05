@@ -897,6 +897,19 @@ def alertfdr(
     logger.info("Alert-FDR report ready", extra={"path": str(out)})
 
 
+@app.command()
+def multiplicity(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Measure how arbitrary the verdicts are across equally-good models (Marx et al. 2020)."""
+    from netsentry.evaluation.multiplicity import run_multiplicity_report
+
+    settings = _load(config, override)
+    out = run_multiplicity_report(settings)
+    logger.info("Multiplicity report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,
