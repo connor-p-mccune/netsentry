@@ -73,6 +73,7 @@ from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.robustness.watermark import run_watermark_report
+from netsentry.serving.cascade import run_cascade_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.unlearn import run_unlearn_report
@@ -173,6 +174,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the deployed model with a broken exporter: missing / stuck / mis-assembled fields",
         "degradation.md",
         run_degradation_report,
+    ),
+    (
+        "Budgeted cascade",
+        "two-stage inference: the compute handed back and the detection it costs",
+        "cascade.md",
+        run_cascade_report,
     ),
     (
         "Poisoning defense",

@@ -1185,6 +1185,25 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class CascadeConfig(BaseModel):
+    """Budgeted two-stage inference: spend the expensive model only where it changes the answer.
+
+    A cheap logistic stage-1 runs on every flow; only flows above its cut reach the deployed
+    boosted model. The cut is chosen **on validation** as the quantile that forwards
+    ``keep_fractions`` of the *deployed model's own alerts* — an explicit escape budget
+    rather than a round number, and one that needs no labels, so it can be re-derived on
+    live traffic. ``max_escape`` is the budget the headline operating point must respect;
+    ``latency_calls`` is how many single-row predictions each stage is timed over (median,
+    because a GC pause is not a property of the model). Both stages share the one fitted
+    feature pipeline, so no second preprocessing path can skew the comparison. A cascade can
+    only ever *remove* alerts, so the FPR budget survives it and the trade is recall-side."""
+
+    keep_fractions: list[float] = Field(default_factory=lambda: [1.0, 0.99, 0.95, 0.9, 0.75, 0.5])
+    max_escape: float = 0.05  # escape budget the headline operating point must respect
+    stage1_max_iter: int = 2000  # logistic solver iterations for the cheap stage
+    latency_calls: int = 300  # single-row predictions each stage is timed over
+
+
 class DegradationConfig(BaseModel):
     """Serve-time sensor-failure audit: the deployed model with a quietly broken input.
 
@@ -1563,6 +1582,7 @@ class Settings(BaseSettings):
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
+    cascade: CascadeConfig = Field(default_factory=CascadeConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)

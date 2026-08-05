@@ -247,6 +247,18 @@ def test_covariate_shift_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_cascade_report_is_written(prepared: Settings) -> None:
+    from netsentry.serving.cascade import run_cascade_report
+
+    prepared.cascade.keep_fractions = [1.0, 0.9]
+    prepared.cascade.latency_calls = 25
+    out = run_cascade_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "cascade" in text and "escape" in text
+    assert "stage 1" in text and "speedup" in text
+
+
+@pytest.mark.slow
 def test_degradation_report_is_written(prepared: Settings) -> None:
     from netsentry.robustness.degradation import run_degradation_report
 

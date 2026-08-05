@@ -923,6 +923,19 @@ def degrade(
     logger.info("Degradation report ready", extra={"path": str(out)})
 
 
+@app.command()
+def cascade(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price a two-stage cascade: the compute it hands back and the detection it costs."""
+    from netsentry.serving.cascade import run_cascade_report
+
+    settings = _load(config, override)
+    out = run_cascade_report(settings)
+    logger.info("Cascade report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,
