@@ -64,6 +64,7 @@ from netsentry.monitoring.retrain_policy import run_retrain_policy_report
 from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.backdoor import run_backdoor_report
 from netsentry.robustness.certify import run_certify_report
+from netsentry.robustness.degradation import run_degradation_report
 from netsentry.robustness.dp import run_dp_report
 from netsentry.robustness.extraction import run_extraction_report
 from netsentry.robustness.hardening import run_hardening_report
@@ -166,6 +167,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "randomized smoothing: a provable L2 radius per flow (Cohen et al. 2019)",
         "certify.md",
         run_certify_report,
+    ),
+    (
+        "Sensor failure",
+        "the deployed model with a broken exporter: missing / stuck / mis-assembled fields",
+        "degradation.md",
+        run_degradation_report,
     ),
     (
         "Poisoning defense",

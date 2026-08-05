@@ -910,6 +910,19 @@ def multiplicity(
     logger.info("Multiplicity report ready", extra={"path": str(out)})
 
 
+@app.command()
+def degrade(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit the deployed model under exporter faults (missing / stuck / mis-assembled fields)."""
+    from netsentry.robustness.degradation import run_degradation_report
+
+    settings = _load(config, override)
+    out = run_degradation_report(settings)
+    logger.info("Degradation report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,

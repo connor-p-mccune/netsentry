@@ -247,6 +247,17 @@ def test_covariate_shift_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_degradation_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.degradation import run_degradation_report
+
+    prepared.degradation.modes = ["missing", "shuffled"]
+    out = run_degradation_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "sensor failure" in text and "shuffled" in text
+    assert "psi" in text and "frozen" in text
+
+
+@pytest.mark.slow
 def test_multiplicity_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.multiplicity import run_multiplicity_report
 

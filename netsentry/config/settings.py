@@ -1185,6 +1185,25 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class DegradationConfig(BaseModel):
+    """Serve-time sensor-failure audit: the deployed model with a quietly broken input.
+
+    Not an adversary — a Tuesday. Exporters drop counters (``missing``, filled by the
+    train-fitted median imputer), wedge on a constant (``stuck``, modelled as zero, the
+    pessimistic end), and mis-assemble records (``shuffled``: real values on the wrong
+    flows, so every marginal is intact and only the joint is destroyed). Faults are applied
+    per behavioural feature family — the realistic granularity, since one exporter module
+    owns the timing statistics and another owns the byte counters — and scored through the
+    **unchanged** pipeline, model, and frozen primary-FPR threshold, because that is what a
+    real incident looks like. Each fault's worst-feature PSI is checked against the deployed
+    drift monitor's thresholds, so the report can separate visible outages from silent ones.
+    ``silent_tpr_drop`` is the relative detection loss above which a monitor-quiet fault is
+    called a silent failure. Runs on the honest temporal/binary split."""
+
+    modes: list[str] = Field(default_factory=lambda: ["missing", "stuck", "shuffled"])
+    silent_tpr_drop: float = 0.25  # relative detection loss that makes a quiet fault serious
+
+
 class MultiplicityConfig(BaseModel):
     """Predictive multiplicity over the Rashomon set (Marx, Calmon & Ustun, ICML 2020).
 
@@ -1543,6 +1562,7 @@ class Settings(BaseSettings):
     pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
+    degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)
