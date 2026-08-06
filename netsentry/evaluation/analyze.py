@@ -53,6 +53,7 @@ from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
+from netsentry.intel.sequential import run_sequential_report
 from netsentry.intel.sigma import run_sigma_export
 from netsentry.log import get_logger
 from netsentry.monitoring.covariate_shift import run_covariate_shift_report
@@ -180,6 +181,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "two-stage inference: the compute handed back and the detection it costs",
         "cascade.md",
         run_cascade_report,
+    ),
+    (
+        "Sequential host decisions",
+        "how many flows before a host can be called compromised (Wald's SPRT, 1945)",
+        "sequential.md",
+        run_sequential_report,
     ),
     (
         "Poisoning defense",

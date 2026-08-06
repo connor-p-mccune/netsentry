@@ -247,6 +247,19 @@ def test_covariate_shift_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_sequential_report_is_written(prepared: Settings) -> None:
+    from netsentry.intel.sequential import run_sequential_report
+
+    prepared.sequential.n_hosts = 40
+    prepared.sequential.max_flows = 200
+    prepared.sequential.compromise_mixes = [0.05, 0.25]
+    out = run_sequential_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "sprt" in text and "undecided" in text
+    assert "host" in text and "boundary" in text
+
+
+@pytest.mark.slow
 def test_cascade_report_is_written(prepared: Settings) -> None:
     from netsentry.serving.cascade import run_cascade_report
 

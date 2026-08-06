@@ -936,6 +936,19 @@ def cascade(
     logger.info("Cascade report ready", extra={"path": str(out)})
 
 
+@app.command()
+def sprt(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Decide host compromise sequentially with both error rates controlled (Wald 1945)."""
+    from netsentry.intel.sequential import run_sequential_report
+
+    settings = _load(config, override)
+    out = run_sequential_report(settings)
+    logger.info("Sequential report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,

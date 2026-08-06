@@ -1185,6 +1185,33 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class SequentialConfig(BaseModel):
+    """Sequential host-compromise decisions by Wald's SPRT (1945).
+
+    A per-flow FPR is not a host-level guarantee: at rate `f` over `n` flows a clean host
+    trips at least one alert with probability ``1 - (1-f)^n``, which approaches certainty for
+    chatty hosts. The SPRT accumulates log-likelihood evidence flow by flow and stops at the
+    first boundary crossing, controlling **both** error rates and — among tests with those
+    rates — minimising the expected number of flows (Wald & Wolfowitz 1948). Both likelihoods
+    come from the deployed operating point measured on *validation* (an alerting flow is
+    TPR/FPR times more likely on a compromised host), so nothing new is fitted.
+    ``alpha`` is the tolerated false escalation of a clean host, ``beta`` the tolerated miss;
+    ``max_flows`` bounds the observation window (a stream that never crosses is reported
+    *undecided*, which is a real outcome, not a failure). ``compromise_mix`` is the headline
+    attack share of a compromised host's traffic and ``compromise_mixes`` the sweep. Host
+    streams are composed from real test-set scores because the identifier columns that would
+    carry host identity are dropped before modelling — the project's leakage rule."""
+
+    alpha: float = 0.01  # tolerated probability of escalating a clean host
+    beta: float = 0.10  # tolerated probability of missing a compromised one
+    max_flows: int = 1000  # observation window per host before reporting undecided
+    n_hosts: int = 400  # simulated streams per arm
+    compromise_mix: float = 0.10  # headline attack share of a compromised host's flows
+    compromise_mixes: list[float] = Field(
+        default_factory=lambda: [0.01, 0.02, 0.05, 0.10, 0.25, 0.50]
+    )
+
+
 class CascadeConfig(BaseModel):
     """Budgeted two-stage inference: spend the expensive model only where it changes the answer.
 
@@ -1583,6 +1610,7 @@ class Settings(BaseSettings):
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
+    sequential: SequentialConfig = Field(default_factory=SequentialConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)
