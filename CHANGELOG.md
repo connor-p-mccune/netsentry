@@ -108,7 +108,7 @@ by construction.
 ### Changed
 - `netsentry analyze` regenerates the eight new reports alongside the existing suite; the report
   index gains nine rows (eight reports plus the ATLAS Navigator layer).
-- Test suite grows under ruff / black / mypy, all green.
+- Test suite grows to 806 passing tests (+130), all green under ruff / black / mypy.
 
 ## [0.12.0] — 2026-07-19
 

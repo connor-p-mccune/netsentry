@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.12.0`.** The build plan in
+**Released `v0.13.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and eleven post-release waves build on top — the
+tested, and committed, and twelve post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -68,7 +68,7 @@ both error rates controlled; federated averaging across sites that cannot pool t
 peeking-safe confidence sequences for the shadow-promotion decision; label-free attack-family
 discovery with its null result diagnosed; and a MITRE ATLAS threat model of the detector itself,
 verified against the repository so a deleted study downgrades its own coverage claim).
-`make check` is green (lint + type-check + **786 passing tests**, property-based invariants and a
+`make check` is green (lint + type-check + **806 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
