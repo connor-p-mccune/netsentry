@@ -1631,6 +1631,100 @@ smaller dev-run numbers noted in earlier phases:
   otherwise would contradict the extraction study two files over. Kept the p-value pure-stdlib
   (`math.lgamma`, log-space) to match the DP accountant's posture.
 
+## Worst-case, distributed & governed wave (v0.13.0)
+
+- **Multiplicity: the aggregate number was boring and the conditional number was the finding.**
+  2.17% ambiguity across the Rashomon set reads as "basically stable" and I nearly wrote it up that
+  way. Splitting it by what the model *did* with each flow changed the story completely: 41.25% of
+  the alerts it raises are contested against 1.25% of the flows it clears. The arbitrariness is
+  concentrated on exactly the decisions that cost analyst time, which is the opposite of reassuring.
+  Two details keep it honest — every competitor gets its own validation-calibrated threshold at the
+  same FPR budget (otherwise "disagreement" is just calibration drift), and the sampled Rashomon set
+  is a **lower** bound on the true one, so the number can only be worse.
+- **Degradation: my first draft credited the drift monitor for alarms it was already raising.** The
+  faulted PSI was measured against the *training* reference, so a family that is naturally drifted
+  on the temporal test split (volume/counts, 0.11) looked "detected" no matter what fault I applied.
+  Fixing it meant measuring the healthy test set's own PSI first and scoring the fault by the
+  *delta*. That turned a mushy result into an exact one: shuffled goes 0.11 → 0.11, and the claim
+  becomes provable rather than empirical — PSI is a marginal statistic, permutation preserves every
+  marginal exactly, so **no threshold choice can ever catch a joint-only fault**. Naming a
+  structural blind spot is worth more than another number.
+- **Degradation, second finding I did not go looking for:** deleting `volume/counts` at serve time
+  raises honest PR-AUC to 0.639, and the ablation study's *retrained* number is 0.641. Two
+  completely different computations (break the input on a trained model vs retrain without the
+  family) landing within noise is the strongest form the temporal-overfitting claim can take here,
+  and it was free — it only showed up because the study reported every cell rather than the ones
+  that fit the narrative.
+- **Cascade: the study failed its own premise and I kept the failure as the headline of that
+  section.** A cascade assumes stage 2 is the better model. On the honest split the cheap logistic
+  filter *out-ranks* the deployed LightGBM (0.569 vs 0.529) — which is the leaderboard's documented
+  finding arriving from a third direction, and it also explains the otherwise-suspicious cascade
+  rows that post a higher PR-AUC than the full model (stage 1's ranking showing through on the
+  flows it filtered). Rather than quietly switching splits, I added the stratified split as a
+  second row so the regime where the premise *does* hold is visible next to the one where it does
+  not, and the engineering result (5.6x throughput, 96% of detection) stays separable from the
+  model-choice result.
+- **SPRT: I mis-specified H1 and the symptom was a suspiciously fast, suspiciously wrong test.**
+  First version modelled a compromised host as alerting at the detector's TPR. That describes a host
+  whose *every* flow is hostile; a 10%-compromised host alerts at `mix*TPR + (1-mix)*FPR`. The bad
+  version made each quiet flow carry ~0.09 nats toward innocence, so 25 consecutive quiet flows
+  acquitted a real intrusion and detection sat at 4.8%. With the mixture, a quiet flow carries
+  0.0285 nats, ~80 are needed to acquit, two alerts convict, and detection is 38.8%. The lesson is
+  that in a likelihood-ratio test the *hypotheses* are the modelling, and getting them wrong looks
+  like a working test rather than an error.
+- **SPRT: the error bound broke, and the diagnosis was this project's own headline.** Realized miss
+  rate 61.3% against a 0.101 bound. Wald's bound is conditional on the assumed likelihood being
+  true, and mine came from validation (28.2% TPR) while the streams came from the later days (9.1%)
+  — the temporal gap, surfacing in a *guarantee* instead of a metric. A third arm re-derived the
+  same test from the realized rate and dropped the miss rate to 12.7% with no change to the
+  algorithm, which is the cleanest possible demonstration that the bound was never broken, only
+  misinformed. Same measure → diagnose → re-measure shape as the hardening and sanitize studies.
+- **Federated: a site with zero attacks posted the best local score, which had to be explained, not
+  reported.** Monday is CIC-IDS2017's clean baseline day and its local model scored 0.583 PR-AUC —
+  above pooled. I checked whether it was degenerate (it is not: full score range, 17k distinct
+  values) and the explanation is that logistic loss on all-benign labels is a **one-class fit**:
+  every step pushes predictions down and the flows that resist are the ones least like that site's
+  benign traffic. It accidentally rediscovers this project's own benign-only anomaly detector. The
+  practical consequence is genuinely useful for a federation — a participant who has never
+  knowingly been breached still contributes something real — but the standalone number is an
+  anomaly score and is labelled as one.
+- **Federated DP: both arms are bad deals and I said so instead of picking the flattering one.**
+  eps = 50 is a vacuous guarantee; eps = 8 costs half the detection. The reason is structural —
+  DP-FedAvg's noise is calibrated to one *site's* influence, and with three sites each one moves
+  the average enormously. Site-level DP gets cheap with hundreds of participants, not three, which
+  is the same 1/n scaling the per-example DP study enjoys. Stating the scaling law is more useful
+  than reporting whichever row looks least bad.
+- **Anytime-valid A/B: my first confidence sequence was invalid and the null simulation caught
+  it.** I plugged the *running sample variance* into Robbins' boundary, which is intuitive and
+  wrong — the sample variance of one observation is zero, so the early intervals are infinitely
+  narrow and the measured false-positive rate came out at 23.5% for a bound that promises 5%. The
+  scale has to be fixed in advance. Second mistake, caught on review: I then estimated it from a
+  warm-up prefix of the same stream, which is circular *and* unrepresentative (the prefix is one
+  capture day). It is now estimated on validation. Worth noting that the thing that caught both was
+  the null-simulation arm, which I had built to demonstrate a point about *other* people's tests.
+- **Anytime-valid A/B: the interval concludes at 1,121 flows and then re-includes zero by the
+  end.** Tempting to hide; reported instead, because the guarantee attaches to the *stopped
+  decision* and the re-widening is information — the advantage was real on the traffic seen up to
+  that point and did not persist, which is a drift signal about the models rather than a defect in
+  the test. Pairs naturally with the exchangeability martingale.
+- **Discovery: a null result, and the diagnostic that made it worth publishing.** Silhouette picks
+  k=2, ARI −0.014, zero of ten families surfaced. On its own that is a failed experiment. The
+  labelled oracle arm at k=10 scores ARI 0.279 and purity 64.3%, which separates "the geometry has
+  nothing to find" from "the selector chose badly" — it is the selector, and the fix is a method for
+  unbalanced clusters rather than a new feature space. I also reported the 684x triage ratio and
+  disqualified it two sentences later, because at 39% purity it is the kind of number that gets
+  quoted out of a report and should not survive its own paragraph.
+- **ATLAS: the interesting engineering was making the mapping unable to rot.** Every coverage claim
+  names a module, a report, and a command, and the exporter checks those paths exist — a deleted
+  study downgrades its own technique on the next run instead of quietly continuing to claim
+  coverage, which is the failure mode of every hand-maintained compliance document. I also split
+  "control implemented" from "attack + defense, re-measured" after noticing my first draft graded
+  provenance attestation the same as the evasion study, and excluded out-of-scope techniques from
+  the denominator — a system with no language model should not earn credit for prompt-injection
+  immunity. The residual-risk table is the part that is actually worth reading, including the one
+  deliberate trade: the API discloses model ontology because explanations are a product
+  requirement, and the extraction study prices that rather than hiding it.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

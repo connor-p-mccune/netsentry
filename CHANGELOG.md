@@ -6,6 +6,110 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-08-06
+
+The **worst-case, distributed & governed wave**: eight studies for the questions that arrive
+after a detector works — when it is *one of many possible models*, when its inputs break, when
+its compute costs money, when the decision is about a host rather than a flow, when the data
+cannot be pooled, when the promotion decision is made by someone checking a dashboard, when
+nobody has labelled the pile, and when the detector is itself the target. Two threads run
+through all of them. The first is **worst case over best case**: predictive multiplicity asks
+not how good the model is but how arbitrary its verdicts are across models that are just as
+good; the sensor-failure audit asks not what a retrained model could do without a feature but
+what the deployed one does when that feature breaks at 3am. The second is **naming where a
+guarantee stops**: the SPRT's error bound fails on the honest split and the report diagnoses it
+as this project's own temporal gap rather than a flaw in Wald; the anytime-valid interval
+re-includes zero after concluding, and that is reported as a drift signal rather than smoothed
+away; the taxonomy-discovery study returns a null result and then runs the diagnostic that says
+*why*. Two findings are uncomfortable and kept: 41% of the alerts the model raises are contested
+by an equally-good model, and a permuted-field exporter fault is invisible to the drift monitor
+by construction.
+
+### Added
+- **Predictive multiplicity** (`netsentry multiplicity`, `netsentry/evaluation/multiplicity.py`):
+  every other number in this repo describes *one* model, but the training protocol has free
+  choices no metric adjudicates. Trains a 12-model Rashomon set by varying only those choices
+  (seed, row/column subsample, leaf count, learning rate), each decided at its own
+  validation-calibrated 0.1%-FPR threshold so nobody wins by alerting more, and reports Marx,
+  Calmon & Ustun's two measures (ICML 2020): **ambiguity** 2.17% of flows some near-optimal model
+  flips, **discrepancy** 0.78% for the worst single competitor. The finding is where it lands —
+  **41.25% of the alerts raised are contested against 1.25% of the flows cleared**, a ~33x
+  concentration on exactly the decisions an analyst acts on. The per-flow vote fraction turns
+  that into an abstention lever: routing every contested flow to review costs 2.17% of the
+  stream and leaves a queue with nothing arbitrary in it.
+- **Sensor-failure degradation audit** (`netsentry degrade`,
+  `netsentry/robustness/degradation.py`): every other robustness study assumes an adversary;
+  this assumes a Tuesday. Breaks each behavioural feature family three ways (missing / stuck /
+  mis-assembled) and scores the **unchanged** pipeline, model, and frozen threshold. Flow rates
+  are a single point of failure (detection 9.1% to 0.0%); a frozen threshold makes faults noisy
+  as well as blind (16,188 alerts/day against a healthy 441); and the mis-assembly fault is
+  **invisible to the drift monitor by construction**, because PSI is a marginal statistic and a
+  permutation preserves every marginal exactly. Deleting `volume/counts` at serve time *raises*
+  honest PR-AUC to 0.639, within noise of the ablation study's retrained 0.641 — two independent
+  routes to the same temporal-overfitting conclusion.
+- **Budgeted cascade inference** (`netsentry cascade`, `netsentry/serving/cascade.py`): a cheap
+  logistic stage-1 scores every flow and only what it cannot rule out reaches the deployed model,
+  with the cut chosen on validation as the quantile forwarding a target share of the *deployed
+  model's own alerts* — an explicit escape budget, label-free, re-derivable on live traffic.
+  Stage 1 is 9x cheaper per flow; at 95% alert retention 6.35% of traffic reaches stage 2 for
+  5.6x throughput and 96% of the detection, with the FPR budget untouched because filtering can
+  only remove alerts. The study then **fails its own premise check** on the honest split (the
+  cheap filter out-ranks the deployed model, 0.569 vs 0.529 — the leaderboard's finding a second
+  time) and runs the stratified split alongside to supply the regime where the premise holds.
+- **Sequential host decisions** (`netsentry sprt`, `netsentry/intel/sequential.py`): every
+  threshold here decides one flow; a SOC responds to a host, and at a 0.059% per-flow FPR a
+  benign host with 1,000 flows trips an alert 44% of the time. Wald's SPRT (1945) accumulates
+  log-likelihood evidence and stops at the first boundary crossing, controlling both error rates
+  and using the fewest observations of any test that does (Wald & Wolfowitz 1948). Both
+  hypotheses come from the deployed operating point; specifying H1 as the **mixture**
+  `mix*TPR + (1-mix)*FPR` rather than the bare TPR is the load-bearing detail and is documented
+  as such. Two alerts convict, ~80 quiet flows acquit, 0.0% of clean hosts are escalated against
+  the first-alert policy's 45.2%. The miss-rate bound fails (61.3%) and is diagnosed rather than
+  hidden — the likelihood was calibrated on validation (28.2% TPR) and the streams come from the
+  later days (9.1%) — with a recalibrated arm dropping it to 12.7%.
+- **Federated training** (`netsentry federated`, `netsentry/training/federated.py`): every model
+  here trains on one pooled dataset, which assumes the least true thing about security telemetry.
+  FedAvg (McMahan et al. 2017) over the capture days as sites reaches 0.579 PR-AUC against a
+  0.569 pooled ceiling and a 0.495 train-alone floor, with raw flows never leaving a site — the
+  federation tax is slightly negative (the weighted average is a mild variance-reducing
+  ensemble). Monday holds zero attacks yet posts the best local score, which was investigated
+  rather than reported: logistic loss on all-benign labels is a **one-class fit** that
+  rediscovers this project's own benign-only anomaly detector by accident. The DP-FedAvg arms are
+  called what they are — with three sites, site-level noise costs half the detection at eps 8 and
+  the eps 50 row is a vacuous guarantee.
+- **Anytime-valid A/B testing** (`netsentry abtest`, `netsentry/evaluation/sequential_ab.py`):
+  the shadow challenger already runs silently, but nothing said when to stop watching. Measures
+  the damage of the habit everyone has — 400 null streams checked at 20 points fire on **23.2%**
+  against the 5% advertised — and fixes it with Robbins' normal-mixture confidence sequence
+  (1970; Howard et al. 2021), valid at every sample size simultaneously, which survives identical
+  peeking at 3.2% and concludes after 1,121 flows where a fixed-n design would have committed to
+  23,050. The sub-Gaussian scale is fixed in advance from validation, never re-estimated as the
+  stream grows, because a running sample variance destroys the coverage the construction exists
+  to provide.
+- **Attack-family discovery** (`netsentry discovery`, `netsentry/evaluation/discovery.py`):
+  clusters the flagged pile into candidate campaigns with **k chosen by silhouette on the
+  unlabelled features**, labels opened only afterwards to grade a decision already made. The
+  result is negative and reported as such (ARI -0.014, 0 of 10 families surfaced), then a
+  labelled diagnostic arm at k=10 scores ARI 0.279 and purity 64.3% — so the geometry carries the
+  taxonomy and the *selector* is what failed, which points at a specific fix. The 684x triage
+  ratio is reported and disqualified in the same paragraph, because it means nothing at 39%
+  purity.
+- **MITRE ATLAS coverage** (`netsentry atlas`, `netsentry/intel/atlas.py`): the capstone that
+  turns a dozen scattered attack/defense studies into one threat model of the detector itself,
+  in the vocabulary a security reviewer reads. 22 techniques mapped — 6 defended, 5 mitigated, 2
+  attacked, 3 measured-but-unmitigated, 4 not covered, 2 out of scope. Two mechanisms keep it
+  from rotting: every claim names the module, report, and command backing it and is **verified
+  against the repository at export time**, so a deleted study downgrades its own technique; and
+  the technique IDs carry the ATLAS version they were pinned from. Grading is deliberately
+  conservative — "control implemented" is a lower grade than "attack + defense, re-measured",
+  and out-of-scope techniques are excluded from the denominator rather than counted as wins.
+  Ships an ATLAS Navigator layer alongside the report.
+
+### Changed
+- `netsentry analyze` regenerates the eight new reports alongside the existing suite; the report
+  index gains nine rows (eight reports plus the ATLAS Navigator layer).
+- Test suite grows under ruff / black / mypy, all green.
+
 ## [0.12.0] — 2026-07-19
 
 The governance & distribution-shift wave: five cited methods for the questions a model faces

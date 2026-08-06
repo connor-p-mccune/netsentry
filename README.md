@@ -59,8 +59,16 @@ false-discovery-rate guarantee on the alert batch where a fixed FPR's precision 
 covariate-shift importance weighting that diagnoses the temporal gap as *concept*, not covariate,
 shift; SISA machine unlearning that honours a deletion request by rebuilding one shard, verified
 identical to a from-scratch model; and a backdoor-based model watermark that proves ownership with
-an exact binomial p-value and honestly measures where it fails — extraction).
-`make check` is green (lint + type-check + **676 passing tests**, property-based invariants and a
+an exact binomial p-value and honestly measures where it fails — extraction), and the
+**worst-case, distributed & governed wave** (predictive multiplicity — 41% of the alerts raised
+are contested by an equally-good model; a sensor-failure audit of the deployed model under
+exporter faults, including the mis-assembly fault PSI cannot see by construction; a budgeted
+cascade returning 5.6x throughput for 96% of detection; Wald's SPRT deciding host compromise with
+both error rates controlled; federated averaging across sites that cannot pool traffic;
+peeking-safe confidence sequences for the shadow-promotion decision; label-free attack-family
+discovery with its null result diagnosed; and a MITRE ATLAS threat model of the detector itself,
+verified against the repository so a deleted study downgrades its own coverage claim).
+`make check` is green (lint + type-check + **786 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -167,6 +175,14 @@ what actually ships.
 | Beaconing / C2 | cross-flow periodicity detection the identity-blind model can't see | ✅ Done |
 | Host-graph analytics | scan fan-out + lateral-movement chains: the cross-flow topology the model can't see | ✅ Done |
 | Kubernetes deploy | production Helm chart + Kustomize manifests, hardened + autoscaled | ✅ Done |
+| Predictive multiplicity | how arbitrary is the verdict across equally-good models — 41% of alerts are contested (Marx 2020) | ✅ Done |
+| Sensor-failure audit | the deployed model with a broken exporter; the fault PSI cannot see | ✅ Done |
+| Budgeted cascade | two-stage inference: 5.6x throughput for 96% of detection, escape budget priced | ✅ Done |
+| Sequential host decisions | Wald's SPRT: call a host compromised with **both** error rates controlled (1945) | ✅ Done |
+| Federated training | FedAvg across sites that cannot pool traffic, priced against pooled and alone (McMahan 2017) | ✅ Done |
+| Anytime-valid A/B | peeking-safe confidence sequences: when the shadow model can be promoted (Robbins 1970) | ✅ Done |
+| Attack-family discovery | clustering the flagged pile with k chosen **without labels**; the null result diagnosed | ✅ Done |
+| MITRE ATLAS coverage | the detector as a target: the whole adversarial suite as one governed threat model | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -317,6 +333,14 @@ netsentry adaptiveconformal         # conformal coverage restored online under d
 netsentry driftscan                 # KS+FDR + online Page-Hinkley/DDM drift detection
 netsentry navigator                 # export ATT&CK Navigator layer (colored by detection)
 netsentry provenance && netsentry verify   # SBOM + model manifest, then integrity gate
+netsentry multiplicity              # how arbitrary is the verdict across equally-good models?
+netsentry degrade                   # sensor failure: the deployed model with a broken exporter
+netsentry cascade                   # budgeted two-stage inference: compute handed back, detection priced
+netsentry sprt                      # decide host compromise sequentially, both error rates controlled
+netsentry federated                 # FedAvg across sites that cannot pool their traffic
+netsentry abtest                    # when can the shadow model be promoted? (peeking-safe)
+netsentry discovery                 # cluster the flagged pile into campaigns, k chosen without labels
+netsentry atlas                     # the detector as a target: MITRE ATLAS coverage + Navigator layer
 netsentry seeds                     # training-noise floor: reproducibility + stability
 netsentry gate                      # release bars incl. the too-good ceiling (exit code)
 netsentry promote                   # champion/challenger promotion decision (exit code)

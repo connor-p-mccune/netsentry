@@ -62,4 +62,13 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Promotion decision | champion vs challenger, paired-bootstrap deltas (via `netsentry promote`) | [open](promotion.md) |
 | MITRE ATT&CK coverage | attack class -> tactic/technique | [open](mitre.md) |
 | ATT&CK Navigator layer | detection coverage as a loadable Navigator layer | [open](attack_navigator_layer.json) |
+| Predictive multiplicity | how arbitrary the verdict is across equally-good models (Marx et al. 2020) | [open](multiplicity.md) |
+| Sensor failure | the deployed model with a broken exporter: missing / stuck / mis-assembled fields | [open](degradation.md) |
+| Budgeted cascade | two-stage inference: the compute handed back and the detection it costs | [open](cascade.md) |
+| Sequential host decisions | how many flows before a host can be called compromised (Wald's SPRT, 1945) | [open](sequential.md) |
+| Federated training | detection when traffic cannot be pooled: FedAvg vs pooled vs alone (McMahan 2017) | [open](federated.md) |
+| Anytime-valid A/B | when the shadow model can be promoted: peeking-safe confidence sequences (Robbins 1970) | [open](sequential_ab.md) |
+| Attack-family discovery | clustering the flagged pile into campaigns, with k chosen without labels | [open](discovery.md) |
+| MITRE ATLAS coverage | the detector as a target: this repo's own ML attack surface, with the gaps named | [open](atlas.md) |
+| ATLAS Navigator layer | the ML attack surface as a loadable Navigator layer | [open](atlas_navigator_layer.json) |
 | Provenance & supply chain | CycloneDX SBOM + model-integrity manifest | [open](provenance.md) |
