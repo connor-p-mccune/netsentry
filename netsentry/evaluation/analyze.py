@@ -51,6 +51,7 @@ from netsentry.explain.influence import run_influence_report
 from netsentry.explain.interactions import run_interactions_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.governance.provenance import run_provenance_report
+from netsentry.intel.atlas import run_atlas_report
 from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
 from netsentry.intel.sequential import run_sequential_report
@@ -459,6 +460,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         _run_gate_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
+    (
+        "MITRE ATLAS coverage",
+        "the detector as a target: this repo's own ML attack surface, with the gaps named",
+        "atlas.md",
+        run_atlas_report,
+    ),
     (
         "ATT&CK Navigator layer",
         "detection coverage as a loadable Navigator layer",

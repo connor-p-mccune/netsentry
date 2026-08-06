@@ -962,6 +962,19 @@ def federated(
     logger.info("Federated report ready", extra={"path": str(out)})
 
 
+@app.command()
+def atlas(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Govern NetSentry's own ML attack surface against MITRE ATLAS (+ a Navigator layer)."""
+    from netsentry.intel.atlas import run_atlas_report
+
+    settings = _load(config, override)
+    out = run_atlas_report(settings)
+    logger.info("ATLAS coverage report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,

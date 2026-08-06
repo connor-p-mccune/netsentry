@@ -1,0 +1,729 @@
+{
+  "name": "NetSentry \u2014 ML Attack Surface (ATLAS)",
+  "versions": {
+    "atlas": "4.5.2 (2024)",
+    "navigator": "4.9.1",
+    "layer": "4.5"
+  },
+  "domain": "atlas",
+  "description": "NetSentry's own ML attack surface mapped to MITRE ATLAS. Scores grade what the repository implements: 100 = attack and defense with a re-measurement, 75 = attack implemented, 50 = measured only, 15 = out of scope, 0 = not covered. Every claim names the module, report, and command backing it, and is verified against the repository at export time.",
+  "techniques": [
+    {
+      "techniqueID": "AML.T0002",
+      "tactic": "resource-development",
+      "score": 85,
+      "color": "",
+      "comment": "[control implemented (attack not simulated)] The published model bundle is an artifact an adversary can acquire. Provenance attestation signs it and the verify gate refuses a bundle whose bytes changed, so an acquired artifact is at least detectably not the deployed one.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "control implemented (attack not simulated)"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/governance/provenance.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/provenance.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry provenance && netsentry verify"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0005",
+      "tactic": "resource-development",
+      "score": 70,
+      "color": "",
+      "comment": "[attack implemented] A surrogate trained on query answers, measured for fidelity and then used to mount black-box transfer evasion against the real model.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack implemented"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/extraction.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/extraction.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry extraction"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0010",
+      "tactic": "initial-access",
+      "score": 85,
+      "color": "",
+      "comment": "[control implemented (attack not simulated)] A CycloneDX SBOM plus a hashed model manifest, enforced by an integrity gate before serving; the canary then re-checks behaviour at load and at hot reload.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "control implemented (attack not simulated)"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/governance/provenance.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/provenance.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry verify"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0040",
+      "tactic": "ml-model-access",
+      "score": 85,
+      "color": "",
+      "comment": "[control implemented (attack not simulated)] The inference API is the adversary's entry point for every query-based attack below. API-key auth and a per-client rate limit bound the query budget that extraction and query-search evasion both depend on.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "control implemented (attack not simulated)"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/serving/app.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/extraction.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry serve"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0044",
+      "tactic": "ml-model-access",
+      "score": 50,
+      "color": "",
+      "comment": "[measured] The white-box case is treated as the worst case throughout: the evasion study's mimicry attack and the certification study both assume full knowledge of the model, so the reported robustness is a floor, not a best case.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/certify.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/certify.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry certify"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0043",
+      "tactic": "ml-attack-staging",
+      "score": 100,
+      "color": "",
+      "comment": "[attack + defense, re-measured] Mimicry and adaptive query-search craft evading flows; adversarial training hardens against them and the study re-measures rather than assuming the fix worked. Randomized smoothing adds a provable per-flow radius.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack + defense, re-measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/evasion.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/robustness.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry robustness && netsentry harden && netsentry certify"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0042",
+      "tactic": "ml-attack-staging",
+      "score": 70,
+      "color": "",
+      "comment": "[attack implemented] The query-search evasion attack verifies each candidate against the live decision before committing, which is exactly this technique and the reason a query budget is the defender's most effective lever.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack implemented"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/evasion.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/robustness.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry robustness"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0015",
+      "tactic": "defense-evasion",
+      "score": 100,
+      "color": "",
+      "comment": "[attack + defense, re-measured] The headline evasion result: detection under budgeted feature perturbation, before and after adversarial training, with the residual gap stated.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack + defense, re-measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/hardening.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/hardening.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry harden"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0020",
+      "tactic": "persistence",
+      "score": 100,
+      "color": "",
+      "comment": "[attack + defense, re-measured] Label-flip and benign-pool contamination curves quantify the damage; audit-and-drop sanitization is applied and the recovery re-measured.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack + defense, re-measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/poisoning.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/poisoning_defense.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry poisoning && netsentry sanitize"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0018",
+      "tactic": "persistence",
+      "score": 100,
+      "color": "",
+      "comment": "[attack + defense, re-measured] A BadNets trigger walks attacks through a model whose clean metrics stay green; spectral signatures detect the poisoned rows without knowing the trigger. The same mechanism is used constructively to watermark the model for ownership proof.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack + defense, re-measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/backdoor.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/backdoor.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry backdoor && netsentry watermark"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0024",
+      "tactic": "exfiltration",
+      "score": 85,
+      "color": "",
+      "comment": "[control implemented (attack not simulated)] The parent technique for the two sub-techniques below; the rate limit and API-key controls on the prediction endpoints are the shared mitigation, since every variant is paid for in queries.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "control implemented (attack not simulated)"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/serving/app.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/extraction.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry serve"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0024.000",
+      "tactic": "exfiltration",
+      "score": 100,
+      "color": "",
+      "comment": "[attack + defense, re-measured] Shokri shadow-model and Yeom threshold attacks measure the leak, with an overfit reference model to price it; DP-SGD with a from-scratch Renyi accountant buys a formal bound and the utility-leakage frontier prices that.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack + defense, re-measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/membership.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/dp.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry privacy && netsentry dp"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0024.002",
+      "tactic": "exfiltration",
+      "score": 100,
+      "color": "",
+      "comment": "[attack + defense, re-measured] Query-only model stealing: surrogate fidelity and stolen detection measured against the query budget, and the budget named as the defense that works.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "attack + defense, re-measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/robustness/extraction.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/extraction.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry extraction"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0031",
+      "tactic": "impact",
+      "score": 85,
+      "color": "",
+      "comment": "[control implemented (attack not simulated)] Slow degradation is treated as a first-class failure: drift monitoring (PSI, KS+FDR, Page-Hinkley/DDM, a conformal test martingale with an anytime-valid false-alarm bound), retrain-trigger policy, and threshold refresh.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "control implemented (attack not simulated)"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/monitoring/exchangeability.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/exchangeability.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry driftscan && netsentry retrainpolicy"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0046",
+      "tactic": "impact",
+      "score": 50,
+      "color": "",
+      "comment": "[measured] An adversary who floods the queue with near-threshold traffic attacks the analysts, not the model. The SOC queue simulation and alert-queue capacity study quantify what that does to the attack SLA; no mitigation is implemented.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/evaluation/socsim.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/socsim.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry socsim"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0029",
+      "tactic": "impact",
+      "score": 50,
+      "color": "",
+      "comment": "[measured] Serving cost is measured (benchmark percentiles, the SHAP share of latency, the cascade's load reduction) and the rate limiter bounds per-client volume, but no resource-exhaustion attack is implemented or defended against end to end.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "measured"
+        },
+        {
+          "name": "module",
+          "value": "netsentry/serving/cascade.py"
+        },
+        {
+          "name": "report",
+          "value": "docs/reports/cascade.md"
+        },
+        {
+          "name": "command",
+          "value": "netsentry benchmark && netsentry cascade"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0034",
+      "tactic": "impact",
+      "score": 0,
+      "color": "",
+      "comment": "[not covered] Driving inference spend up by querying an expensive endpoint. The rate limit bounds it incidentally, but no cost model, quota, or per-tenant accounting exists and nothing here measures the attack.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "not covered"
+        },
+        {
+          "name": "module",
+          "value": "n/a"
+        },
+        {
+          "name": "report",
+          "value": "n/a"
+        },
+        {
+          "name": "command",
+          "value": "n/a"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0025",
+      "tactic": "exfiltration",
+      "score": 0,
+      "color": "",
+      "comment": "[not covered] Stealing the model file off disk or out of the registry rather than through the API. This is host and IAM security, outside what a detection pipeline controls; the signed manifest makes tampering detectable but does not prevent theft.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "not covered"
+        },
+        {
+          "name": "module",
+          "value": "n/a"
+        },
+        {
+          "name": "report",
+          "value": "n/a"
+        },
+        {
+          "name": "command",
+          "value": "n/a"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0013",
+      "tactic": "discovery",
+      "score": 0,
+      "color": "",
+      "comment": "[not covered] The API returns class names, SHAP feature attributions, MITRE context, and conformal prediction sets \u2014 a rich description of the model's ontology, offered deliberately because explanations are a product requirement. The trade-off is named in the extraction study but not defended against.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "not covered"
+        },
+        {
+          "name": "module",
+          "value": "n/a"
+        },
+        {
+          "name": "report",
+          "value": "n/a"
+        },
+        {
+          "name": "command",
+          "value": "n/a"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0014",
+      "tactic": "discovery",
+      "score": 0,
+      "color": "",
+      "comment": "[not covered] Locating model files, MLflow runs, and training data on a compromised host. Infrastructure hardening, not modelling; noted here so the gap is on the record.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "not covered"
+        },
+        {
+          "name": "module",
+          "value": "n/a"
+        },
+        {
+          "name": "report",
+          "value": "n/a"
+        },
+        {
+          "name": "command",
+          "value": "n/a"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0051",
+      "tactic": "initial-access",
+      "score": 15,
+      "color": "",
+      "comment": "[out of scope] NetSentry has no language model and no prompt surface anywhere in the pipeline. Recorded as out of scope rather than omitted, so the matrix reads honestly.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "out of scope"
+        },
+        {
+          "name": "module",
+          "value": "n/a"
+        },
+        {
+          "name": "report",
+          "value": "n/a"
+        },
+        {
+          "name": "command",
+          "value": "n/a"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "AML.T0011",
+      "tactic": "execution",
+      "score": 15,
+      "color": "",
+      "comment": "[out of scope] Requires a human operator to be induced into running adversary-supplied content. There is no interactive user surface in the serving path; the only human in the loop is an analyst reading alerts.",
+      "enabled": true,
+      "metadata": [
+        {
+          "name": "grade",
+          "value": "out of scope"
+        },
+        {
+          "name": "module",
+          "value": "n/a"
+        },
+        {
+          "name": "report",
+          "value": "n/a"
+        },
+        {
+          "name": "command",
+          "value": "n/a"
+        },
+        {
+          "name": "evidence verified",
+          "value": "yes"
+        }
+      ],
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": [
+      "#e02b35",
+      "#f7e463",
+      "#3fa34d"
+    ],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {
+      "label": "attack + defense, re-measured",
+      "color": "#3fa34d"
+    },
+    {
+      "label": "control implemented (attack not simulated)",
+      "color": "#8fbf4d"
+    },
+    {
+      "label": "attack implemented",
+      "color": "#b8cf5a"
+    },
+    {
+      "label": "measured",
+      "color": "#f7e463"
+    },
+    {
+      "label": "out of scope",
+      "color": "#c9c9c9"
+    },
+    {
+      "label": "not covered",
+      "color": "#e02b35"
+    }
+  ]
+}
