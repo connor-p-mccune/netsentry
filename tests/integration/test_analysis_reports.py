@@ -247,6 +247,18 @@ def test_covariate_shift_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_federated_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.federated import run_federated_report
+
+    prepared.federated.rounds = 3
+    prepared.federated.noise_multipliers = [1.0]
+    out = run_federated_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "fedavg" in text and "federation tax" in text
+    assert "non-iid" in text and "eps" in text
+
+
+@pytest.mark.slow
 def test_sequential_report_is_written(prepared: Settings) -> None:
     from netsentry.intel.sequential import run_sequential_report
 

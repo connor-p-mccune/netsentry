@@ -75,6 +75,7 @@ from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.cascade import run_cascade_report
+from netsentry.training.federated import run_federated_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.unlearn import run_unlearn_report
@@ -187,6 +188,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "how many flows before a host can be called compromised (Wald's SPRT, 1945)",
         "sequential.md",
         run_sequential_report,
+    ),
+    (
+        "Federated training",
+        "detection when traffic cannot be pooled: FedAvg vs pooled vs alone (McMahan 2017)",
+        "federated.md",
+        run_federated_report,
     ),
     (
         "Poisoning defense",

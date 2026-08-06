@@ -949,6 +949,19 @@ def sprt(
     logger.info("Sequential report ready", extra={"path": str(out)})
 
 
+@app.command()
+def federated(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Train across sites that cannot pool traffic: FedAvg vs pooled vs alone (McMahan 2017)."""
+    from netsentry.training.federated import run_federated_report
+
+    settings = _load(config, override)
+    out = run_federated_report(settings)
+    logger.info("Federated report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,

@@ -1185,6 +1185,33 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class FederatedConfig(BaseModel):
+    """Federated averaging across sites that cannot pool raw traffic (McMahan et al. 2017).
+
+    Flow records carry who talked to whom; for a hospital group or an MSSP's client estates
+    "send us your flow logs" ends the project, and training alone is expensive because each
+    site only sees the attacks that hit it. FedAvg trains locally, shares only **weights**,
+    averages them by sample count, and repeats. Sites here are the capture days of the
+    training split — already non-IID (different attacks per day), the regime where FedAvg is
+    known to degrade via client drift. ``rounds`` and ``local_epochs`` set the
+    communication/computation trade (more local work per round saves bandwidth and increases
+    drift); the local-only and centralized arms get the same total budget so the comparison
+    is about data access, not compute. ``noise_multipliers`` adds DP-FedAvg arms: each site's
+    update is clipped to ``clip_norm`` (bounding one *site's* influence — the privacy unit
+    that matches the threat) and Gaussian noise is added to the aggregate, accounted at
+    ``delta`` with the same Renyi accountant the DP study uses. The model is linear because
+    FedAvg averages parameters and a boosted forest has none to average."""
+
+    rounds: int = 10  # federated aggregation rounds
+    local_epochs: int = 2  # local passes per site per round (more = more client drift)
+    batch_size: int = 256
+    learning_rate: float = 0.1
+    l2: float = 0.0001
+    clip_norm: float = 5.0  # L2 bound on one site's update, for the DP arms
+    noise_multipliers: list[float] = Field(default_factory=lambda: [0.5, 2.0])
+    delta: float = 1e-5  # DP delta the per-site epsilon is reported at
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -1611,6 +1638,7 @@ class Settings(BaseSettings):
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
     sequential: SequentialConfig = Field(default_factory=SequentialConfig)
+    federated: FederatedConfig = Field(default_factory=FederatedConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)
