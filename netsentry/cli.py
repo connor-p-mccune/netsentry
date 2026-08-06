@@ -975,6 +975,19 @@ def atlas(
     logger.info("ATLAS coverage report ready", extra={"path": str(out)})
 
 
+@app.command()
+def abtest(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Decide when the shadow model can be promoted, with peeking-safe intervals."""
+    from netsentry.evaluation.sequential_ab import run_sequential_ab_report
+
+    settings = _load(config, override)
+    out = run_sequential_ab_report(settings)
+    logger.info("Sequential A/B report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,

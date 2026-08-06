@@ -38,6 +38,7 @@ from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.seed_variance import run_seed_variance_report
+from netsentry.evaluation.sequential_ab import run_sequential_ab_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.socsim import run_socsim_report
 from netsentry.evaluation.subgroups import run_subgroups_report
@@ -458,6 +459,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "honesty invariants + metric floors the candidate must clear",
         "gate.md",
         _run_gate_report,
+    ),
+    (
+        "Anytime-valid A/B",
+        "when the shadow model can be promoted: peeking-safe confidence sequences",
+        "sequential_ab.md",
+        run_sequential_ab_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
     (

@@ -247,6 +247,19 @@ def test_covariate_shift_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_sequential_ab_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.sequential_ab import run_sequential_ab_report
+
+    prepared.sequential_ab.max_stream = 2000
+    prepared.sequential_ab.n_null_trials = 20
+    prepared.sequential_ab.null_obs = 300
+    out = run_sequential_ab_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "confidence sequence" in text and "peek" in text
+    assert "shadow" in text and "anytime" in text
+
+
+@pytest.mark.slow
 def test_federated_report_is_written(prepared: Settings) -> None:
     from netsentry.training.federated import run_federated_report
 

@@ -1185,6 +1185,33 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class SequentialABConfig(BaseModel):
+    """Anytime-valid shadow-model comparison (Robbins 1970; Howard et al. 2021).
+
+    A fixed-sample test earns its error rate by being evaluated **once**, at a sample size
+    fixed in advance; checking it every morning as shadow data arrives inflates the
+    false-positive rate toward certainty. A confidence sequence is valid simultaneously at
+    every sample size, so an operator may peek and stop freely. ``rho`` is the mixture
+    parameter — small tightens the boundary early (catch a big effect fast), large tightens
+    it later (resolve a small effect eventually); ``alpha`` is the coverage level and
+    ``power`` feeds the fixed-n comparison. ``n_null_trials`` / ``null_obs`` / ``checkpoints``
+    size the simulation that *measures* the peeking inflation rather than asserting it. The
+    challenger is the deployed configuration with a different capacity and learning rate, and
+    the comparison is paired per flow — the entire statistical advantage of a shadow
+    deployment over splitting traffic."""
+
+    alpha: float = 0.05  # coverage level, held uniformly over all sample sizes
+    power: float = 0.80  # target power for the fixed-n comparison row
+    rho: float = 1.0  # mixture parameter: where the anytime boundary is tightest
+    max_stream: int = 20000  # cap on the shadow stream length
+    challenger_num_leaves: int = 31
+    challenger_learning_rate: float = 0.08
+    n_null_trials: int = 400  # null streams used to measure the peeking error rate
+    null_obs: int = 2000  # observations per null stream
+    checkpoints: int = 20  # how often the peeking team looks at the dashboard
+    warmup: int = 500  # prefix used to fix the sub-Gaussian scale proxy (never re-estimated)
+
+
 class FederatedConfig(BaseModel):
     """Federated averaging across sites that cannot pool raw traffic (McMahan et al. 2017).
 
@@ -1639,6 +1666,7 @@ class Settings(BaseSettings):
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
     sequential: SequentialConfig = Field(default_factory=SequentialConfig)
     federated: FederatedConfig = Field(default_factory=FederatedConfig)
+    sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)
