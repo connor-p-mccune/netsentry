@@ -25,6 +25,7 @@ from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.data_value import run_data_value_report
+from netsentry.evaluation.discovery import run_discovery_report
 from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.hmeasure import run_hmeasure_report
 from netsentry.evaluation.label_audit import run_label_audit_report
@@ -357,6 +358,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection/false-alarm equity across services",
         "subgroups.md",
         run_subgroups_report,
+    ),
+    (
+        "Attack-family discovery",
+        "clustering the flagged pile into campaigns, with k chosen without labels",
+        "discovery.md",
+        run_discovery_report,
     ),
     (
         "Novelty distance",

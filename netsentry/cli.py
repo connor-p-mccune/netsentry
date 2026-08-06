@@ -988,6 +988,19 @@ def abtest(
     logger.info("Sequential A/B report ready", extra={"path": str(out)})
 
 
+@app.command()
+def discovery(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Cluster the flagged pile into candidate campaigns, with k chosen without labels."""
+    from netsentry.evaluation.discovery import run_discovery_report
+
+    settings = _load(config, override)
+    out = run_discovery_report(settings)
+    logger.info("Discovery report ready", extra={"path": str(out)})
+
+
 @app.command("labelshift")
 def label_shift_cmd(
     config: ConfigOpt = None,

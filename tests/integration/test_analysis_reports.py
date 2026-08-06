@@ -247,6 +247,19 @@ def test_covariate_shift_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
+def test_discovery_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.discovery import run_discovery_report
+
+    prepared.discovery.k_candidates = [2, 3, 4]
+    prepared.discovery.max_flows = 800
+    prepared.discovery.silhouette_sample = 400
+    out = run_discovery_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "silhouette" in text and "adjusted rand" in text
+    assert "cluster" in text and "without labels" in text
+
+
+@pytest.mark.slow
 def test_sequential_ab_report_is_written(prepared: Settings) -> None:
     from netsentry.evaluation.sequential_ab import run_sequential_ab_report
 

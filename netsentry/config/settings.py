@@ -1185,6 +1185,33 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class DiscoveryConfig(BaseModel):
+    """Unsupervised attack-family discovery over the flows the detector flags.
+
+    Novel-attack detection ends with an unstructured pile of anomalies; clustering turns it
+    into candidate campaigns an analyst can triage as groups. The methodological crux is that
+    ``k`` is chosen by **silhouette score on the unlabelled features** (``k_candidates``,
+    subsampled to ``silhouette_sample`` rows for speed) — choosing it by whichever value best
+    reproduces the labels would be leakage wearing an unsupervised costume, so labels are
+    opened only afterwards to grade a decision already made. A family counts as *discovered*
+    when some cluster is at least ``min_purity`` made of it and holds ``min_cluster_size``
+    flows. ``novel_quantile`` sets the relative distance beyond which a cluster is called a
+    candidate *new* family rather than named after the nearest known centroid (an absolute
+    distance would be unit-dependent). ``baseline_trials`` sizes the random-assignment control
+    that gives the ARI a reference point. Runs on the stratified split, where every family
+    appears in the test set so "would it have been discovered" is well posed."""
+
+    flag_fpr: float = 0.01  # budget defining the flagged pile that gets clustered
+    k_candidates: list[int] = Field(default_factory=lambda: [2, 3, 4, 5, 6, 8, 10, 12, 16])
+    silhouette_sample: int = 3000  # rows the silhouette is evaluated on (it is O(n^2))
+    max_flows: int = 6000  # cap on the clustered pile
+    min_purity: float = 0.6  # dominant-class share that makes a cluster a discovery
+    min_cluster_size: int = 20  # a coherent campaign, not a statistical coincidence
+    novel_quantile: float = 0.8  # distance quantile above which a cluster is "new"
+    min_class_rows: int = 30  # training rows a class needs to enter the naming catalogue
+    baseline_trials: int = 20  # random assignments averaged for the ARI control
+
+
 class SequentialABConfig(BaseModel):
     """Anytime-valid shadow-model comparison (Robbins 1970; Howard et al. 2021).
 
@@ -1667,6 +1694,7 @@ class Settings(BaseSettings):
     sequential: SequentialConfig = Field(default_factory=SequentialConfig)
     federated: FederatedConfig = Field(default_factory=FederatedConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
+    discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
     unlearn: UnlearnConfig = Field(default_factory=UnlearnConfig)
     watermark: WatermarkConfig = Field(default_factory=WatermarkConfig)
