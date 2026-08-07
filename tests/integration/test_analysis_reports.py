@@ -707,3 +707,17 @@ def test_robustness_report_is_written(prepared: Settings) -> None:
     prepared.robustness.max_attack_samples = 300
     out = run_robustness_report(prepared)
     assert out.exists() and "evasion" in out.read_text(encoding="utf-8").lower()
+
+
+@pytest.mark.slow
+def test_neyman_pearson_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.neyman_pearson import run_neyman_pearson_report
+
+    prepared.neyman_pearson.n_splits = 20
+    prepared.neyman_pearson.split_calibration_size = 400
+    prepared.neyman_pearson.calibration_sizes = [1_000, 10_000]
+    prepared.neyman_pearson.delta_sweep = [0.1, 0.05]
+    out = run_neyman_pearson_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "neyman-pearson" in text
+    assert "violation" in text and "binomial" in text

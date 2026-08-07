@@ -897,6 +897,19 @@ def alertfdr(
     logger.info("Alert-FDR report ready", extra={"path": str(out)})
 
 
+@app.command("npclass")
+def neyman_pearson_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Certify the FP budget: a finite-sample Neyman-Pearson threshold (Tong et al. 2018)."""
+    from netsentry.evaluation.neyman_pearson import run_neyman_pearson_report
+
+    settings = _load(config, override)
+    out = run_neyman_pearson_report(settings)
+    logger.info("Neyman-Pearson report ready", extra={"path": str(out)})
+
+
 @app.command()
 def multiplicity(
     config: ConfigOpt = None,

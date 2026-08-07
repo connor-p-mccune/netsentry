@@ -1406,6 +1406,33 @@ class AlertFDRConfig(BaseModel):
     tolerance: float = 0.02  # finite-sample slack on the FDR bound before flagging
 
 
+class NeymanPearsonConfig(BaseModel):
+    """Neyman-Pearson thresholds: a finite-sample guarantee on the false-positive budget.
+
+    The headline operating point is an empirical quantile of a finite benign validation
+    sample, so the rate it achieves on unseen traffic is a random variable — and a biased
+    one, exceeding the budget about half the time. The NP umbrella algorithm (Tong, Feng &
+    Li, JMLR 2018) replaces that with a threshold chosen as an order statistic, giving
+    ``P(true FPR > alpha) <= delta`` for a finite sample with no distributional assumption
+    beyond a continuous score. ``delta`` is the headline confidence level and
+    ``delta_sweep`` prices tightening it; ``calibration_sizes`` sweeps the closed-form cost
+    of the guarantee against how much benign traffic is available for calibration (there is
+    a hard floor below which no threshold certifies the budget at all);
+    ``split_calibration_size`` and ``n_splits`` drive the Monte-Carlo arm that checks the
+    closed form against a measurement. Runs on the honest temporal/binary split with raw
+    (uncalibrated) scores — the calibrator is monotone but creates ties that would corrupt
+    an order statistic."""
+
+    delta: float = 0.05  # tolerated probability that the realized FPR exceeds the budget
+    delta_sweep: list[float] = Field(default_factory=lambda: [0.20, 0.10, 0.05, 0.01])
+    calibration_sizes: list[int] = Field(
+        default_factory=lambda: [1_000, 3_000, 10_000, 30_000, 100_000, 1_000_000]
+    )
+    split_calibration_size: int = 3_000  # benign flows per Monte-Carlo calibration draw
+    n_splits: int = 400  # calibration/holdout re-draws behind the measured violation rate
+    n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
+
+
 class PoisoningConfig(BaseModel):
     """Training-set poisoning study: how detection degrades as labels are corrupted.
 
@@ -1688,6 +1715,7 @@ class Settings(BaseSettings):
     experts: ExpertsConfig = Field(default_factory=ExpertsConfig)
     pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
+    neyman_pearson: NeymanPearsonConfig = Field(default_factory=NeymanPearsonConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
