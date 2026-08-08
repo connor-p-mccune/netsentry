@@ -37,6 +37,7 @@ from netsentry.evaluation.lodo import run_lodo_report
 from netsentry.evaluation.multiplicity import run_multiplicity_report
 from netsentry.evaluation.neyman_pearson import run_neyman_pearson_report
 from netsentry.evaluation.novelty import run_novelty_report
+from netsentry.evaluation.ope import run_ope_report
 from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
@@ -138,6 +139,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a finite-sample guarantee that the FP budget holds (Tong, Feng & Li 2018)",
         "neyman_pearson.md",
         run_neyman_pearson_report,
+    ),
+    (
+        "Off-policy evaluation",
+        "value a triage policy you never deployed: IPS/SNIPS/doubly-robust "
+        "(Dudik, Langford & Li 2011)",
+        "ope.md",
+        run_ope_report,
     ),
     (
         "Extreme-value thresholds",

@@ -1433,6 +1433,33 @@ class NeymanPearsonConfig(BaseModel):
     n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
 
 
+class OPEConfig(BaseModel):
+    """Off-policy evaluation of triage policies from a logged, partially-labelled stream.
+
+    A SOC only labels what it reviewed, so scoring a candidate threshold on its own logs
+    measures the *deployed* policy's selection rather than the candidate's value. Treating
+    triage as a contextual bandit gives four estimators — direct method, IPS
+    (Horvitz-Thompson 1952), SNIPS (Swaminathan & Joachims 2015) and doubly robust (Dudik,
+    Langford & Li 2011) — and this dataset's full labels make the true policy value
+    computable, so each can be scored against it. ``logging_fpr`` is the deployed threshold
+    the logs came from; ``exploration`` is the share of decisions the logging policy
+    randomises (without it the propensities are 0/1 and no candidate is identified);
+    ``candidate_fprs`` are the policies valued offline; ``exploration_sweep`` prices the
+    randomisation budget against the regret of choosing a policy with a bad estimate.
+    Rewards come from ``cost`` so this report and the cost study share one currency."""
+
+    logging_fpr: float = 0.001  # the deployed operating point that generated the logs
+    exploration: float = 0.05  # headline share of triage decisions randomised
+    exploration_sweep: list[float] = Field(
+        default_factory=lambda: [0.0, 0.005, 0.02, 0.05, 0.10, 0.20]
+    )
+    candidate_fprs: list[float] = Field(
+        default_factory=lambda: [0.001, 0.005, 0.01, 0.02, 0.05, 0.10]
+    )
+    n_replicates: int = 120  # replicate logs behind the headline estimator comparison
+    sweep_replicates: int = 60  # replicate logs per exploration-budget row
+
+
 class EVTConfig(BaseModel):
     """Extreme-value (peaks-over-threshold) estimation of the operating point.
 
@@ -1742,6 +1769,7 @@ class Settings(BaseSettings):
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
     neyman_pearson: NeymanPearsonConfig = Field(default_factory=NeymanPearsonConfig)
     evt: EVTConfig = Field(default_factory=EVTConfig)
+    ope: OPEConfig = Field(default_factory=OPEConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

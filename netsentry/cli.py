@@ -911,6 +911,19 @@ def neyman_pearson_cmd(
 
 
 @app.command()
+def ope(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Value a triage policy you never deployed, from logs a different policy generated."""
+    from netsentry.evaluation.ope import run_ope_report
+
+    settings = _load(config, override)
+    out = run_ope_report(settings)
+    logger.info("Off-policy evaluation report ready", extra={"path": str(out)})
+
+
+@app.command()
 def evt(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

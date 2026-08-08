@@ -735,3 +735,17 @@ def test_evt_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "generalized pareto" in text
     assert "peaks-over-threshold" in text and "tail" in text
+
+
+@pytest.mark.slow
+def test_ope_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.ope import run_ope_report
+
+    prepared.ope.n_replicates = 8
+    prepared.ope.sweep_replicates = 4
+    prepared.ope.candidate_fprs = [0.001, 0.01, 0.05]
+    prepared.ope.exploration_sweep = [0.0, 0.05]
+    out = run_ope_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "off-policy" in text
+    assert "doubly robust" in text and "propensity" in text
