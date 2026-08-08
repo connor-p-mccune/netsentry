@@ -911,6 +911,19 @@ def neyman_pearson_cmd(
 
 
 @app.command()
+def evt(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Fit the benign tail and place operating points past the edge of the data (POT/GPD)."""
+    from netsentry.evaluation.evt import run_evt_report
+
+    settings = _load(config, override)
+    out = run_evt_report(settings)
+    logger.info("EVT report ready", extra={"path": str(out)})
+
+
+@app.command()
 def multiplicity(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

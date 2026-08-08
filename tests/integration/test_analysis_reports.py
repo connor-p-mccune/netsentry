@@ -721,3 +721,17 @@ def test_neyman_pearson_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "neyman-pearson" in text
     assert "violation" in text and "binomial" in text
+
+
+@pytest.mark.slow
+def test_evt_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.evt import run_evt_report
+
+    prepared.evt.sim_trials = 15
+    prepared.evt.sim_n = 1_000
+    prepared.evt.sim_budgets = [0.001]
+    prepared.evt.grid_points = 120
+    out = run_evt_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "generalized pareto" in text
+    assert "peaks-over-threshold" in text and "tail" in text

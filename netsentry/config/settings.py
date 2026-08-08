@@ -1433,6 +1433,31 @@ class NeymanPearsonConfig(BaseModel):
     n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
 
 
+class EVTConfig(BaseModel):
+    """Extreme-value (peaks-over-threshold) estimation of the operating point.
+
+    At a 0.1% budget the deployed threshold is pinned by a handful of benign order
+    statistics, and one order of magnitude tighter it stops existing (``n * alpha < 1``
+    degenerates to the sample maximum). Pickands-Balkema-de Haan says exceedances over a
+    high threshold converge to a Generalized Pareto, so the tail can be *fitted* from
+    hundreds of flows and extrapolated (Siffer et al., KDD 2017). ``tail_quantile`` is
+    where the tail is declared to begin and ``tail_quantile_sweep`` exposes that choice as
+    the bias-variance dial it is; ``budgets`` are the operating points compared on real
+    scores; ``sim_budgets``/``sim_n``/``sim_trials`` drive the controlled arm against
+    populations with closed-form tails (exponential, heavy, bounded) — the only place the
+    realized false-positive rate can be computed exactly, and therefore the only place the
+    comparison can be decided. ``grid_points`` is the resolution of the log-spaced search
+    over Grimshaw's profile likelihood before golden-section refinement."""
+
+    tail_quantile: float = 0.95  # where the fitted tail is declared to start
+    tail_quantile_sweep: list[float] = Field(default_factory=lambda: [0.90, 0.95, 0.98, 0.99])
+    budgets: list[float] = Field(default_factory=lambda: [0.01, 0.001, 0.0001, 0.00001])
+    sim_budgets: list[float] = Field(default_factory=lambda: [0.001, 0.0001, 0.00001])
+    sim_n: int = 5_000  # calibration flows per simulated replicate (matches the real split)
+    sim_trials: int = 400  # replicates behind each simulated cell
+    grid_points: int = 400  # log-spaced candidates for the GPD profile likelihood
+
+
 class PoisoningConfig(BaseModel):
     """Training-set poisoning study: how detection degrades as labels are corrupted.
 
@@ -1716,6 +1741,7 @@ class Settings(BaseSettings):
     pu_learning: PULearnConfig = Field(default_factory=PULearnConfig)
     alert_fdr: AlertFDRConfig = Field(default_factory=AlertFDRConfig)
     neyman_pearson: NeymanPearsonConfig = Field(default_factory=NeymanPearsonConfig)
+    evt: EVTConfig = Field(default_factory=EVTConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
