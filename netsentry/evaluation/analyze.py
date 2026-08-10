@@ -83,6 +83,7 @@ from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.cascade import run_cascade_report
+from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
@@ -141,6 +142,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a finite-sample guarantee that the FP budget holds (Tong, Feng & Li 2018)",
         "neyman_pearson.md",
         run_neyman_pearson_report,
+    ),
+    (
+        "Group DRO",
+        "train for the worst service, not the average one, against the cheap serving-side "
+        "fix (Sagawa et al. 2020)",
+        "dro.md",
+        run_dro_report,
     ),
     (
         "Deterministic verification",

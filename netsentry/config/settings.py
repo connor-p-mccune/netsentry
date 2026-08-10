@@ -1433,6 +1433,26 @@ class NeymanPearsonConfig(BaseModel):
     n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
 
 
+class DROConfig(BaseModel):
+    """Group DRO: minimise the worst service's loss instead of the average one.
+
+    The per-service parity audit shows one global threshold treats services unequally,
+    because empirical risk minimisation optimises a mean the bulk service dominates. Sagawa
+    et al. (ICLR 2020) replace that objective with the worst group's and solve the saddle
+    point by online exponentiated gradient: upweight whichever group is doing worst, refit,
+    repeat. Groups are services resolved from the destination port (routing metadata, never
+    a model feature), matching the audit. ``n_rounds`` and ``step_size`` drive the
+    adversary; ``min_group_size`` drops services too rare to carry a stable per-group loss.
+    The study scores DRO against plain ERM *and* against the serving-side per-service
+    threshold already shipped, because a training-time fix has to beat the cheap incumbent
+    rather than an absent one."""
+
+    group_by: Literal["day", "service"] = "day"  # the partition the adversary reweights
+    n_rounds: int = 8  # DRO rounds; each is a full weighted refit
+    step_size: float = 2.0  # exponentiated-gradient step on the group weights
+    min_group_size: int = 200  # training flows a group needs to be included
+
+
 class VerifyTreesConfig(BaseModel):
     """Deterministic (sound) robustness verification of the deployed tree ensemble.
 
@@ -1822,6 +1842,7 @@ class Settings(BaseSettings):
     ope: OPEConfig = Field(default_factory=OPEConfig)
     uncertainty: UncertaintyConfig = Field(default_factory=UncertaintyConfig)
     verify_trees: VerifyTreesConfig = Field(default_factory=VerifyTreesConfig)
+    dro: DROConfig = Field(default_factory=DROConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

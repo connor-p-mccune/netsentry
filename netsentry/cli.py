@@ -910,6 +910,19 @@ def neyman_pearson_cmd(
     logger.info("Neyman-Pearson report ready", extra={"path": str(out)})
 
 
+@app.command()
+def dro(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Train for the worst service instead of the average one (Sagawa et al. 2020)."""
+    from netsentry.training.dro import run_dro_report
+
+    settings = _load(config, override)
+    out = run_dro_report(settings)
+    logger.info("Group-DRO report ready", extra={"path": str(out)})
+
+
 @app.command("verifytrees")
 def verify_trees_cmd(
     config: ConfigOpt = None,

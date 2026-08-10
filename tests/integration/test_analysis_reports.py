@@ -777,3 +777,15 @@ def test_verify_trees_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "certified radius" in text
     assert "sound but incomplete" in text and "threat model" in text
+
+
+@pytest.mark.slow
+def test_dro_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.dro import run_dro_report
+
+    prepared.dro.n_rounds = 2
+    prepared.dro.min_group_size = 50
+    out = run_dro_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "group dro" in text
+    assert "worst" in text and "size-balanced" in text
