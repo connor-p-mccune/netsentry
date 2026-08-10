@@ -749,3 +749,29 @@ def test_ope_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "off-policy" in text
     assert "doubly robust" in text and "propensity" in text
+
+
+@pytest.mark.slow
+def test_uncertainty_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.uncertainty import run_uncertainty_report
+
+    prepared.uncertainty.n_models = 3
+    prepared.uncertainty.n_holdout_classes = 1
+    prepared.uncertainty.min_holdout_flows = 10
+    out = run_uncertainty_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "epistemic" in text and "aleatoric" in text
+    assert "deleted from training" in text
+
+
+@pytest.mark.slow
+def test_uncertainty_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.uncertainty import run_uncertainty_report
+
+    prepared.uncertainty.n_models = 3
+    prepared.uncertainty.n_holdout_classes = 1
+    prepared.uncertainty.min_holdout_flows = 10
+    out = run_uncertainty_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "epistemic" in text and "aleatoric" in text
+    assert "deleted from training" in text

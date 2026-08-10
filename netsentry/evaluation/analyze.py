@@ -46,6 +46,7 @@ from netsentry.evaluation.sequential_ab import run_sequential_ab_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.socsim import run_socsim_report
 from netsentry.evaluation.subgroups import run_subgroups_report
+from netsentry.evaluation.uncertainty import run_uncertainty_report
 from netsentry.explain.anchors import run_anchors_report
 from netsentry.explain.anomaly_explain import run_anomaly_explain_report
 from netsentry.explain.counterfactual import run_recourse_report
@@ -139,6 +140,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a finite-sample guarantee that the FP budget holds (Tong, Feng & Li 2018)",
         "neyman_pearson.md",
         run_neyman_pearson_report,
+    ),
+    (
+        "Epistemic vs aleatoric",
+        "ambiguity or ignorance: uncertainty decomposed over an ensemble, tested on "
+        "never-seen attack classes",
+        "uncertainty.md",
+        run_uncertainty_report,
     ),
     (
         "Off-policy evaluation",

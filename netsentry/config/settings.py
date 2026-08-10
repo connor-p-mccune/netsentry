@@ -1433,6 +1433,29 @@ class NeymanPearsonConfig(BaseModel):
     n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
 
 
+class UncertaintyConfig(BaseModel):
+    """Epistemic vs aleatoric decomposition over a bagged, re-seeded ensemble.
+
+    One attack score is asked to mean both "this looks benign" and "I have never seen
+    anything like this", and a SOC should treat those flows differently. An ensemble
+    separates them: aleatoric uncertainty is the members' average entropy (irreducible
+    noise), epistemic is the entropy of their average minus that — the mutual information
+    between the label and the choice of member (Houlsby et al. 2011; Depeweg et al. 2018).
+    Members share hyperparameters and differ only by bootstrap draw and seed, the tabular
+    analogue of a deep ensemble (Lakshminarayanan et al. 2017); varying hyperparameters is a
+    different question that the multiplicity study asks. ``n_models`` sets ensemble size and
+    ``bag_fraction`` how much of the training split each member draws; ``coverages`` are the
+    abstention levels of the risk-coverage curves. The temporal split supplies a falsifiable
+    test — attack classes present only on the later days — so the claim that epistemic
+    uncertainty tracks unfamiliarity is checked rather than asserted."""
+
+    n_models: int = 10  # ensemble members behind the decomposition
+    bag_fraction: float = 0.8  # bootstrap draw size per member, as a share of the train split
+    n_holdout_classes: int = 3  # attack classes deleted from training, one controlled arm each
+    min_holdout_flows: int = 100  # test flows a class needs before it can carry an arm
+    coverages: list[float] = Field(default_factory=lambda: [0.5, 0.6, 0.7, 0.8, 0.9, 0.95, 1.0])
+
+
 class OPEConfig(BaseModel):
     """Off-policy evaluation of triage policies from a logged, partially-labelled stream.
 
@@ -1770,6 +1793,7 @@ class Settings(BaseSettings):
     neyman_pearson: NeymanPearsonConfig = Field(default_factory=NeymanPearsonConfig)
     evt: EVTConfig = Field(default_factory=EVTConfig)
     ope: OPEConfig = Field(default_factory=OPEConfig)
+    uncertainty: UncertaintyConfig = Field(default_factory=UncertaintyConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

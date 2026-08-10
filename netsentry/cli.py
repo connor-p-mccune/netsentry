@@ -911,6 +911,19 @@ def neyman_pearson_cmd(
 
 
 @app.command()
+def uncertainty(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Split the detector's uncertainty into ambiguity vs ignorance, and test the split."""
+    from netsentry.evaluation.uncertainty import run_uncertainty_report
+
+    settings = _load(config, override)
+    out = run_uncertainty_report(settings)
+    logger.info("Uncertainty report ready", extra={"path": str(out)})
+
+
+@app.command()
 def ope(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
