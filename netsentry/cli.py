@@ -924,6 +924,19 @@ def survival(
 
 
 @app.command()
+def earliness(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price the detector's decision latency: when a flow verdict can first exist."""
+    from netsentry.evaluation.earliness import run_earliness_report
+
+    settings = _load(config, override)
+    out = run_earliness_report(settings)
+    logger.info("Earliness report ready", extra={"path": str(out)})
+
+
+@app.command()
 def byzantine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -26,6 +26,7 @@ from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.data_value import run_data_value_report
 from netsentry.evaluation.discovery import run_discovery_report
+from netsentry.evaluation.earliness import run_earliness_report
 from netsentry.evaluation.evt import run_evt_report
 from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.hmeasure import run_hmeasure_report
@@ -150,6 +151,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "Kaplan-Meier with the never-detected campaigns still in the denominator",
         "survival.md",
         run_survival_report,
+    ),
+    (
+        "Decision latency",
+        "when a flow verdict can first exist, and what deciding earlier costs",
+        "earliness.md",
+        run_earliness_report,
     ),
     (
         "Byzantine-robust aggregation",

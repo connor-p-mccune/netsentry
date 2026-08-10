@@ -48,6 +48,76 @@ def feature_groups(*, include_destination_port: bool = False) -> dict[str, list[
     return groups
 
 
+# --- When each statistic exists ----------------------------------------------------
+# A second, orthogonal partition of the same columns: not *what* a feature measures but
+# *when its value is knowable*. CICFlowMeter emits one record per finished flow, so the
+# deployed model is structurally a post-mortem detector; the earliness study uses this
+# partition to price that. Three nested tiers, in the order a detector could act on them:
+#
+#   handshake  — fixed by the connection setup and never revised afterwards.
+#   in-flight  — *intensive* statistics (mean/min/max/std/rate/ratio). Their value over a
+#                prefix of the flow is a noisy estimate of the same quantity, so a detector
+#                may act on them mid-flow.
+#   complete   — *extensive* statistics (totals, cumulative sums, counts) and teardown or
+#                whole-timeline quantities (durations, flag counts, active/idle periods).
+#                A prefix value of an accumulating feature is not a noisy version of the
+#                final value, it is a systematically smaller different number, so acting on
+#                it early is not an approximation — it is a category error.
+#
+# Keyword-driven, first match wins, so new columns are classified automatically. Note that
+# `SYN Flag Count` lands in `complete` although a SYN arrives first: the *count* keeps
+# accruing (retransmits) and the exporter only reports it at flow end. The conservative
+# call, stated in the report's scope.
+_HANDSHAKE_FEATURES: frozenset[str] = frozenset(
+    {
+        schema.DESTINATION_PORT,  # in the first packet; excluded from the headline anyway
+        "Init_Win_bytes_forward",
+        "Init_Win_bytes_backward",
+        "min_seg_size_forward",
+    }
+)
+_COMPLETE_KEYWORDS: tuple[str, ...] = (
+    "Total",
+    "Subflow",
+    "Duration",
+    "Idle",
+    "Active",
+    "Flag",
+    "Flags",
+    "Header Length",
+    "Bulk",
+    "act_data_pkt",
+)
+
+AVAILABILITY_TIERS: tuple[str, ...] = ("handshake", "in_flight", "complete")
+
+
+def availability_tier(feature: str) -> str:
+    """Earliest tier at which ``feature`` has the value the model was trained on."""
+    if feature in _HANDSHAKE_FEATURES:
+        return "handshake"
+    if any(keyword in feature for keyword in _COMPLETE_KEYWORDS):
+        return "complete"
+    return "in_flight"
+
+
+def availability_sets(*, include_destination_port: bool = False) -> dict[str, list[str]]:
+    """The **nested** feature sets a detector may use at each decision time.
+
+    Nested rather than disjoint because availability accumulates: an in-flight detector
+    still knows the handshake fields, and the deployed complete-flow model knows
+    everything. ``availability_sets()["complete"]`` is therefore the full feature list.
+    """
+    columns = schema.feature_columns(include_destination_port=include_destination_port)
+    tiers = {c: availability_tier(c) for c in columns}
+    out: dict[str, list[str]] = {}
+    allowed: set[str] = set()
+    for tier in AVAILABILITY_TIERS:
+        allowed.add(tier)
+        out[tier] = [c for c in columns if tiers[c] in allowed]
+    return out
+
+
 def get_feature_set(name: str, *, include_destination_port: bool = False) -> list[str]:
     """Return the ordered feature columns for a named feature set."""
     if name == "full":

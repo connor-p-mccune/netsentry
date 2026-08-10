@@ -814,3 +814,14 @@ def test_survival_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "kaplan-meier" in text
     assert "censor" in text and "log-rank" in text
+
+
+@pytest.mark.slow
+def test_earliness_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.earliness import run_earliness_report
+
+    prepared.earliness.min_class_flows = 5
+    out = run_earliness_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "handshake" in text and "in-flight" in text
+    assert "teardown" in text and "idle timer" in text

@@ -1185,6 +1185,32 @@ class UnlearnConfig(BaseModel):
     verify_deletions: int = 5  # batch size the exactness + forgetting demo deletes
 
 
+class EarlinessConfig(BaseModel):
+    """Decision latency: when the deployed verdict can first exist, and what earlier costs.
+
+    Flow exporters emit one record per *finished* flow, so most CICFlowMeter statistics are
+    undefined until the flow is over and the deployed detector is structurally a post-mortem
+    one. The study prices that in two halves: the wait (computed per flow from whether the
+    exporter saw a FIN/RST — a flow that merely stops is held until the idle timer
+    ``capture.flow_timeout_us`` expires) and the detection lost by deciding earlier, by
+    refitting on the nested feature tiers in ``features.feature_sets.availability_sets``.
+    ``in_flight_horizon_us`` is how long an in-flight detector is allowed to accumulate
+    packets before its intensive statistics mean anything (a flow shorter than the horizon
+    ends first, so its verdict is bounded by its own duration). ``horizons_s`` are the
+    x-positions of the detected-in-time frontier, log-spaced because the interesting range
+    spans milliseconds to minutes; ``min_class_flows`` is the support a class needs before it
+    gets its own row."""
+
+    in_flight_horizon_us: int = 1_000_000  # packets accumulated before an in-flight verdict
+    horizons_s: list[float] = Field(
+        default_factory=lambda: [0.01, 0.1, 1.0, 5.0, 15.0, 60.0, 120.0, 300.0]
+    )
+    min_class_flows: int = 50  # test flows a class needs before it gets its own row
+    unclosed_shares: list[float] = Field(  # sensitivity sweep the stand-in cannot supply
+        default_factory=lambda: [0.0, 0.1, 0.25, 0.5, 0.75, 1.0]
+    )
+
+
 class DiscoveryConfig(BaseModel):
     """Unsupervised attack-family discovery over the flows the detector flags.
 
@@ -1887,6 +1913,7 @@ class Settings(BaseSettings):
     dro: DROConfig = Field(default_factory=DROConfig)
     byzantine: ByzantineConfig = Field(default_factory=ByzantineConfig)
     survival: SurvivalConfig = Field(default_factory=SurvivalConfig)
+    earliness: EarlinessConfig = Field(default_factory=EarlinessConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
