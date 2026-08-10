@@ -59,6 +59,7 @@ from netsentry.explain.exemplars import run_exemplars_report
 from netsentry.explain.importance_stability import run_importance_stability_report
 from netsentry.explain.influence import run_influence_report
 from netsentry.explain.interactions import run_interactions_report
+from netsentry.explain.optimal_tree import run_optimal_tree_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.atlas import run_atlas_report
@@ -542,6 +543,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "which training flows caused a verdict, validated against real LOO (Koh & Liang 2017)",
         "influence.md",
         run_influence_report,
+    ),
+    (
+        "Optimal sparse trees",
+        "how far greedy CART sits from the provably optimal tree, with a certificate "
+        "(Hu, Rudin & Seltzer 2019)",
+        "optimal_tree.md",
+        run_optimal_tree_report,
     ),
     (
         "Surrogate distillation",

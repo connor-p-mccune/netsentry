@@ -988,6 +988,19 @@ def monotonic(
     logger.info("Monotonicity report ready", extra={"path": str(out)})
 
 
+@app.command("opttree")
+def optimal_tree_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Find the provably optimal sparse tree and price greedy CART's shortfall against it."""
+    from netsentry.explain.optimal_tree import run_optimal_tree_report
+
+    settings = _load(config, override)
+    out = run_optimal_tree_report(settings)
+    logger.info("Optimal-tree report ready", extra={"path": str(out)})
+
+
 @app.command()
 def byzantine(
     config: ConfigOpt = None,

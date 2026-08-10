@@ -1323,6 +1323,28 @@ class MonotonicConfig(BaseModel):
     max_verify_flows: int = 400  # flows the interval verifier proves (it is per-flow)
 
 
+class OptimalTreeConfig(BaseModel):
+    """Provably optimal sparse decision trees by branch and bound, against greedy CART.
+
+    The distilled surrogate is grown by CART, which is greedy, so nobody knows how much
+    accuracy greediness costs. At interpretable sizes that is now computable exactly (Hu,
+    Rudin & Seltzer 2019; Lin et al. 2020): the search minimises weighted error plus
+    ``penalties`` per leaf and reports whether the space was **exhausted**, which is the
+    difference between a proof and a best effort. ``n_features`` and ``n_thresholds`` set the
+    binarisation (features ranked by single-feature separation, cut at quantiles rather than
+    at purity-optimal points, since a purity-optimal threshold is a greedy split smuggled into
+    an exhaustive search). ``max_depth`` and ``node_budget`` bound the search; an uncertified
+    row is reported as an upper bound rather than as the optimum. ``max_train_rows`` subsamples
+    for tractability, and greedy is scored on the same rows so the gap is like-for-like."""
+
+    n_features: int = 8  # strongest features entering the binarisation
+    n_thresholds: int = 3  # quantile cuts per feature
+    max_depth: int = 3  # depth limit for both the search and the greedy baseline
+    penalties: list[float] = Field(default_factory=lambda: [0.001, 0.005, 0.01, 0.02, 0.05])
+    node_budget: int = 400_000  # search nodes before the certificate is withdrawn
+    max_train_rows: int = 8000  # training rows the search runs on
+
+
 class DiscoveryConfig(BaseModel):
     """Unsupervised attack-family discovery over the flows the detector flags.
 
@@ -2030,6 +2052,7 @@ class Settings(BaseSettings):
     defer: DeferConfig = Field(default_factory=DeferConfig)
     invariance: InvarianceConfig = Field(default_factory=InvarianceConfig)
     monotonic: MonotonicConfig = Field(default_factory=MonotonicConfig)
+    optimal_tree: OptimalTreeConfig = Field(default_factory=OptimalTreeConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

@@ -873,3 +873,16 @@ def test_monotonic_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "monotone-constrained" in text
     assert "provably inflation-robust" in text and "inflate" in text
+
+
+@pytest.mark.slow
+def test_optimal_tree_report_is_written(prepared: Settings) -> None:
+    from netsentry.explain.optimal_tree import run_optimal_tree_report
+
+    prepared.optimal_tree.penalties = [0.005, 0.02]
+    prepared.optimal_tree.max_train_rows = 800
+    prepared.optimal_tree.n_features = 4
+    out = run_optimal_tree_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "greedy cart" in text and "certified" in text
+    assert "branch and bound" in text and "lambda" in text
