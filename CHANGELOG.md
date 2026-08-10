@@ -6,6 +6,89 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-08-10
+
+The **guarantees, counterfactuals & worst-case wave**: eight studies aimed at the sentences this
+project has been quietly taking on trust. The recurring move is to take a number the repo already
+reports, ask what would have to be true for it to mean what it appears to mean, and then measure
+that. The headline operating point turns out to describe a *procedure* rather than a promise —
+its true false-positive rate exceeds its own budget 51% of the time — so it gets a finite-sample
+guarantee, and with it a sample-size floor nobody states. The threshold underneath that budget
+rests on five benign flows, so the tail gets fitted rather than counted. The campaign latency
+averages over the campaigns that were caught, so the ones that were not get put back in the
+denominator, and the number moves by 8x.
+
+Four of the eight are **negative results, kept deliberately**. Epistemic uncertainty rises on
+unfamiliar attacks — and is at chance on the one class where the detector is blind, which is the
+only case that mattered. Group DRO's adversary, given eight rounds to reweight, selected its own
+uniform round, and every round in which it did something made the worst group worse. Extreme-value
+extrapolation wins decisively on unbounded tails and provably nothing on bounded ones, which is
+the regime this detector is actually in. And a finite holdout, the natural way to check a
+finite-sample bound, reads it as failing when it is not. Each is reported with the mechanism
+rather than buried, because a method that fails for a stateable reason is worth more than one that
+appears to work.
+
+The other thread is **where the evidence stops**. Off-policy evaluation finds that 77% of the
+counterfactual an operator wants — *what would a lower threshold have caught?* — is not hard but
+unanswerable from a deterministic policy's logs, and prices the 0.5% random-review budget that
+makes it answerable. Deterministic verification refuses to report at all unless its flattened
+trees reproduce LightGBM's own scores, because a proof about a re-implementation proves nothing.
+Byzantine aggregation shows every defence here catches the loud attack and waves through the quiet
+one.
+
+### Added
+- **Neyman-Pearson certified thresholds** (`netsentry npclass`,
+  `netsentry/evaluation/neyman_pearson.py`): the deployed threshold is an empirical quantile of a
+  finite benign sample, so its realized false-positive rate is a random variable — and a biased
+  one, exceeding the 0.1% budget with probability **51%** at an expected 1.07x budget. The
+  umbrella rule of Tong, Feng & Li (JMLR 2018) picks the order statistic whose binomial tail sits
+  under `delta`, giving `P(FPR > alpha) <= delta` for a finite sample with no distributional
+  assumption. Certified rule: violation 2.4%, detection 9.2% → 6.0%. Also computes the hard
+  **sample-size floor** (`log(delta)/log(1-alpha)`, 2,995 benign flows at 0.1%/95%) and the
+  `1/sqrt(n)` decay of the price, out to a million flows. Validation is two-armed and the arms
+  disagree instructively: a rank simulation reproduces the closed form to 0.4%, while the
+  finite-holdout check reads 6.0% against a true 4.5% — a certified rule sits below budget by
+  design, so holdout noise can only push the estimate across the line.
+- **Extreme-value (peaks-over-threshold) thresholds** (`netsentry evt`,
+  `netsentry/evaluation/evt.py`): a Generalized Pareto fitted to the benign tail by Grimshaw's
+  profile likelihood, implemented directly and validated against known GPD draws, SciPy, and the
+  linear mean-excess property. The tail fits **xi = -0.811** — bounded, endpoint 0.99976 — which
+  is the correct answer for a score capped at 1. A controlled arm with closed-form tails decides
+  the comparison: EVT holds 1.2x budget at 0.001% where the empirical quantile overshoots to
+  15.6x, and wins **nothing** on the bounded tail because there the extreme quantile is the
+  endpoint and both estimators land on the sample maximum.
+- **Off-policy evaluation of triage policies** (`netsentry ope`, `netsentry/evaluation/ope.py`):
+  direct method, IPS, SNIPS and doubly-robust (Dudik, Langford & Li 2011), scored against the true
+  policy value the full labels make computable. The deployed policy is worth $212/1,000 flows
+  against a best candidate at $612, with the optimum interior. At zero exploration 77% of the
+  flows a candidate would review carry propensity zero; choosing wrong there costs $1,350, and
+  randomising 0.5% of decisions removes the violation for $51.
+- **Epistemic vs aleatoric uncertainty** (`netsentry uncertainty`,
+  `netsentry/evaluation/uncertainty.py`): predictive entropy decomposed over a bagged ensemble and
+  tested by deleting an attack class from training only. Also surfaces a previously unstated fact
+  about the headline split — **it shares zero attack classes across the day boundary**, so the
+  honest PR-AUC measures detection of entirely unseen attack families.
+- **Deterministic tree verification** (`netsentry verifytrees`,
+  `netsentry/robustness/verify_trees.py`): interval arithmetic over the deployed ensemble giving a
+  **sound, absolute** robustness radius — no sampling, no confidence level, no surrogate. Gated on
+  reproducing LightGBM's `raw_score` to 1e-6; soundness pinned by brute force. Threat model moves
+  the answer from 5.0% to 55.8% of caught attacks provably robust.
+- **Group DRO** (`netsentry dro`, `netsentry/training/dro.py`): worst-group training (Sagawa et
+  al., ICLR 2020) with a size-balanced control isolating what the adversary contributes. Includes
+  the diagnostic for why service cannot be the group here — the same collinearity that makes
+  `Destination Port` a leakage risk.
+- **Byzantine-robust aggregation** (`netsentry byzantine`, `netsentry/training/byzantine.py`):
+  three attacks against the mean, coordinate median, trimmed mean (Yin et al. 2018) and Krum
+  (Blanchard et al. 2017) over 12 sites. One liar in twelve costs a third of FedAvg's value.
+- **Time-to-detection survival analysis** (`netsentry survival`,
+  `netsentry/evaluation/survival.py`): Kaplan-Meier with Greenwood log-log intervals, restricted
+  mean survival time, and a log-rank test with an exact one-degree-of-freedom p-value. Naive
+  latency 4.1 flows against a restricted mean of 32.1, because 61% of bursts are never detected.
+
+### Changed
+- The analysis suite (`netsentry analyze`) and `docs/reports/INDEX.md` now carry 76 reports.
+- Test suite grows from 806 to **930** tests.
+
 ## [0.13.0] — 2026-08-06
 
 The **worst-case, distributed & governed wave**: eight studies for the questions that arrive

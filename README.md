@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.13.0`.** The build plan in
+**Released `v0.14.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and twelve post-release waves build on top — the
+tested, and committed, and thirteen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -67,8 +67,22 @@ cascade returning 5.6x throughput for 96% of detection; Wald's SPRT deciding hos
 both error rates controlled; federated averaging across sites that cannot pool traffic;
 peeking-safe confidence sequences for the shadow-promotion decision; label-free attack-family
 discovery with its null result diagnosed; and a MITRE ATLAS threat model of the detector itself,
-verified against the repository so a deleted study downgrades its own coverage claim).
-`make check` is green (lint + type-check + **806 passing tests**, property-based invariants and a
+verified against the repository so a deleted study downgrades its own coverage claim), and the
+**guarantees, counterfactuals & worst-case wave** (a Neyman-Pearson threshold that *certifies*
+the false-positive budget rather than targeting it — the deployed rule violates its own budget
+51% of the time — plus the sample-size floor below which no threshold can certify it at all;
+extreme-value tails placing operating points the empirical quantile cannot resolve, and the
+bounded-tail regime where extrapolation provably buys nothing; off-policy evaluation of triage
+policies from logs a different policy wrote, where 77% of the counterfactual is unanswerable
+without a deliberate 0.5% exploration budget; epistemic-vs-aleatoric uncertainty tested by
+deleting an attack class from training — and failing exactly where novelty detection matters;
+deterministic interval-arithmetic verification giving an **absolute** robustness radius for the
+deployed ensemble, gated on reproducing LightGBM's own scores; group DRO whose adversary
+declined to reweight and whose emphasis made the worst group monotonically worse;
+Byzantine-robust aggregation where one lying site in twelve costs a third of FedAvg; and
+Kaplan-Meier time-to-detection showing the naive latency understates by 8x because it deletes
+the attacks nobody caught).
+`make check` is green (lint + type-check + **930 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -183,6 +197,14 @@ what actually ships.
 | Anytime-valid A/B | peeking-safe confidence sequences: when the shadow model can be promoted (Robbins 1970) | ✅ Done |
 | Attack-family discovery | clustering the flagged pile with k chosen **without labels**; the null result diagnosed | ✅ Done |
 | MITRE ATLAS coverage | the detector as a target: the whole adversarial suite as one governed threat model | ✅ Done |
+| Certified FP budget | Neyman-Pearson order-statistic threshold: `P(FPR > alpha) <= delta`, finite-sample, with the sample-size floor it implies (Tong, Feng & Li 2018) | ✅ Done |
+| Extreme-value thresholds | peaks-over-threshold GPD fit for operating points the empirical quantile cannot resolve; the bounded-tail limit measured (Siffer et al. 2017) | ✅ Done |
+| Off-policy evaluation | value a triage policy from logs a different policy wrote: IPS/SNIPS/doubly-robust, and the exploration budget that makes it answerable (Dudik 2011) | ✅ Done |
+| Uncertainty decomposition | epistemic vs aleatoric over an ensemble, tested by deleting an attack class from training — and failing where it matters | ✅ Done |
+| Deterministic verification | a **sound, absolute** robustness radius for the deployed ensemble by interval arithmetic, sandwiched with a real attack (Chen et al. 2019) | ✅ Done |
+| Worst-group training | group DRO over capture days, against a size-balanced control; the premise fails and the report says why (Sagawa et al. 2020) | ✅ Done |
+| Byzantine robustness | one lying site costs a third of FedAvg; median / trimmed mean / Krum priced, including when nobody attacks (Blanchard 2017, Yin 2018) | ✅ Done |
+| Survival analysis | Kaplan-Meier time-to-detection with the never-detected campaigns in the denominator; log-rank across operating points | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -1283,6 +1305,155 @@ boundary) vs random. On the stratified split (where the pool/test exchangeabilit
 that active learning needs holds — the training-time mirror of conformal), uncertainty
 sampling reaches random's full-budget PR-AUC with **~22% fewer labels**. See
 [`docs/reports/active_learning.md`](docs/reports/active_learning.md).
+
+## Certified false-positive budgets (Neyman-Pearson)
+
+Every operational claim here rests on one sentence — *"the threshold is chosen on
+validation at a 0.1% false-positive budget"* — and that sentence describes a
+**procedure, not a promise**. The threshold is an empirical quantile of a finite
+benign sample, so the rate it achieves on unseen traffic is a random variable, and a
+biased one. `netsentry npclass` measures it: on 5,611 benign validation flows the
+deployed rule's true FPR exceeds its budget with probability **51%**, and its
+expected FPR is 1.07x budget. The Neyman-Pearson umbrella rule (Tong, Feng & Li 2018)
+replaces the procedure with a guarantee — pick the order statistic whose binomial
+tail sits under `delta` and `P(FPR > alpha) <= delta` holds for a finite sample,
+distribution-free. The certified threshold pins violation at **2.4%** and costs 3.2
+points of detection (9.2% → 6.0% TPR). Two consequences fall out: a hard **sample-size
+floor** (below `log(delta)/log(1-alpha)` benign flows *no* threshold certifies the
+budget — 2,995 flows at 0.1%/95%), and a price that decays like `1/sqrt(n)`, turning
+"how much validation traffic?" into a sizing table. The validation section is itself a
+finding: a rank simulation reproduces the closed form to 0.4%, while the finite-holdout
+check a practitioner would actually run reads 6.0% against a true 4.5% — **a finite
+holdout cannot validate a finite-sample bound**.
+See [`docs/reports/neyman_pearson.md`](docs/reports/neyman_pearson.md).
+
+## Extreme-value thresholds (operating points past the edge of the data)
+
+At a 0.1% budget the threshold is pinned by the top **five** benign scores; one order
+of magnitude tighter and the empirical quantile stops existing (`n*alpha < 1` degenerates
+to the sample maximum). `netsentry evt` fits a Generalized Pareto to the tail instead
+(Pickands-Balkema-de Haan; the peaks-over-threshold machinery of Siffer et al., KDD
+2017), using 281 tail flows to place a threshold rather than five. The fit is Grimshaw's
+profile likelihood implemented directly and validated three ways — parameter recovery
+from known GPD draws, agreement with SciPy, and the linear mean-excess property. The
+benign tail fits **xi = -0.811**: bounded, with an upper endpoint at 0.99976, which is
+the right answer for a score that cannot exceed 1 and a claim the empirical quantile has
+no vocabulary to make. A controlled arm against populations with closed-form tails
+decides the comparison: on unbounded tails EVT holds 1.2x its budget at 0.001% where the
+quantile overshoots to **15.6x** — but on the bounded tail it wins *nothing*, because
+there the extreme quantile **is** the endpoint and both estimators land on the sample
+maximum. Extrapolation buys nothing where there is nothing to extrapolate into.
+See [`docs/reports/evt.md`](docs/reports/evt.md).
+
+## Off-policy evaluation (valuing a policy you never deployed)
+
+A SOC does not have labels for every flow — it has a log: the score, the decision, and
+what the analyst found **only for the flows it reviewed**. Scoring a candidate threshold
+on that log measures the deployed policy's selection, not the candidate's value.
+`netsentry ope` treats triage as a contextual bandit and estimates candidate policies
+with the direct method, IPS, SNIPS and doubly-robust (Dudik, Langford & Li 2011), scored
+against the true value this dataset's full labels make computable. The deployed
+0.1%-FPR policy is worth $212 per 1,000 flows; the best candidate is worth $612, and
+beyond it the value turns negative — so the optimum is interior and estimators can
+genuinely misrank it. RMSE picks the direct method and taking that at face value is the
+trap: it is steady and systematically adrift, because its reward model was fitted on
+exactly the flows the incumbent chose to show an analyst. **The finding is about the log,
+not the estimator.** At zero exploration — a plain deployed threshold, which is what
+production runs — 77% of the flows a candidate would review carry propensity zero, and
+the question is not hard but *unanswerable*; choosing wrong there costs $1,350 per 1,000
+flows. Randomising **0.5%** of triage decisions removes the violation entirely, costs
+$51 and avoids $141 of selection loss.
+See [`docs/reports/ope.md`](docs/reports/ope.md).
+
+## Epistemic vs aleatoric uncertainty (ambiguity or ignorance?)
+
+One attack score is asked to mean both *"this looks benign"* and *"I have never seen
+anything like this"*, and a SOC should treat those flows differently. `netsentry
+uncertainty` decomposes an ensemble's predictive entropy into aleatoric (the members'
+mean entropy — irreducible) and epistemic (the entropy of their mean minus that — the
+mutual information between label and member). Building the falsifiable test surfaced a
+fact about this project's headline split that had gone unstated: **the temporal split
+shares zero attack classes across the day boundary**, so the honest PR-AUC is not
+"known attacks, later" but detection of entirely unseen attack *families*. That also
+forces the test to run as an intervention — on the stratified split, one class deleted
+from training only. The prediction holds weakly (epistemic rises 1.14x against an
+aleatoric 1.04x) and **fails where it matters**: with PortScan deleted the detector
+scores it at 0.492 AUC — chance, completely blind — and epistemic uncertainty reaches
+0.526, also chance. The model is at chance on the attack and does not know it. Reported
+as a negative result, and it is why the benign-only anomaly detector keeps its place
+rather than being replaced by an uncertainty score.
+See [`docs/reports/uncertainty.md`](docs/reports/uncertainty.md).
+
+## Deterministic verification (proving the verdict, not sampling it)
+
+The evasion study gives an upper bound on the attack radius; randomized smoothing gives
+a probabilistic lower bound for a *smoothed surrogate*. A boosted ensemble is
+piecewise-constant over axis-aligned boxes, so `netsentry verifytrees` bounds its output
+over an input box by **interval arithmetic** — a sound, absolute lower bound for the
+deployed model itself, with no sampling and no confidence level. It is gated on identity:
+the flattened trees must reproduce LightGBM's own `raw_score` to within 1e-6 or the run
+aborts, because a proof about a re-implementation proves nothing. Incompleteness is
+priced rather than hidden — bounding trees independently can refuse to certify a safe
+point, so every flow is sandwiched between the certificate and a real attack (median
+0.024 certified against 0.043 attacked). The second half is where it stops being an
+exercise: certifying against arbitrary perturbation of all 76 features leaves **5.0%** of
+caught attacks provably robust at a 0.10 radius; restricting to the 39 an attacker can
+shape gives 18.3%; forbidding the physically impossible direction — you can add bytes,
+you cannot un-send them — reaches **55.8%** and a 4.8x larger radius.
+See [`docs/reports/verify_trees.md`](docs/reports/verify_trees.md).
+
+## Group DRO (training for the worst case)
+
+`netsentry dro` minimises the worst group's loss instead of the average (Sagawa et al.,
+ICLR 2020), and choosing the groups turned out to be most of the work. Grouping by
+service is unusable here: most services are one class end to end, and a group that is
+100% one class is not a subpopulation but a label. That collinearity is not a synthetic
+quirk — attacks concentrate on service ports in the real capture too, **which is exactly
+why `Destination Port` is dropped as a feature**. The same property that makes the port a
+leakage risk makes the service a useless DRO group. Groups are capture days instead
+(0%, 13%, 38% attack traffic), which sharpens the question to transfer. Two negative
+results worth keeping: DRO selected its own uniform round, so its column matches the
+size-balanced control by construction — given the chance to reweight, the adversary
+declined; and upweighting the worst group made it **monotonically worse** (weight on
+Tuesday 0.33 → 0.70, Tuesday's loss 0.3764 → 0.3958), because weight is a fixed budget
+and the model learns Tuesday's attacks largely from the other days'. DRO assumes a
+group's difficulty is fixable by paying it more attention; that fails when groups share
+their signal.
+See [`docs/reports/dro.md`](docs/reports/dro.md).
+
+## Byzantine-robust aggregation (when a site lies)
+
+Federated training assumes every site is honest, and that assumption carries the whole
+result: averaging is linear, so one participant sending a large enough vector moves the
+global model anywhere. `netsentry byzantine` runs three attacks against four aggregation
+rules over 12 day-sharded sites. **One liar in twelve costs a third of FedAvg's value**
+(0.595 → 0.378 PR-AUC); swapping in coordinate median, trimmed mean (Yin et al. 2018) or
+Krum (Blanchard et al. 2017) holds the same attack above 90% of clean. Robustness is not
+free — the median gives up 0.068 PR-AUC when nobody attacks — and the trimmed mean's
+tolerance is a parameter you must size, collapsing to 26% at four liars with `trim=2`.
+Krum's three attack rows come out identical digit for digit, which is its defining
+property rather than a bug: it discards the attackers' updates entirely instead of
+diluting them. The label-flip row is the one to take seriously — every defence works by
+treating outliers as suspicious, and a well-fitted model of the wrong thing is not an
+outlier.
+See [`docs/reports/byzantine.md`](docs/reports/byzantine.md).
+
+## Time-to-detection with censoring (survival analysis)
+
+The campaign study averages first-alert latency over campaigns that *raised* an alert,
+which conditions on success and deletes the worst outcomes. `netsentry survival` applies
+Kaplan-Meier (1958) with the never-detected bursts kept in the at-risk denominator —
+Greenwood variance on a log-log scale, restricted mean survival time, and a log-rank test
+whose p-value is the exact one-degree-of-freedom tail. The bias is not marginal: the
+naive mean reads **4.1 flows**, the restricted mean over the same horizon is **32.1**,
+because 61% of bursts are never detected. At the 0.1% budget the Kaplan-Meier median
+does not exist, and saying so beats substituting a mean over the lucky ones. Log-rank
+says the 1% budget catches attacks *earlier*, not merely more of them (p = 0.041). The
+per-class breakdown reframes everything: DDoS is caught in essentially every burst at a
+median of 3 flows, Bot/PortScan/Web Attack in none — nothing in between, so the aggregate
+mean is a **mixture artefact**. There is no latency to tune; the quantity is governed
+entirely by which classes are visible at all.
+See [`docs/reports/survival.md`](docs/reports/survival.md).
 
 ## Provenance & supply chain
 

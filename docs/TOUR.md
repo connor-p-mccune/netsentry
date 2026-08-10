@@ -128,7 +128,34 @@ of attack-SLA** once the offered load crosses 1 and the backlog forms — with t
 backlog column kept beside it to show the tail-starvation trade, not hide it
 ([`reports/socsim.md`](reports/socsim.md)).
 
-## Stop 8 — Where the bodies are buried, on purpose
+## Stop 8 — The claims themselves are audited, and four of them failed
+
+The newest wave went after the sentences the rest of the repo takes on trust, and kept the
+results that came back badly.
+
+- *"The threshold is chosen at a 0.1% FP budget"* describes a procedure, not a promise: its
+  true rate exceeds that budget **51%** of the time. [`neyman_pearson.md`](reports/neyman_pearson.md)
+  replaces it with a finite-sample guarantee — and finds the sample-size floor below which no
+  threshold can certify the budget at all.
+- *"We can tell when the model is out of its depth."* Not reliably.
+  [`uncertainty.md`](reports/uncertainty.md) deletes an attack class from training: the detector
+  scores it at chance, and its epistemic uncertainty is also at chance. It is blind and does not
+  know it.
+- *"Worst-case training helps."* [`dro.md`](reports/dro.md) gives the adversary eight rounds; it
+  selects the round where it did nothing, and every round in which it acted made the worst group
+  worse.
+- *"More sophisticated tail estimation is better."* [`evt.md`](reports/evt.md) shows it wins by an
+  order of magnitude on unbounded tails and provably nothing on bounded ones — which is the regime
+  this detector is in.
+
+Alongside them: [`verify_trees.md`](reports/verify_trees.md) proves per-flow robustness radii by
+interval arithmetic rather than sampling (and refuses to report unless the flattened trees
+reproduce LightGBM exactly), [`ope.md`](reports/ope.md) shows 77% of the "what would a lower
+threshold have caught?" counterfactual is unanswerable from a deterministic policy's logs, and
+[`survival.md`](reports/survival.md) puts the never-detected campaigns back into the latency
+metric, moving it by 8x.
+
+## Stop 9 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the
@@ -142,7 +169,7 @@ file is probably the fastest signal in the repo.
 make install
 netsentry download && netsentry prep   # synthetic stand-in, out of the box
 make lifecycle                         # seeds → gate → promote → retrainpolicy → canary
-netsentry analyze                      # regenerate all 36 reports + the index
+netsentry analyze                      # regenerate all 76 reports + the index
 netsentry pcap --demo                  # raw packets → CIC flows → verdicts
 ```
 

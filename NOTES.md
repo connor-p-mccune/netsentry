@@ -1725,6 +1725,162 @@ smaller dev-run numbers noted in earlier phases:
   deliberate trade: the API discloses model ontology because explanations are a product
   requirement, and the extraction study prices that rather than hiding it.
 
+## Guarantees, counterfactuals & worst-case wave (v0.14.0)
+
+Eight studies. The unifying question was not "what else can this project do" but "which sentences
+in it are load-bearing and unverified". Four of the eight came back negative, which is the part I
+am most confident was worth doing.
+
+### Neyman-Pearson: the headline operating point had no guarantee
+
+The whole repo hangs off *"the threshold is chosen on validation at a 0.1% FP budget"*. I had
+never asked what that promises. It promises nothing: the empirical quantile lands on the order
+statistic that just fits the sample, and the population is bigger than the sample, so its expected
+FPR is `(floor(n*alpha)+1)/(n+1)` — **above** budget by construction. Measured: 51% chance of
+violating its own budget.
+
+- The identity that makes it exact: with `m` of `n` benign flows above the threshold, the
+  population FPR is `Beta(m+1, n-m)`, whose upper tail is `P(Bin(n, alpha) <= m)`. So certifying
+  is just "find the largest `m` whose binomial tail is under delta" — a scan, not an optimisation.
+- **The floor was the surprise.** Even `m = 0` (threshold above every calibration flow) violates
+  with probability `(1-alpha)^n`, so below `n = log(delta)/log(1-alpha)` there is no certifiable
+  threshold *at all*. 2,995 benign flows at 0.1%/95%; validation has 5,611. The deployed budget is
+  only just certifiable, and I had no idea.
+- **Validation arm bit me and became the best part.** My first version checked the guarantee with
+  repeated cal/holdout splits of the real scores. The certified rule read 6.0% against a 5%
+  promise and I nearly went hunting for an off-by-one. Simulated it three ways instead: population
+  truth (matches the closed form), finite i.i.d. holdout (inflates), finite-pool split (same as
+  i.i.d.). **The instrument was wrong, not the bound** — a certified rule sits below budget by
+  design, so holdout noise can only push the *estimate* over the line, never back. A finite
+  holdout cannot validate a finite-sample bound. Kept both arms and the explanation.
+- Rank-invariance means simulating with uniform draws is not a toy — the rule reads only order
+  statistics. Reused that in EVT and got a free cross-check.
+
+### EVT: the tail is bounded, and that kills the extrapolation
+
+Grimshaw's profile likelihood (`theta = xi/sigma`, `xi(theta) = mean(log(1 + theta*y))`) collapses
+the two-parameter fit to a 1-D search. Validated against known GPD draws *and* SciPy — worth the
+extra test, it caught a sign error early.
+
+- Fitted `xi = -0.811` on the benign tail: bounded, endpoint 0.99976. Correct for a score capped
+  at 1, and a claim the empirical quantile cannot make.
+- **The controlled arm is the whole report.** Real data cannot adjudicate a 0.01% budget (needs
+  ~100k benign flows, the test days have 18,720), so I compared against populations with
+  closed-form tails. EVT wins hugely on unbounded ones (1.2x vs 15.6x at 0.001%) and **wins
+  nothing on the bounded one**. Traced it: both estimators land on the sample maximum in ~100% of
+  replicates, because for a bounded tail the extreme quantile *is* the endpoint and the endpoint
+  cannot be known better than the largest observation. Same "collect more data" floor the NP study
+  reaches from the other side.
+- The empirical-quantile rows came out byte-identical across all three populations. Not a bug —
+  rank invariance again.
+
+### Off-policy evaluation: two modelling errors before it said anything
+
+- **First version was degenerate.** I used the test split's own ~25% attack rate, at which a
+  randomly chosen review has positive expected value, "review everything" wins by construction,
+  and exploration reads as *free* (negative cost). Re-mixed to the cost study's 1% production
+  prior; optimum became interior (1% FPR) and the comparison became real.
+- **ESS was lying.** Taken over all logged flows it read ~24,000 because the zero-reward skip arm
+  dominates the weight mass. Restricted it to the reviewed arm — the flows that actually carry
+  reward — and it reads 12-60. That is the number an operator can act on.
+- RMSE ranks the direct method first, which is the trap: it is steady and systematically adrift
+  because its reward model was fitted on exactly the flows the incumbent chose to show an analyst.
+  Added a **selection-regret** table (which policy does each estimator pick, and what was that
+  choice worth) and led with it. DM edges DR on regret here, and I said explicitly why that is not
+  a recommendation: its bias happens to be monotone in permissiveness, which is unverifiable
+  without the labels that are missing.
+- Headline: at zero exploration 77% of the counterfactual is *unanswerable*, not hard.
+
+### Uncertainty: the split has no known attacks at all
+
+Building the falsifiable test surfaced something I should have known for months — **the temporal
+split shares zero attack classes across the day boundary**. Train sees DoS/Patator/Heartbleed;
+test is Bot/DDoS/Infiltration/PortScan/WebAttack. The headline 0.529 PR-AUC is detection of
+entirely unseen attack *families*, which is a harder claim than I had been making.
+
+- That also killed the observational design (no known-attack population on test days), so I moved
+  to an intervention: stratified split, delete one class from training only, test set untouched.
+- Result: epistemic 1.14x vs aleatoric 1.04x — right ordering, too weak to lean on. **The PortScan
+  arm is the finding.** Delete PortScan and the detector scores it at 0.492 AUC (chance, blind);
+  epistemic uncertainty reads 0.526 (also chance). The model is at chance and does not know it.
+  The arms where epistemic looks good (DoS Hulk, DDoS) are arms where the detector still catches
+  the class at 0.9+ because siblings cover it — i.e. where a novelty signal was not needed.
+- Mechanism: a tree away from its training data does not abstain, it returns whichever leaf the
+  last split routes to, and bagged members route it to the same place.
+
+### Deterministic verification: gate it on identity or it means nothing
+
+Flattened LightGBM into arrays and propagated intervals. The whole thing is worthless if the
+flattened trees are not the deployed function, so the run **aborts** unless it reproduces
+`booster.predict(raw_score=True)` to 1e-6.
+
+- **Performance mistake:** first attack implementation called my Python tree walker per candidate
+  — 180k tree traversals per bisection step, ~777M total. Killed it after 11 minutes. Rewrote the
+  attack around a batched `predict` callable (the attack may use the compiled booster; the *proof*
+  stays on the flat trees) and it runs in seconds. Kept the callable signature so tests can drive
+  it with no LightGBM.
+- Incompleteness is real and priced: summing per-tree extremes can describe a leaf combination no
+  input realises. Wrote the pathological two-tree case as a unit test so the claim stays honest.
+- Threat model is the operational half: unrestricted 5.0% provably robust → controllable 18.3% →
+  inflate-only 55.8%. An attacker can add bytes; it cannot un-send them.
+
+### Group DRO: the groups were the whole problem
+
+- Tried services first, as the parity audit does. **Unusable**: DNS/IMAP/POP3/SMTP are 100% benign,
+  FTP and ephemeral 100% attack. A group that is one class is a label, and worst-group loss becomes
+  hardest-class loss. Realised the collinearity is the *same reason* `Destination Port` is dropped
+  as a feature — worth stating, so the report shows the composition table.
+- Moved to capture days (0%, 13%, 38% attack). Added a **size-balanced control** so the adversary's
+  contribution is isolated from the effect of equalising group sizes.
+- Two negatives: DRO selected round 1 (uniform weights), so its column equals the control *by
+  construction*, not coincidence; and upweighting the worst group made it monotonically worse
+  (Tuesday's weight 0.33→0.70, its loss 0.3764→0.3958) because weight is a fixed budget and
+  Tuesday's attacks are learned largely from the other days'. Cheap diagnostic worth remembering:
+  if worst-group loss rises as its weight rises, the partition is wrong for DRO, not the model.
+
+### Byzantine: the mean has no breakdown point
+
+Reused the federated module's `Weights` / `local_train`, sharded days into 12 sites (3 sites is too
+few for a Byzantine minority to mean anything).
+
+- One liar in twelve: 0.595 → 0.378 PR-AUC. Wrote the unit test that *constructs* the update
+  moving FedAvg to an arbitrary target rather than describing the vulnerability.
+- Krum's three attack rows came out identical digit for digit. Checked before writing it up — it is
+  the defining property (it elects rather than averages, so excluded updates cannot matter at all),
+  not a copy-paste bug. Said so in the report because it looks like one.
+- Label flip is the honest worry: the malicious update has an ordinary norm and an ordinary
+  distance to its neighbours, and every defence here works by treating outliers as suspicious.
+- Toned down my own first draft, which said one liar "destroys" FedAvg. 64% retention is severe,
+  not destruction; made the wording scale with the measured number.
+
+### Survival: the latency metric was deleting its worst cases
+
+- Bursts, not campaigns: (day, class) gives ~6 subjects and survival analysis on 6 subjects is
+  theatre. 50-flow bursts give 125. Fixed windows also make the censoring **administrative**,
+  which is exactly the independence Kaplan-Meier needs — a design that stopped following a burst
+  when the attack stopped would violate it.
+- Naive mean 4.1 flows vs restricted mean 32.1. The KM median does not exist at the 0.1% budget
+  and reporting "it does not exist, because 61% are never detected" is more useful than a number.
+- Log-rank p = 0.041: the looser budget catches attacks *earlier*, not just more of them.
+- **Per-class table changed the conclusion.** DDoS 100% detected at median 3 flows; Bot, PortScan,
+  Web Attack 0%. Nothing in between — so the aggregate restricted mean is a *mixture artefact* and
+  no burst actually takes 32 flows. There is no latency to tune; it is a coverage problem.
+
+### Mechanics worth remembering
+
+- `math.ceil`/`math.floor` already return `int` — `int(...)` around them trips RUF046 (hit twice).
+- `zip(x, x[1:], strict=True)` raises; ruff wants `itertools.pairwise` anyway.
+- mypy `no-any-return` on numpy expressions: assign to a typed local first. Still the fix.
+- `np.trapezoid` (numpy 2.x) not `np.trapz`.
+- Markdown tables inside f-string report templates blow the 100-char line limit; build them as
+  module-level joined lists (`_COMPARISON_TABLE`, `_APPROACH_TABLE`).
+- `load_settings` takes a `Path`, not a `str`.
+- Heredocs containing `'''` break the shell; write long Python to the scratchpad and splice.
+- Running a report generator with an override still writes to `docs/reports/` — regenerate with
+  the default config afterwards or the committed report is the small one.
+- 6 version files this wave (`__init__.py`, `pyproject.toml`, Helm `Chart.yaml` + `values.yaml`,
+  k8s `deployment.yaml` + `kustomization.yaml`) plus the README status line and wave count.
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

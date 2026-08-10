@@ -10,6 +10,14 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Alert-queue capacity | detection vs analyst budget; lift over random triage | [open](alert_queue.md) |
 | SOC queue simulation | FIFO vs score-priority attack-SLA under queueing load | [open](socsim.md) |
 | Base-rate stress test | alert precision vs production prevalence (Axelsson 1999) | [open](base_rate.md) |
+| Neyman-Pearson thresholds | a finite-sample guarantee that the FP budget holds (Tong, Feng & Li 2018) | [open](neyman_pearson.md) |
+| Time-to-detection survival | Kaplan-Meier with the never-detected campaigns still in the denominator | [open](survival.md) |
+| Byzantine-robust aggregation | one lying site destroys FedAvg; median / trimmed mean / Krum priced (Blanchard 2017, Yin 2018) | [open](byzantine.md) |
+| Group DRO | train for the worst group, not the average one, and watch the premise fail (Sagawa et al. 2020) | [open](dro.md) |
+| Deterministic verification | a sound, absolute robustness radius for the deployed ensemble by interval arithmetic (Chen et al. 2019) | [open](verify_trees.md) |
+| Epistemic vs aleatoric | ambiguity or ignorance: uncertainty decomposed over an ensemble, tested on never-seen attack classes | [open](uncertainty.md) |
+| Off-policy evaluation | value a triage policy you never deployed: IPS/SNIPS/doubly-robust (Dudik, Langford & Li 2011) | [open](ope.md) |
+| Extreme-value thresholds | peaks-over-threshold GPD fit: operating points past the edge of the data (Siffer et al. 2017) | [open](evt.md) |
 | Conformal alert FDR | a false-discovery-rate guarantee on the alert batch: conformal p-values + BH (Bates et al. 2023) | [open](alert_fdr.md) |
 | Conformal prediction | coverage guarantee + selective alerting | [open](conformal.md) |
 | Adaptive conformal | coverage restored online under drift (ACI) | [open](adaptive_conformal.md) |
