@@ -67,6 +67,7 @@ from netsentry.intel.report import run_mitre_report
 from netsentry.intel.sequential import run_sequential_report
 from netsentry.intel.sigma import run_sigma_export
 from netsentry.log import get_logger
+from netsentry.models.monotonic import run_monotonic_report
 from netsentry.monitoring.covariate_shift import run_covariate_shift_report
 from netsentry.monitoring.exchangeability import run_exchangeability_report
 from netsentry.monitoring.experts import run_experts_report
@@ -181,6 +182,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "(Peters 2016, Arjovsky 2019)",
         "invariance.md",
         run_invariance_report,
+    ),
+    (
+        "Monotone constraints",
+        "an entire evasion family made impossible by construction, proved and priced",
+        "monotonic.md",
+        run_monotonic_report,
     ),
     (
         "Byzantine-robust aggregation",

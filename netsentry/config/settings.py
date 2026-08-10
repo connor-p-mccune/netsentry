@@ -1298,6 +1298,31 @@ class InvarianceConfig(BaseModel):
     plot_features: int = 20  # strongest features shown in the stability figure
 
 
+class MonotonicConfig(BaseModel):
+    """Monotone constraints as a structural evasion defence, priced against detection.
+
+    The evasion attack works by inflation: pad the flow until the score falls under the
+    threshold. A model constrained non-decreasing in every attacker-inflatable feature cannot
+    be attacked that way at all -- adding bytes can only raise suspicion -- and both backends
+    enforce the constraint at split time, so it holds for every input rather than for the ones
+    that resemble training rows. The inflatable set is ``robustness.controllable_features``,
+    shared with the evasion and verification studies so the three cannot drift apart.
+    ``inflation_reach`` is how far the verifier lets the attacker inflate in standardised
+    units (large enough to be effectively unbounded for a standardised feature);
+    ``attack_steps`` and ``attack_rounds`` drive the greedy inflation
+    search (at each round, the single addition that lowers the score most is kept);
+    ``probe_steps`` are the random bumps the falsification probe tries. ``max_attack_flows``
+    and ``max_verify_flows`` bound the work, since both the search and the interval
+    propagation are per-flow."""
+
+    inflation_reach: float = 1e6  # standardised units the verifier lets the attacker add
+    attack_steps: list[float] = Field(default_factory=lambda: [0.25, 1.0, 4.0])
+    attack_rounds: list[int] = Field(default_factory=lambda: [0, 1, 2, 3])
+    probe_steps: list[float] = Field(default_factory=lambda: [0.1, 1.0, 10.0])
+    max_attack_flows: int = 500  # alerting flows driven through the greedy attack
+    max_verify_flows: int = 400  # flows the interval verifier proves (it is per-flow)
+
+
 class DiscoveryConfig(BaseModel):
     """Unsupervised attack-family discovery over the flows the detector flags.
 
@@ -2004,6 +2029,7 @@ class Settings(BaseSettings):
     hierarchy: HierarchyConfig = Field(default_factory=HierarchyConfig)
     defer: DeferConfig = Field(default_factory=DeferConfig)
     invariance: InvarianceConfig = Field(default_factory=InvarianceConfig)
+    monotonic: MonotonicConfig = Field(default_factory=MonotonicConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

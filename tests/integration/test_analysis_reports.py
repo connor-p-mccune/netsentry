@@ -860,3 +860,16 @@ def test_invariance_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "environment" in text and "irm" in text
     assert "flipped sign" in text and "premise" in text
+
+
+@pytest.mark.slow
+def test_monotonic_report_is_written(prepared: Settings) -> None:
+    from netsentry.models.monotonic import run_monotonic_report
+
+    prepared.monotonic.max_attack_flows = 40
+    prepared.monotonic.max_verify_flows = 40
+    prepared.monotonic.attack_rounds = [0, 1]
+    out = run_monotonic_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "monotone-constrained" in text
+    assert "provably inflation-robust" in text and "inflate" in text

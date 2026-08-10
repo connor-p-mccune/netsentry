@@ -976,6 +976,19 @@ def invariance(
 
 
 @app.command()
+def monotonic(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Make inflation evasion impossible by constraint, prove it, and price the detection."""
+    from netsentry.models.monotonic import run_monotonic_report
+
+    settings = _load(config, override)
+    out = run_monotonic_report(settings)
+    logger.info("Monotonicity report ready", extra={"path": str(out)})
+
+
+@app.command()
 def byzantine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

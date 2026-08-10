@@ -8,6 +8,7 @@ resampling), early stopping uses the validation set, and seeding is deterministi
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -53,9 +54,19 @@ def build_baselines(settings: Settings) -> dict[str, Any]:
 class SupervisedClassifier(BaseModel):
     """Gradient-boosted classifier with imbalance handling and early stopping."""
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(
+        self, settings: Settings, monotone_constraints: Sequence[int] | None = None
+    ) -> None:
+        """``monotone_constraints`` is one entry per feature: +1 non-decreasing, -1
+        non-increasing, 0 unconstrained. Both backends enforce it structurally at split
+        time, so the resulting model *cannot* violate it for any input -- which is what
+        makes it usable as a security property rather than a regulariser (see
+        ``netsentry.models.monotonic``)."""
         self.settings = settings
         self.backend = resolve_backend(settings)
+        self.monotone_constraints = (
+            None if monotone_constraints is None else [int(c) for c in monotone_constraints]
+        )
         self.model: Any = None
         self.classes_: np.ndarray = np.empty(0)
 
@@ -64,6 +75,11 @@ class SupervisedClassifier(BaseModel):
         if self.backend == "lightgbm":
             import lightgbm as lgb
 
+            extra: dict[str, Any] = (
+                {"monotone_constraints": self.monotone_constraints}
+                if self.monotone_constraints is not None
+                else {}
+            )
             return lgb.LGBMClassifier(
                 n_estimators=cfg.n_estimators,
                 learning_rate=cfg.learning_rate,
@@ -78,6 +94,7 @@ class SupervisedClassifier(BaseModel):
                 deterministic=True,
                 force_row_wise=True,
                 verbosity=-1,
+                **extra,
             )
         # scikit-learn fallback: self-validating internal early stopping.
         return HistGradientBoostingClassifier(
@@ -88,6 +105,7 @@ class SupervisedClassifier(BaseModel):
             l2_regularization=cfg.reg_lambda,
             random_state=self.settings.seed,
             early_stopping=True,
+            monotonic_cst=self.monotone_constraints,
             validation_fraction=self.settings.split.val_size,
             n_iter_no_change=max(10, cfg.early_stopping_rounds // 2),
         )
