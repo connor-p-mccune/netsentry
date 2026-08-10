@@ -22,7 +22,7 @@ def test_binary_entropy_is_zero_at_certainty_and_maximal_at_a_coin_flip() -> Non
 
 def test_unanimous_confident_members_leave_no_uncertainty_at_all() -> None:
     members = np.array([[0.99, 0.01], [0.99, 0.01], [0.99, 0.01]])
-    total, aleatoric, epistemic = decompose(members)
+    total, _aleatoric, epistemic = decompose(members)
     assert np.all(total < 0.06) and np.all(epistemic < 1e-9)
 
 

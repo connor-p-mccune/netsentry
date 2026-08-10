@@ -910,6 +910,19 @@ def neyman_pearson_cmd(
     logger.info("Neyman-Pearson report ready", extra={"path": str(out)})
 
 
+@app.command("verifytrees")
+def verify_trees_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Prove per-flow robustness radii for the deployed ensemble by interval arithmetic."""
+    from netsentry.robustness.verify_trees import run_verify_trees_report
+
+    settings = _load(config, override)
+    out = run_verify_trees_report(settings)
+    logger.info("Tree-verification report ready", extra={"path": str(out)})
+
+
 @app.command()
 def uncertainty(
     config: ConfigOpt = None,

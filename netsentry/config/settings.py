@@ -1433,6 +1433,33 @@ class NeymanPearsonConfig(BaseModel):
     n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
 
 
+class VerifyTreesConfig(BaseModel):
+    """Deterministic (sound) robustness verification of the deployed tree ensemble.
+
+    The evasion study gives an upper bound on the attack radius and randomized smoothing
+    gives a probabilistic lower bound for a *smoothed* surrogate. A tree ensemble is
+    piecewise-constant over axis-aligned boxes, so interval arithmetic gives an **absolute**
+    lower bound for the deployed model itself: propagate a box down each tree, sum the
+    per-tree extremes, and if the bound still clears the threshold no perturbation inside the
+    box can flip the verdict. Bounding trees independently makes it sound but incomplete —
+    the exact answer is a max-clique search over consistent leaf tuples (Chen et al., NeurIPS
+    2019) — so the study sandwiches every flow between the certificate and a real attack and
+    reports the gap. ``max_radius`` bounds the bisection, ``bisection_steps`` its precision,
+    ``budget`` is the radius the robust-share headline is quoted at, ``n_flows`` caps how many
+    caught attacks are verified, and ``attack_samples`` sizes the random search behind the
+    upper bound. ``exactness_checks``/``exactness_tolerance`` gate the whole report: the
+    flattened trees must reproduce LightGBM's own raw score or the run aborts, since a proof
+    about a re-implementation proves nothing about what is deployed."""
+
+    n_flows: int = 120  # caught attack flows verified per threat model
+    max_radius: float = 1.0  # bisection ceiling, in standardised feature units
+    bisection_steps: int = 12  # radius precision: max_radius / 2^steps
+    budget: float = 0.10  # radius the "provably robust" headline share is quoted at
+    attack_samples: int = 60  # random probes inside the box, per attack radius trial
+    exactness_checks: int = 200  # flows the flattened ensemble is checked against LightGBM on
+    exactness_tolerance: float = 1e-6  # largest reconstruction error tolerated before aborting
+
+
 class UncertaintyConfig(BaseModel):
     """Epistemic vs aleatoric decomposition over a bagged, re-seeded ensemble.
 
@@ -1794,6 +1821,7 @@ class Settings(BaseSettings):
     evt: EVTConfig = Field(default_factory=EVTConfig)
     ope: OPEConfig = Field(default_factory=OPEConfig)
     uncertainty: UncertaintyConfig = Field(default_factory=UncertaintyConfig)
+    verify_trees: VerifyTreesConfig = Field(default_factory=VerifyTreesConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

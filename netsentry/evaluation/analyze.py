@@ -80,6 +80,7 @@ from netsentry.robustness.membership import run_membership_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
+from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.cascade import run_cascade_report
 from netsentry.training.federated import run_federated_report
@@ -140,6 +141,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a finite-sample guarantee that the FP budget holds (Tong, Feng & Li 2018)",
         "neyman_pearson.md",
         run_neyman_pearson_report,
+    ),
+    (
+        "Deterministic verification",
+        "a sound, absolute robustness radius for the deployed ensemble by interval "
+        "arithmetic (Chen et al. 2019)",
+        "verify_trees.md",
+        run_verify_trees_report,
     ),
     (
         "Epistemic vs aleatoric",

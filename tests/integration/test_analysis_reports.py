@@ -765,13 +765,15 @@ def test_uncertainty_report_is_written(prepared: Settings) -> None:
 
 
 @pytest.mark.slow
-def test_uncertainty_report_is_written(prepared: Settings) -> None:
-    from netsentry.evaluation.uncertainty import run_uncertainty_report
+def test_verify_trees_report_is_written(prepared: Settings) -> None:
+    pytest.importorskip("lightgbm")
+    from netsentry.robustness.verify_trees import run_verify_trees_report
 
-    prepared.uncertainty.n_models = 3
-    prepared.uncertainty.n_holdout_classes = 1
-    prepared.uncertainty.min_holdout_flows = 10
-    out = run_uncertainty_report(prepared)
+    prepared.verify_trees.n_flows = 5
+    prepared.verify_trees.bisection_steps = 6
+    prepared.verify_trees.attack_samples = 20
+    prepared.verify_trees.exactness_checks = 25
+    out = run_verify_trees_report(prepared)
     text = out.read_text(encoding="utf-8").lower()
-    assert out.exists() and "epistemic" in text and "aleatoric" in text
-    assert "deleted from training" in text
+    assert out.exists() and "certified radius" in text
+    assert "sound but incomplete" in text and "threat model" in text
