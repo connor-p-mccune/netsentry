@@ -29,6 +29,7 @@ from netsentry.evaluation.discovery import run_discovery_report
 from netsentry.evaluation.earliness import run_earliness_report
 from netsentry.evaluation.evt import run_evt_report
 from netsentry.evaluation.gate import run_gate
+from netsentry.evaluation.hierarchy import run_hierarchy_report
 from netsentry.evaluation.hmeasure import run_hmeasure_report
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.label_shift import run_label_shift_report
@@ -157,6 +158,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "when a flow verdict can first exist, and what deciding earlier costs",
         "earliness.md",
         run_earliness_report,
+    ),
+    (
+        "Taxonomy-aware errors",
+        "hierarchical P/R/F1 over the ATT&CK tree; which mistakes actually cost "
+        "(Kiritchenko 2006)",
+        "hierarchy.md",
+        run_hierarchy_report,
     ),
     (
         "Byzantine-robust aggregation",

@@ -825,3 +825,14 @@ def test_earliness_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "handshake" in text and "in-flight" in text
     assert "teardown" in text and "idle timer" in text
+
+
+@pytest.mark.slow
+def test_hierarchy_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.hierarchy import run_hierarchy_report
+
+    prepared.hierarchy.min_class_rows = 5
+    out = run_hierarchy_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "hier. f1" in text and "att&ck" in text
+    assert "within tactic" in text and "missed attack" in text

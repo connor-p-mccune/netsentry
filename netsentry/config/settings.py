@@ -1211,6 +1211,39 @@ class EarlinessConfig(BaseModel):
     )
 
 
+class HierarchyConfig(BaseModel):
+    """Taxonomy-aware multiclass evaluation: not every misclassification costs the same.
+
+    The flat multiclass metric charges the same for confusing ``DoS Hulk`` with ``DoS
+    GoldenEye`` (same playbook, same containment) as for confusing it with ``BENIGN`` (no
+    response at all). The study scores against the four-level ATT&CK taxonomy already in
+    ``intel.attack_mapping`` — verdict / tactic / technique / class — using hierarchical
+    precision/recall/F1 (Kiritchenko et al. 2006), and compares the deployed flat classifier
+    against a local-classifier-per-parent-node one. The ``cost_*`` fields are a stated
+    playbook schedule in arbitrary units, not a measurement: they encode an ordering nobody
+    would dispute (a missed attack costs more than the wrong playbook, which costs more than
+    a sibling name) so that "88% accurate" can be restated as an expected response cost.
+    ``min_class_rows`` is the support a class needs before it gets its own row."""
+
+    cost_within_technique: float = 0.1  # a sibling name; the same playbook runs
+    cost_within_tactic: float = 0.3  # right intent, wrong technique
+    cost_cross_tactic: float = 1.0  # the wrong playbook runs
+    cost_false_alarm: float = 1.0  # an investigation with nothing at the end of it
+    cost_missed_attack: float = 5.0  # no investigation at all
+    min_class_rows: int = 30  # test rows a class needs before it gets its own row
+
+    def error_costs(self) -> dict[str, float]:
+        """Per-error-kind playbook cost, keyed as ``evaluation.hierarchy.ERROR_KINDS``."""
+        return {
+            "exact": 0.0,
+            "within_technique": self.cost_within_technique,
+            "within_tactic": self.cost_within_tactic,
+            "cross_tactic": self.cost_cross_tactic,
+            "false_alarm": self.cost_false_alarm,
+            "missed_attack": self.cost_missed_attack,
+        }
+
+
 class DiscoveryConfig(BaseModel):
     """Unsupervised attack-family discovery over the flows the detector flags.
 
@@ -1914,6 +1947,7 @@ class Settings(BaseSettings):
     byzantine: ByzantineConfig = Field(default_factory=ByzantineConfig)
     survival: SurvivalConfig = Field(default_factory=SurvivalConfig)
     earliness: EarlinessConfig = Field(default_factory=EarlinessConfig)
+    hierarchy: HierarchyConfig = Field(default_factory=HierarchyConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

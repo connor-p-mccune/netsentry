@@ -937,6 +937,19 @@ def earliness(
 
 
 @app.command()
+def hierarchy(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Score the classifier against the ATT&CK taxonomy: which errors actually cost."""
+    from netsentry.evaluation.hierarchy import run_hierarchy_report
+
+    settings = _load(config, override)
+    out = run_hierarchy_report(settings)
+    logger.info("Hierarchy report ready", extra={"path": str(out)})
+
+
+@app.command()
 def byzantine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
