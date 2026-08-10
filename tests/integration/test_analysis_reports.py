@@ -836,3 +836,15 @@ def test_hierarchy_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "hier. f1" in text and "att&ck" in text
     assert "within tactic" in text and "missed attack" in text
+
+
+@pytest.mark.slow
+def test_defer_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.defer import run_defer_report
+
+    prepared.defer.budget_fractions = [0.0, 0.01, 0.05]
+    prepared.defer.reference_rows = 500
+    out = run_defer_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "complementary" in text and "least confident" in text
+    assert "review" in text and "noise floor" in text

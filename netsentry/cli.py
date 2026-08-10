@@ -950,6 +950,19 @@ def hierarchy(
 
 
 @app.command()
+def defer(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Learn which flows to escalate to an analyst (Madras et al. 2018), under a budget."""
+    from netsentry.evaluation.defer import run_defer_report
+
+    settings = _load(config, override)
+    out = run_defer_report(settings)
+    logger.info("Deferral report ready", extra={"path": str(out)})
+
+
+@app.command()
 def byzantine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

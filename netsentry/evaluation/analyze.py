@@ -25,6 +25,7 @@ from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.data_value import run_data_value_report
+from netsentry.evaluation.defer import run_defer_report
 from netsentry.evaluation.discovery import run_discovery_report
 from netsentry.evaluation.earliness import run_earliness_report
 from netsentry.evaluation.evt import run_evt_report
@@ -158,6 +159,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "when a flow verdict can first exist, and what deciding earlier costs",
         "earliness.md",
         run_earliness_report,
+    ),
+    (
+        "Learning to defer",
+        "which flows are worth an analyst's time; when 'abstain where unsure' is the wrong "
+        "policy (Madras et al. 2018)",
+        "defer.md",
+        run_defer_report,
     ),
     (
         "Taxonomy-aware errors",

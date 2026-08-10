@@ -1244,6 +1244,35 @@ class HierarchyConfig(BaseModel):
         }
 
 
+class DeferConfig(BaseModel):
+    """Learning to defer: which flows are worth an analyst's time, under a budget.
+
+    Conformal abstention declines to decide where the *model* is unsure, which assumes the
+    human is better there. Madras et al. (2018) state the decision properly as a comparison
+    of two expected losses under a review budget, and that reframing makes the analyst the
+    experimental variable. Three are simulated — skill that is constant, skill that tracks
+    the model's confidence, and skill that tracks the flow's distance from the training data
+    — via ``analyst_base_skill`` (accuracy at the middle of the range) and ``analyst_spread``
+    (how sharply it varies across it), so an analyst can be made strong or weak without
+    changing *which* flows they are strong on. ``budget_fractions`` sweeps the share of test
+    flows that may be reviewed and ``operating_budget_fraction`` picks the row the tables
+    report; ``reference_rows`` sizes the training sample the novelty distance is measured
+    against. Reviews are charged whether or not the human was right, without which
+    "defer everything" wins by construction."""
+
+    analyst_base_skill: float = 0.8  # accuracy at the middle of the covariate range
+    analyst_spread: float = 0.35  # how sharply skill varies across it
+    budget_fractions: list[float] = Field(
+        default_factory=lambda: [0.0, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2]
+    )
+    operating_budget_fraction: float = 0.01  # the budget the summary tables report
+    reference_rows: int = 4000  # training rows the novelty distance is measured against
+    min_rows_per_bin: int = 500  # validation flows per cell of the skill estimator
+    cost_false_positive: float = 25.0  # matches the cost study's analyst-time figure
+    cost_false_negative: float = 500.0  # expected loss from a missed attack flow
+    cost_review: float = 25.0  # an analyst's time, charged right or wrong
+
+
 class DiscoveryConfig(BaseModel):
     """Unsupervised attack-family discovery over the flows the detector flags.
 
@@ -1948,6 +1977,7 @@ class Settings(BaseSettings):
     survival: SurvivalConfig = Field(default_factory=SurvivalConfig)
     earliness: EarlinessConfig = Field(default_factory=EarlinessConfig)
     hierarchy: HierarchyConfig = Field(default_factory=HierarchyConfig)
+    defer: DeferConfig = Field(default_factory=DeferConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
