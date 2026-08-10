@@ -83,6 +83,7 @@ from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.cascade import run_cascade_report
+from netsentry.training.byzantine import run_byzantine_report
 from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.pu_learning import run_pu_learning_report
@@ -142,6 +143,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a finite-sample guarantee that the FP budget holds (Tong, Feng & Li 2018)",
         "neyman_pearson.md",
         run_neyman_pearson_report,
+    ),
+    (
+        "Byzantine-robust aggregation",
+        "one lying site destroys FedAvg; median / trimmed mean / Krum priced "
+        "(Blanchard 2017, Yin 2018)",
+        "byzantine.md",
+        run_byzantine_report,
     ),
     (
         "Group DRO",

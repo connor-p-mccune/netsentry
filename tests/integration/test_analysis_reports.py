@@ -789,3 +789,16 @@ def test_dro_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "group dro" in text
     assert "worst" in text and "size-balanced" in text
+
+
+@pytest.mark.slow
+def test_byzantine_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.byzantine import run_byzantine_report
+
+    prepared.byzantine.rounds = 2
+    prepared.byzantine.shards_per_day = 2
+    prepared.byzantine.malicious_counts = [1, 2]
+    out = run_byzantine_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "krum" in text and "trimmed mean" in text
+    assert "malicious" in text

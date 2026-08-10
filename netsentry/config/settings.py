@@ -1433,6 +1433,29 @@ class NeymanPearsonConfig(BaseModel):
     n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
 
 
+class ByzantineConfig(BaseModel):
+    """Byzantine-robust aggregation: the federated study's missing threat model.
+
+    FedAvg averages, averaging is linear, and a linear aggregate has no bounded influence —
+    one site sending a large enough vector moves the global model anywhere. Federation is
+    exactly where such a site is plausible, since the reason to federate is that the other
+    members' data cannot be inspected. Three attacks (sign flip, Gaussian noise, and a
+    label flip whose update looks entirely ordinary) are run against four aggregation rules:
+    the mean, coordinate-wise median and trimmed mean (Yin et al., ICML 2018), and Krum,
+    which elects rather than averages (Blanchard et al., NeurIPS 2017). ``shards_per_day``
+    splits each capture day into that many sites so a Byzantine minority is meaningful;
+    ``malicious_counts`` is the sweep; ``trim`` is the trimmed mean's tolerance parameter;
+    ``sign_flip_scale`` and ``gaussian_sigma`` size the two loud attacks. The clean-case row
+    prices what each defence costs when nobody is lying."""
+
+    shards_per_day: int = 4  # sites per capture day (total sites = days x shards)
+    rounds: int = 8  # federated aggregation rounds
+    malicious_counts: list[int] = Field(default_factory=lambda: [1, 2, 4, 6])
+    trim: int = 2  # values dropped from each end per coordinate by the trimmed mean
+    sign_flip_scale: float = 10.0  # amplification on the negated honest update
+    gaussian_sigma: float = 5.0  # scale of the pure-noise update
+
+
 class DROConfig(BaseModel):
     """Group DRO: minimise the worst service's loss instead of the average one.
 
@@ -1843,6 +1866,7 @@ class Settings(BaseSettings):
     uncertainty: UncertaintyConfig = Field(default_factory=UncertaintyConfig)
     verify_trees: VerifyTreesConfig = Field(default_factory=VerifyTreesConfig)
     dro: DROConfig = Field(default_factory=DROConfig)
+    byzantine: ByzantineConfig = Field(default_factory=ByzantineConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

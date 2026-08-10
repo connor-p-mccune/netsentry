@@ -911,6 +911,19 @@ def neyman_pearson_cmd(
 
 
 @app.command()
+def byzantine(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Attack the federation and defend it: median / trimmed mean / Krum vs FedAvg."""
+    from netsentry.training.byzantine import run_byzantine_report
+
+    settings = _load(config, override)
+    out = run_byzantine_report(settings)
+    logger.info("Byzantine report ready", extra={"path": str(out)})
+
+
+@app.command()
 def dro(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
