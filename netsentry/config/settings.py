@@ -1273,6 +1273,31 @@ class DeferConfig(BaseModel):
     cost_review: float = 25.0  # an analyst's time, charged right or wrong
 
 
+class InvarianceConfig(BaseModel):
+    """Causal-invariance methods over capture days, and a premise check before them.
+
+    Invariant Causal Prediction (Peters et al. 2016) keeps features whose relationship to the
+    label is stable across environments; Invariant Risk Minimization (Arjovsky et al. 2019)
+    penalises representations on which different environments would prefer different
+    classifiers. Both assume environments that differ in nuisance structure while sharing the
+    label mechanism, which CIC-IDS2017's days do not — so the report measures the per-day
+    class composition first and reads everything else in that light. ``min_strength`` and
+    ``max_dispersion`` are the screen: a feature must point the same way every day, carry at
+    least that much mean ``|AUC - 0.5|``, and vary in magnitude by no more than that
+    coefficient of variation. Both were fixed before the transfer numbers were seen, because
+    a screen tuned until its subset wins is selecting on the outcome. ``penalty_weights``
+    sweeps IRMv1's penalty on a linear head (weight 0 is the ERM control, identical in every
+    other respect); ``steps``, ``learning_rate`` and ``l2`` are that head's optimiser."""
+
+    min_strength: float = 0.02  # mean |AUC - 0.5| a feature needs to be worth screening
+    max_dispersion: float = 0.75  # allowed coefficient of variation of that strength
+    penalty_weights: list[float] = Field(default_factory=lambda: [0.0, 1.0, 10.0, 100.0, 1000.0])
+    steps: int = 300  # full-batch gradient steps for the linear head
+    learning_rate: float = 0.5
+    l2: float = 1e-4
+    plot_features: int = 20  # strongest features shown in the stability figure
+
+
 class DiscoveryConfig(BaseModel):
     """Unsupervised attack-family discovery over the flows the detector flags.
 
@@ -1978,6 +2003,7 @@ class Settings(BaseSettings):
     earliness: EarlinessConfig = Field(default_factory=EarlinessConfig)
     hierarchy: HierarchyConfig = Field(default_factory=HierarchyConfig)
     defer: DeferConfig = Field(default_factory=DeferConfig)
+    invariance: InvarianceConfig = Field(default_factory=InvarianceConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

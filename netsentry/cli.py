@@ -963,6 +963,19 @@ def defer(
 
 
 @app.command()
+def invariance(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Screen features for cross-day invariance and train with IRM's penalty (Arjovsky 2019)."""
+    from netsentry.training.invariance import run_invariance_report
+
+    settings = _load(config, override)
+    out = run_invariance_report(settings)
+    logger.info("Invariance report ready", extra={"path": str(out)})
+
+
+@app.command()
 def byzantine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

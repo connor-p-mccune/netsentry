@@ -90,6 +90,7 @@ from netsentry.serving.cascade import run_cascade_report
 from netsentry.training.byzantine import run_byzantine_report
 from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
+from netsentry.training.invariance import run_invariance_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.unlearn import run_unlearn_report
@@ -173,6 +174,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "(Kiritchenko 2006)",
         "hierarchy.md",
         run_hierarchy_report,
+    ),
+    (
+        "Causal invariance",
+        "ICP screening + IRM over capture days, with the premise checked first "
+        "(Peters 2016, Arjovsky 2019)",
+        "invariance.md",
+        run_invariance_report,
     ),
     (
         "Byzantine-robust aggregation",

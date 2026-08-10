@@ -848,3 +848,15 @@ def test_defer_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "complementary" in text and "least confident" in text
     assert "review" in text and "noise floor" in text
+
+
+@pytest.mark.slow
+def test_invariance_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.invariance import run_invariance_report
+
+    prepared.invariance.penalty_weights = [0.0, 10.0]
+    prepared.invariance.steps = 40
+    out = run_invariance_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "environment" in text and "irm" in text
+    assert "flipped sign" in text and "premise" in text
