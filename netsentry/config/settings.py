@@ -1433,6 +1433,25 @@ class NeymanPearsonConfig(BaseModel):
     n_sims: int = 20_000  # rank-space replicates behind the exact violation-rate simulation
 
 
+class SurvivalConfig(BaseModel):
+    """Time-to-detection with right-censoring: the campaigns nobody ever caught.
+
+    The campaign study averages first-alert latency over the campaigns that *raised* an
+    alert, which conditions on success and deletes the worst outcomes. Kaplan-Meier (1958)
+    keeps an undetected burst in the at-risk denominator for every flow it was observed
+    without inventing an event time for it, so the median and the restricted mean describe
+    the deployed detector rather than its lucky half; a log-rank test then compares two
+    operating points using every burst including the censored ones. Attack flows are chopped
+    into ``episode_flows``-length bursts within each (day, class) stream — a whole campaign
+    gives a handful of subjects, and fixed-length windows make the censoring administrative
+    (follow-up ends because the window ended, never because of anything about the attack),
+    which is exactly the independence the estimator assumes. ``min_episodes`` is the support
+    a class needs before its own curve is reported."""
+
+    episode_flows: int = 50  # hostile flows per burst; also the follow-up horizon
+    min_episodes: int = 5  # bursts an attack class needs before it gets its own row
+
+
 class ByzantineConfig(BaseModel):
     """Byzantine-robust aggregation: the federated study's missing threat model.
 
@@ -1867,6 +1886,7 @@ class Settings(BaseSettings):
     verify_trees: VerifyTreesConfig = Field(default_factory=VerifyTreesConfig)
     dro: DROConfig = Field(default_factory=DROConfig)
     byzantine: ByzantineConfig = Field(default_factory=ByzantineConfig)
+    survival: SurvivalConfig = Field(default_factory=SurvivalConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

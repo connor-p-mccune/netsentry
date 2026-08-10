@@ -911,6 +911,19 @@ def neyman_pearson_cmd(
 
 
 @app.command()
+def survival(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Time-to-detection with the never-detected attacks still counted (Kaplan-Meier)."""
+    from netsentry.evaluation.survival import run_survival_report
+
+    settings = _load(config, override)
+    out = run_survival_report(settings)
+    logger.info("Survival report ready", extra={"path": str(out)})
+
+
+@app.command()
 def byzantine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

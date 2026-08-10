@@ -802,3 +802,15 @@ def test_byzantine_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "krum" in text and "trimmed mean" in text
     assert "malicious" in text
+
+
+@pytest.mark.slow
+def test_survival_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.survival import run_survival_report
+
+    prepared.survival.episode_flows = 20
+    prepared.survival.min_episodes = 2
+    out = run_survival_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "kaplan-meier" in text
+    assert "censor" in text and "log-rank" in text
