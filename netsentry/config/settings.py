@@ -1345,6 +1345,33 @@ class OptimalTreeConfig(BaseModel):
     max_train_rows: int = 8000  # training rows the search runs on
 
 
+class SketchConfig(BaseModel):
+    """Streaming sketches for host analytics at line rate, with every bound checked.
+
+    The host-graph scan detector keeps a set of destinations per source, which grows with the
+    traffic and fails during exactly the incident it was bought for. Count-Min (Cormode &
+    Muthukrishnan 2005), HyperLogLog (Flajolet et al. 2007), Misra-Gries (1982) and reservoir
+    sampling (Vitter 1985) answer the same questions in fixed memory, and the study grades
+    each guarantee against exact ground truth rather than citing it. The stream is synthetic
+    because cleaning drops the identity columns before any model sees them; it is
+    ``zipf_exponent``-skewed rather than uniform because hash collisions hurt most under skew,
+    which is the regime real traffic is in. ``countmin_epsilons`` and ``countmin_delta`` size
+    the Count-Min tables from the guarantee wanted; ``hll_precisions`` sweeps register counts;
+    ``top_k`` is the shortlist whose ordering must survive approximation."""
+
+    n_flows: int = 50_000  # synthetic stream length (the sketches are pure Python)
+    n_hosts: int = 1_500
+    zipf_exponent: float = 1.1  # heavy-tailed talker volumes, as real traffic is
+    scanners: int = 3  # planted high-fan-out sources with a known answer
+    scanner_targets: int = 600
+    countmin_epsilons: list[float] = Field(default_factory=lambda: [0.01, 0.001, 0.0001])
+    countmin_delta: float = 0.01  # failure probability the width/depth are sized for
+    hll_precisions: list[int] = Field(default_factory=lambda: [6, 8, 10, 12])
+    top_k: int = 10  # shortlist whose ranking must survive the approximation
+    heavy_hitter_k: int = 32  # Misra-Gries counters (guarantees any 1/k-share host)
+    reservoir_size: int = 5_000
+
+
 class DiscoveryConfig(BaseModel):
     """Unsupervised attack-family discovery over the flows the detector flags.
 
@@ -2053,6 +2080,7 @@ class Settings(BaseSettings):
     invariance: InvarianceConfig = Field(default_factory=InvarianceConfig)
     monotonic: MonotonicConfig = Field(default_factory=MonotonicConfig)
     optimal_tree: OptimalTreeConfig = Field(default_factory=OptimalTreeConfig)
+    sketches: SketchConfig = Field(default_factory=SketchConfig)
     multiplicity: MultiplicityConfig = Field(default_factory=MultiplicityConfig)
     degradation: DegradationConfig = Field(default_factory=DegradationConfig)
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)

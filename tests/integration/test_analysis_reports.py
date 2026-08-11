@@ -886,3 +886,18 @@ def test_optimal_tree_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "greedy cart" in text and "certified" in text
     assert "branch and bound" in text and "lambda" in text
+
+
+@pytest.mark.slow
+def test_sketches_report_is_written(prepared: Settings) -> None:
+    from netsentry.intel.sketches import run_sketches_report
+
+    prepared.sketches.n_flows = 3_000
+    prepared.sketches.n_hosts = 200
+    prepared.sketches.scanner_targets = 120
+    prepared.sketches.hll_precisions = [6, 8]
+    prepared.sketches.countmin_epsilons = [0.01, 0.001]
+    out = run_sketches_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "count-min" in text and "hyperloglog" in text
+    assert "misra-gries" in text and "reservoir" in text

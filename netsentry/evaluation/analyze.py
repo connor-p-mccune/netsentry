@@ -67,6 +67,7 @@ from netsentry.intel.navigator import run_navigator_export
 from netsentry.intel.report import run_mitre_report
 from netsentry.intel.sequential import run_sequential_report
 from netsentry.intel.sigma import run_sigma_export
+from netsentry.intel.sketches import run_sketches_report
 from netsentry.log import get_logger
 from netsentry.models.monotonic import run_monotonic_report
 from netsentry.monitoring.covariate_shift import run_covariate_shift_report
@@ -599,6 +600,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the signature baseline exported as portable Sigma rules",
         "sigma/README.md",
         run_sigma_export,
+    ),
+    (
+        "Streaming sketches",
+        "host analytics at line rate in fixed memory, with every bound checked against exact "
+        "truth (Cormode 2005, Flajolet 2007)",
+        "sketches.md",
+        run_sketches_report,
     ),
     (
         "Provenance & supply chain",

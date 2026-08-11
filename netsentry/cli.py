@@ -1002,6 +1002,19 @@ def optimal_tree_cmd(
 
 
 @app.command()
+def sketches(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Count hosts at line rate in fixed memory, and grade every bound against exact truth."""
+    from netsentry.intel.sketches import run_sketches_report
+
+    settings = _load(config, override)
+    out = run_sketches_report(settings)
+    logger.info("Sketches report ready", extra={"path": str(out)})
+
+
+@app.command()
 def byzantine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
