@@ -101,6 +101,17 @@ jobs:
           python -m netsentry.cli gate -o configs/ci.yaml
           python -m netsentry.cli promote -o configs/ci.yaml
           python -m netsentry.cli retrainpolicy -o configs/ci.yaml
+      - name: Decision-time & proof studies (earliness · hierarchy · defer · invariance)
+        run: |
+          python -m netsentry.cli earliness -o configs/ci.yaml
+          python -m netsentry.cli hierarchy -o configs/ci.yaml
+          python -m netsentry.cli defer -o configs/ci.yaml
+          python -m netsentry.cli invariance -o configs/ci.yaml
+      - name: Structural guarantees (monotonic · opttree · sketches)
+        run: |
+          python -m netsentry.cli monotonic -o configs/ci.yaml
+          python -m netsentry.cli opttree -o configs/ci.yaml
+          python -m netsentry.cli sketches -o configs/ci.yaml
       - name: Model-integrity gate (SBOM + manifest, verify bytes, replay canaries)
         run: |
           python -m netsentry.cli provenance -o configs/ci.yaml

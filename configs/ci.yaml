@@ -38,5 +38,29 @@ socsim:
 gate:
   min_tpr_at_primary_fpr: 0.0  # the 5k-row smoke is about the structural checks
   max_ece: 1.0
+earliness:
+  horizons_s: [0.1, 1.0, 60.0]   # three points are enough to exercise the frontier
+hierarchy:
+  min_class_rows: 5              # the 5k-row smoke has few rows per leaf class
+defer:
+  budget_fractions: [0.0, 0.01, 0.05]
+  reference_rows: 500
+invariance:
+  penalty_weights: [0.0, 10.0]   # ERM plus one penalised arm exercises both branches
+  steps: 40
+monotonic:
+  max_attack_flows: 100          # the greedy search and the verifier are both per-flow
+  max_verify_flows: 100
+  attack_rounds: [0, 1]
+optimal_tree:
+  penalties: [0.005, 0.02]
+  n_features: 4                  # the search is exponential in the predicate count
+  max_train_rows: 800
+sketches:
+  n_flows: 3000                  # pure-Python structures; enough to exercise every bound
+  n_hosts: 200
+  scanner_targets: 120
+  hll_precisions: [6, 8]
+  countmin_epsilons: [0.01, 0.001]
 mlflow:
   enabled: false         # use the local file logger in CI
