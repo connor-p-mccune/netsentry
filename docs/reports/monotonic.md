@@ -48,6 +48,16 @@ in bytes" are the same claim here. A pipeline with a sign flip or a non-monotone
 would break that equivalence and the guarantee would silently become a statement about a
 quantity no attacker cares about.
 
+The deployed model reads **0% provably robust** here while the
+[verification study](verify_trees.md) reports **55.8%** under the same inflate-only threat
+model. Both are correct and they answer different questions. That study certifies robustness
+at a *bounded* radius — 0.10 in standardised units, a budget an attacker might plausibly be
+held to — and asks how many alerts survive it. This one lets the attacker inflate without
+limit, because that is the only setting in which the constrained model's guarantee is
+interesting: any model is robust to a small enough perturbation, and the whole point of a
+structural constraint is that no budget defeats it. Read against the bounded number, the
+constraint turns "safe if the adversary spends little" into "safe at any price".
+
 The threat model is inflation only, and it is a real restriction rather than a convenient one:
 an attacker who can *remove* bytes or packets from its own traffic is outside it. That is the
 right restriction for padding-style evasion — a scan probe cannot un-send a packet, and a
