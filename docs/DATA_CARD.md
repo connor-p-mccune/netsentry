@@ -67,3 +67,30 @@
   random** (optimistic reference), and **leave-one-attack-out** (for the anomaly
   detector). Validation is carved from the training split only. Splits are
   persisted with a content hash for reproducibility.
+- **The temporal split shares no attack class across the boundary.** Training days
+  hold the DoS family, the Patators and Heartbleed; test days hold Bot, DDoS,
+  Infiltration, PortScan and Web Attack. The headline number is therefore detection
+  of entirely *unseen attack families*, which is a harder claim than "known attacks,
+  later" — and it is the reason a multiclass question is not well posed on this split
+  (see [`docs/reports/hierarchy.md`](reports/hierarchy.md), which uses the stratified
+  split and says why).
+
+## Day-to-day structure worth knowing before modelling
+- **Monday contains no attacks at all.** It is a single-class day, so any
+  per-day statistic conditioned on the label is undefined there and must drop it
+  explicitly rather than score it as zero (see
+  [`docs/reports/invariance.md`](reports/invariance.md) for what the obvious
+  implementation does instead).
+- **42% of features point in opposite directions on different days.** A feature that
+  separates attack from benign one way on Tuesday separates it the other way on
+  Wednesday, because Tuesday is brute force (many short low-volume connections) and
+  Wednesday is denial of service (sustained high-volume ones). This is why methods
+  that assume a stable label mechanism across environments reject genuinely useful
+  features here, and it is worth knowing before reaching for one.
+- **Extensive features do not cross the boundary.** Totals, cumulative sums and
+  durations measure how large one particular burst was, which is a property of that
+  day's campaign rather than of hostile behaviour; the intensive statistics (means,
+  extremes, spreads, rates, ratios) transfer and the extensive ones do not. Measured
+  from two independent directions in
+  [`docs/reports/earliness.md`](reports/earliness.md) and
+  [`docs/reports/monotonic.md`](reports/monotonic.md).
