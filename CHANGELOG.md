@@ -6,6 +6,106 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-08-10
+
+The **decision-time, structure & proof wave**: seven studies that each take a claim this
+project has been making implicitly and turn it into something checkable. The deployed model is
+described as a detector — it is a *post-mortem* one, and the latency is measurable. Its
+multiclass errors are counted as though they were interchangeable — they differ by a factor of
+fifty in what they cost a responder. Its evasion resistance is measured at roughly half of
+alerts — it can be made total by construction, and the constraint turns out to be free. Its
+interpretable surrogate is called auditable — it is also up to 69% worse than the best readable
+model that provably exists.
+
+The recurring move is the same one the previous wave made and this one pushes harder: prefer a
+property that *holds* to a number that was *observed*. A 56%-provably-robust model becomes a
+100%-provably-robust one by restricting the hypothesis class rather than by training harder. A
+"best tree we found" becomes the best tree that exists, with the search space exhausted and the
+result validated against brute force. A sketch's error bound stops being a citation and becomes
+a measurement against exact ground truth.
+
+Three results are **negative or self-undercutting, and kept**. Learning to defer made the
+system worse in exactly the regime it was designed for, and the diagnosis is a ratio rather
+than a mystery: the human's advantage varies 1.5x among the flows in contention while the
+model's risk varies 2.7x, so the model's term settles the ranking and a fitted human term only
+adds variance to it. Both causal-invariance methods reject genuine class-specific structure
+here, because 42% of features point in opposite directions on different capture days and the
+premise those methods need does not hold. And the streaming-sketch report argues against its
+own thesis: at high precision the per-source sketch costs more memory than exact counting on
+this stream, so the honest recommendation is the unimpressive configuration.
+
+### Added
+- **Decision latency** (`netsentry earliness`, `netsentry/evaluation/earliness.py`): every other
+  metric here is quoted as though the detector decides when the attack does. Flow exporters emit
+  one record per *finished* flow, so it cannot. Features are partitioned by when their value is
+  knowable — fixed at connection setup, intensive statistics estimable from a prefix, or
+  extensive and teardown quantities that only exist at flow end — and each tier refit. **The
+  ordering inverts**: the in-flight tier reaches 0.574 PR-AUC and 16.7% detection against the
+  deployed model's 0.529 and 9.1%, on half the features, deciding mid-connection. The
+  detected-in-time frontier is *dominated* — no horizon makes waiting pay. The wait itself is
+  computed per flow from FIN/RST counts; the stand-in stamps a teardown on every flow, so the
+  report sweeps the share it cannot supply instead: past 50% unclosed, the median verdict jumps
+  from 80 ms to the full 120 s timeout.
+- **Taxonomy-aware evaluation** (`netsentry hierarchy`, `netsentry/evaluation/hierarchy.py`):
+  flat accuracy charges the same for confusing `DoS Hulk` with `DoS GoldenEye` (same playbook)
+  as with `BENIGN` (no response). Scoring uses hierarchical P/R/F1 (Kiritchenko et al. 2006)
+  over the four-level ATT&CK taxonomy already in `intel.attack_mapping`, which collapses to the
+  flat metric on a flat tree — pinned by test. The result is **harsher, not softer**: hF1 lands
+  at 0.840 *below* the 0.868 flat accuracy, because hierarchical recall divides by path length
+  and an attack is four levels deep where benign is two, so a miss automatically costs twice a
+  false alarm. Only 8% of errors are forgivable; 65% are missed attacks. A local-classifier-per-
+  parent model gives up 1.3% exact accuracy for a **9% cut in expected response cost** and
+  +0.017 macro-F1.
+- **Learning to defer** (`netsentry defer`, `netsentry/evaluation/defer.py`): conformal
+  abstention declines where the *model* is unsure, assuming the human is better there. Madras et
+  al. (2018) state it as a comparison of expected losses under a review budget, making the
+  analyst the experimental variable (skill constant / tracking model confidence / tracking
+  distance from training data). Five policies form an ablation and the uniform analyst is an
+  exact control. Random deferral is worse than none. Cost-awareness changes **nothing** — at a
+  0.1% budget the model calls everything benign, so the only mistake available is a miss and the
+  20:1 asymmetry has nothing to re-rank. And the learned policy **loses** 450 against a ±25
+  control noise floor.
+- **Causal invariance** (`netsentry invariance`, `netsentry/training/invariance.py`): ICP
+  screening (Peters et al. 2016) and IRMv1 (Arjovsky et al. 2019) from scratch over capture days,
+  with the premise checked first and found to fail. **42% of features point in opposite
+  directions on different days** — Tuesday is brute force, Wednesday is denial of service, and
+  they are abnormal in opposite directions — so both methods reject genuine class-specific
+  structure. The invariant subset (2 of 76) loses 0.317 PR-AUC and no penalty weight beats ERM.
+  Two traps fixed rather than lived with: an all-benign Monday scored as "zero strength" rejects
+  almost the whole feature vector, and the IRM penalty diverges to 1e28 without the paper's own
+  loss rescaling.
+- **Monotone constraints** (`netsentry monotonic`, `netsentry/models/monotonic.py`): the evasion
+  study attacks by padding and verification finds only ~56% of alerts provably safe. Constraining
+  the model non-decreasing in all 39 attacker-inflatable features removes the attack instead of
+  resisting it — both backends enforce it at split time, so the property holds for every input in
+  the domain. **100% of alerts provably immune to inflation** (against 0%) over an unbounded
+  inflation box; a greedy padding search destroys **44.4% of the deployed model's alerts and none**
+  of the constrained one's; a random probe finds 375 score-lowering additions against the deployed
+  model and zero against the constrained one. The guarantee is **better than free**: −0.001 PR-AUC
+  and **+3.6% detection**.
+- **Provably optimal sparse trees** (`netsentry opttree`, `netsentry/explain/optimal_tree.py`):
+  branch and bound minimising `weighted error + lambda x leaves` with two sound prunes and an
+  **exhaustion certificate**, validated against exhaustive enumeration of every tree on 15 small
+  problems. Greedy CART is provably suboptimal at all five penalty settings, by **up to 69%**; at
+  the headline penalty the optimal tree reaches 37.7% held-out detection against greedy's 12.2%
+  with **half the leaves**. The tree's 19.2% false-positive rate is reported alongside, and the
+  comparison with the ensemble refused rather than implied.
+- **Streaming sketches** (`netsentry sketches`, `netsentry/intel/sketches.py`): Count-Min
+  (Cormode & Muthukrishnan 2005), HyperLogLog (Flajolet et al. 2007), Misra-Gries (1982) and
+  reservoir sampling (Vitter 1985) from scratch on a keyed blake2b hash, because the host-graph
+  scan detector keeps a set per source and sets grow with what they hold. Every guarantee is
+  graded against exact truth rather than cited: Count-Min never undercounts and its `epsilon x N`
+  bound holds for 100% of keys, HyperLogLog tracks `1.04/sqrt(m)` at all four precisions,
+  Misra-Gries recovers every true heavy hitter, the reservoir is statistically indistinguishable
+  from its stream, and all three planted scanners survive the approximation in the top ten.
+
+### Changed
+- `SupervisedClassifier` accepts an optional per-feature monotone-constraint vector, passed to
+  LightGBM's `monotone_constraints` or scikit-learn's `monotonic_cst`.
+- `features.feature_sets` gains the availability-tier partition (`availability_tier`,
+  `availability_sets`) — a second, orthogonal partition of the same columns by *when their value
+  is knowable*, used by the earliness and invariance studies.
+
 ## [0.14.0] — 2026-08-10
 
 The **guarantees, counterfactuals & worst-case wave**: eight studies aimed at the sentences this

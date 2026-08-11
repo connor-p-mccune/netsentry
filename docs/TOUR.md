@@ -155,7 +155,41 @@ threshold have caught?" counterfactual is unanswerable from a deterministic poli
 [`survival.md`](reports/survival.md) puts the never-detected campaigns back into the latency
 metric, moving it by 8x.
 
-## Stop 9 — Where the bodies are buried, on purpose
+## Stop 9 — Two things stop being measured and start being proved
+
+Most robustness and interpretability results in this field are measurements: *this* model, on
+*this* data, scored *that*. Retrain and the number moves. The newest wave replaces two of them
+with properties that hold by construction, and validates both against something that could
+have contradicted them.
+
+- **An entire evasion family is made impossible, not merely hard.**
+  [`monotonic.md`](reports/monotonic.md) constrains the model non-decreasing in all 39
+  attacker-inflatable features, so padding a flow can never lower its attack score. Not usually
+  — never. The property is confirmed three independent ways: an interval-arithmetic proof over
+  an *unbounded* inflation box (100% of alerts provably robust, against 0% for the deployed
+  model), a greedy padding search that destroys 44.4% of the deployed model's alerts and none
+  of the constrained one's, and a random probe that finds 375 score-lowering additions against
+  the deployed model and zero against the constrained one. It costs −0.001 PR-AUC and **gains**
+  3.6% detection, because "more bytes is never less suspicious" is true of network traffic and
+  the unconstrained model had only three capture days in which to learn it.
+- **"The best small tree we found" becomes the best small tree that exists.**
+  [`optimal_tree.md`](reports/optimal_tree.md) runs branch and bound with two sound prunes and
+  reports, per setting, whether the search space was *exhausted*. Greedy CART is provably
+  suboptimal at all five penalties, by up to **69%**, and the optimal tree reaches three times
+  greedy's held-out detection with half the leaves. The search itself is checked against
+  exhaustive enumeration of every tree of every shape on fifteen small problems.
+
+The same wave also turns a piece of framing into a measurement.
+[`earliness.md`](reports/earliness.md) points out that flow exporters emit one record per
+*finished* flow, so the deployed detector is structurally a post-mortem one — then finds that
+an in-flight model using half the features **beats** it, 0.574 against 0.529 PR-AUC, on a
+frontier where waiting never pays at any horizon. And three results in the wave came back
+negative and were kept: deferral to a human loses against its own control (with the reason
+given as a ratio), both causal-invariance methods reject genuine structure because 42% of
+features point in opposite directions on different days, and the sketch study finds its own
+high-precision configuration costs more memory than exact counting.
+
+## Stop 10 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the

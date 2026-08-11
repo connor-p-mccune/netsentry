@@ -11,7 +11,12 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | SOC queue simulation | FIFO vs score-priority attack-SLA under queueing load | [open](socsim.md) |
 | Base-rate stress test | alert precision vs production prevalence (Axelsson 1999) | [open](base_rate.md) |
 | Neyman-Pearson thresholds | a finite-sample guarantee that the FP budget holds (Tong, Feng & Li 2018) | [open](neyman_pearson.md) |
+| Decision latency | when a flow verdict can first exist, and what deciding earlier costs | [open](earliness.md) |
+| Learning to defer | which flows are worth an analyst's time; when 'abstain where unsure' is the wrong policy (Madras et al. 2018) | [open](defer.md) |
+| Taxonomy-aware errors | hierarchical P/R/F1 over the ATT&CK tree; which mistakes actually cost (Kiritchenko 2006) | [open](hierarchy.md) |
 | Time-to-detection survival | Kaplan-Meier with the never-detected campaigns still in the denominator | [open](survival.md) |
+| Causal invariance | ICP screening + IRM over capture days, with the premise checked first (Peters 2016, Arjovsky 2019) | [open](invariance.md) |
+| Monotone constraints | an entire evasion family made impossible by construction, proved and priced | [open](monotonic.md) |
 | Byzantine-robust aggregation | one lying site destroys FedAvg; median / trimmed mean / Krum priced (Blanchard 2017, Yin 2018) | [open](byzantine.md) |
 | Group DRO | train for the worst group, not the average one, and watch the premise fail (Sagawa et al. 2020) | [open](dro.md) |
 | Deterministic verification | a sound, absolute robustness radius for the deployed ensemble by interval arithmetic (Chen et al. 2019) | [open](verify_trees.md) |
@@ -63,6 +68,7 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Anchor explanations | high-precision IF-THEN rules with a coverage trade-off (Ribeiro et al. 2018) | [open](anchors.md) |
 | Anomaly attribution | why a flow is abnormal: per-feature anomaly explanations + a faithfulness check | [open](anomaly_explain.md) |
 | Influence functions | which training flows caused a verdict, validated against real LOO (Koh & Liang 2017) | [open](influence.md) |
+| Optimal sparse trees | how far greedy CART sits from the provably optimal tree, with a certificate (Hu, Rudin & Seltzer 2019) | [open](optimal_tree.md) |
 | Surrogate distillation | the model's closest auditable imitation, with fidelity priced | [open](distill.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
 | Seed sensitivity | the training-noise floor under every reported metric | [open](seed_variance.md) |
@@ -79,4 +85,5 @@ _Regenerated 2026-07-04 04:53 UTC via `netsentry analyze`. Synthetic stand-in un
 | Attack-family discovery | clustering the flagged pile into campaigns, with k chosen without labels | [open](discovery.md) |
 | MITRE ATLAS coverage | the detector as a target: this repo's own ML attack surface, with the gaps named | [open](atlas.md) |
 | ATLAS Navigator layer | the ML attack surface as a loadable Navigator layer | [open](atlas_navigator_layer.json) |
+| Streaming sketches | host analytics at line rate in fixed memory, with every bound checked against exact truth (Cormode 2005, Flajolet 2007) | [open](sketches.md) |
 | Provenance & supply chain | CycloneDX SBOM + model-integrity manifest | [open](provenance.md) |

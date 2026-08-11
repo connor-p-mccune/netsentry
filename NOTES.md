@@ -1881,6 +1881,152 @@ few for a Byzantine minority to mean anything).
 - 6 version files this wave (`__init__.py`, `pyproject.toml`, Helm `Chart.yaml` + `values.yaml`,
   k8s `deployment.yaml` + `kustomization.yaml`) plus the README status line and wave count.
 
+## Decision-time, structure & proof wave (v0.15.0)
+
+Seven studies with one thread running through them: take a claim the project makes implicitly
+and turn it into something that can be checked. The deployed model is described as a detector;
+it is a post-mortem one, and the latency is measurable. Its multiclass errors are counted;
+they differ by a factor of fifty in what they cost a responder. Its evasion resistance is
+measured at 56%; it can be made 100% by construction. Its interpretable surrogate is called
+auditable; it is also up to 69% worse than the best readable model that exists.
+
+Three of the seven produced negative or self-undercutting results and all three were kept.
+
+### Earliness: the ordering inverted, and that was the finding
+
+Partitioned the features by *when their value is knowable* rather than by what they measure —
+fixed at connection setup, intensive statistics estimable from a prefix, extensive quantities
+that only exist at flow end — expecting a clean accuracy-versus-latency trade to price.
+
+- **The in-flight tier beat the deployed model**: 0.574 vs 0.529 PR-AUC, 16.7% vs 9.1%
+  detection, on half the features, deciding while the connection is still open. The 40
+  features it drops are the extensive ones, and an extensive feature measures how large *that
+  particular burst* was. Burst size is a property of Wednesday's campaign, not of hostile
+  behaviour.
+- The detected-in-time frontier is **dominated** — there is no horizon at which waiting pays.
+  Had to rewrite the report's prose to lead with the inversion instead of the ladder I assumed.
+- The stand-in generator stamps a teardown on every flow, so the idle-timer half of the latency
+  model is inert. Reported the sensitivity sweep instead of the number: past a 50% unclosed
+  share the median verdict jumps from 80 ms to the full 120 s timeout. A cliff, not a slope,
+  because past half the population the median flow *is* one of the timed-out ones.
+
+### Hierarchy: the metric got harsher, not softer
+
+Built the taxonomy from `intel.attack_mapping` rather than inventing one — ATT&CK is already a
+tree and already shipped in the API, so it cannot be accused of being shaped to flatter.
+
+- hF1 came out **below** flat accuracy (0.840 vs 0.868), which looked wrong since partial
+  credit can only add. It is the path-length weighting: an attack is four levels deep and
+  benign is two, so calling an attack benign costs twice what a false alarm does, automatically,
+  with nobody choosing a weight. For a detector that is the right asymmetry.
+- Only 8% of errors are the forgivable kind; 65% are missed attacks. The first draft of the
+  read leaned on "the flat metric was too harsh" and was simply wrong about this data.
+- Local-classifier-per-parent gives up 1.3% accuracy for a 9% cut in response cost, converting
+  missed attacks into false alarms. A flat metric scores it as the worse model.
+
+### Defer: two modelling errors, then a clean negative
+
+- **First version ranked by accuracy difference** — the 0-1-loss special case — on a problem
+  where a miss costs 20x a false alarm. Rewrote it as the expected-loss comparison the paper
+  actually specifies.
+- **Second version rank-normalised each split against itself**, so a novelty of 0.9 meant a
+  different distance in validation than in test and the fitted policy was applied on an axis it
+  was not fitted on. Both splits now map through validation's ECDF.
+- Re-mixed the test stream from 25% to a 1% prior for the reason the off-policy study had to:
+  at 25% a random review pays for itself and every policy wins.
+- Sized the skill estimator by a stated rule (~500 validation flows per cell) rather than a
+  magic 8x8 grid. That dropped the uniform-analyst control's noise floor from 525 to 25, which
+  is what made the real result readable.
+- **The result is negative and outside the noise floor**: knowing where the human is better
+  made the system worse by 450. Diagnosis is a ratio — among flows in contention the analyst's
+  skill varies 1.5x and the model's attack probability varies 2.7x, the ranking is their
+  product, so the model's term settles the order and a *fitted* human term only adds variance.
+  The signal was genuinely there (31% skill spread) and still was not worth acting on.
+- Cost-awareness turned out to change **nothing**, digit for digit. At a 0.1% budget the model
+  calls everything benign, so the only mistake available is a miss and the asymmetry has
+  nothing to re-rank. Worth stating because it looks exactly like a bug.
+
+### Invariance: two implementation traps, one sharp number
+
+- **Monday is entirely benign.** Scoring a single-class environment as zero strength — the
+  obvious implementation — drags every feature towards zero mean strength and infinite
+  dispersion, and the screen rejects the whole vector for a reason with nothing to do with
+  invariance. Dropping single-class days leaves the famous five-day capture supplying exactly
+  two usable environments.
+- **The IRM penalty diverged to 1e28** at weight 100, because the gradient grows with the
+  penalty weight and the step size that was stable at weight 1 is not. The paper's own loss
+  rescaling fixes it; the penalty now falls monotonically, so the sweep measures the objective
+  rather than optimiser blow-up.
+- The finding: **42% of features point in opposite directions on different days**. Tuesday is
+  brute force (many short low-volume connections), Wednesday is denial of service (sustained
+  high-volume ones), and they are abnormal in opposite directions. What an invariance screen
+  rejects here is not spurious structure but genuine class-specific structure.
+- Wanted the tier cross-check to work — it would have been satisfying if the screen
+  independently rediscovered earliness's intensive/extensive partition — but two surviving
+  features cannot support that claim, so the report says so instead of reading a pattern into
+  a coin flip.
+
+### Monotonic: the best result of the wave
+
+- Constrained the model non-decreasing in all 39 attacker-inflatable features. 100% of alerts
+  provably immune to inflation against 0%, at -0.001 PR-AUC and **+3.6% detection**.
+- More detection from a strictly smaller hypothesis class is not a paradox: "more bytes is
+  never less suspicious" is true, and the unconstrained model had three capture days in which
+  to learn it and had not finished by Thursday.
+- **The first empirical arm was not an attack.** Mimicry walks toward the benign centroid,
+  which mostly means shrinking features; clipping that walk to inflation raised the score for
+  both models and discriminated nothing (evasion "rates" of -132% and -532% made it obvious).
+  Replaced with a greedy coordinate inflation search, which destroys 44.4% of the deployed
+  model's alerts and none of the constrained one's.
+- Three independent checks by design — interval proof, greedy attack, random probe — because
+  the proof reasons about a flattened copy and the attack drives the deployed object.
+
+### Optimal trees: greedy is 69% off, and brute force says so
+
+- Branch and bound with two sound prunes (the leaf bound: error at or below lambda cannot be
+  improved by splitting; the incumbent bound: every subtree costs at least lambda).
+- **Validated against exhaustive enumeration** of every tree of every shape on 15 small
+  problems, with a deliberately naive reference so a bug in a bound cannot hide in both.
+- Greedy CART is provably suboptimal at all five penalties, by 69% at the tightest. The optimal
+  tree reaches 37.7% held-out detection against greedy's 12.2% with **half the leaves**.
+- The tree alerts at a 19.2% false-positive rate, 326x the ensemble's budget, so the report
+  reports the FPR alongside detection and refuses the comparison rather than implying the
+  readable model beats the deployed one.
+
+### Sketches: the report argues against itself
+
+- Count-Min, HyperLogLog, Misra-Gries and reservoir sampling from scratch, on keyed blake2b
+  because Python's `hash` is randomised per process and every number would be irreproducible.
+- **The first stream had the wrong ground truth**: destinations drawn uniformly meant the
+  heaviest benign talkers out-fanned the planted scanners, and 0 of 3 scanners made the top
+  ten. Benign hosts now return to a small pool of peers, which is both what ordinary traffic
+  looks like and what makes fan-out a scan signal at all.
+- At p >= 8 the per-source sketch costs **more** than exact counting on this stream, because
+  its memory scales with sources and an exact set scales with fan-out. Said so, and recommended
+  the low-precision configuration rather than the impressive one.
+- Cut the default stream from 200k to 50k flows so the committed report regenerates in
+  reasonable time; these are pure-Python structures.
+
+### Mechanics worth remembering
+
+- Building three features before committing any of them meant hub-file surgery to separate the
+  commits (a script that cuts named blocks out of `settings.py` / `cli.py` / `analyze.py`,
+  commits, and restores). The first cut anchor over-deleted 400 lines of `_ANALYSES` because
+  the end marker matched the end of the list rather than the next entry. Strictly sequential
+  is still the right discipline; this wave proved why by ignoring it once.
+- `netsentry analyze` regenerates `INDEX.md` from `_ANALYSES`, but the committed index has
+  hand-curated wording that does not all round-trip — inserting the new rows in place beats
+  regenerating the file wholesale.
+- A backslash-n inside a Python string written through a bash heredoc becomes a real newline
+  and breaks the literal. Bit twice; use an editor for anything containing escapes.
+- LightGBM takes `monotone_constraints`, scikit-learn's HistGB takes `monotonic_cst` — both
+  enforce structurally at split time, which is what makes the property a security guarantee.
+- `predict: object` defeats mypy on `predict(x) - float`; type it as
+  `Callable[[np.ndarray], np.ndarray]` and the ignores disappear.
+- mypy reads `rng.normal(..., size=n)` as a float; assign through `np.asarray(..., dtype=float)`.
+- 7 version files this wave (`__init__.py`, `pyproject.toml`, README status, Helm
+  `Chart.yaml` + `values.yaml`, k8s `deployment.yaml` + `kustomization.yaml`).
+
 ## Invariants I am holding myself to (from the project rules)
 
 1. No identifier/timestamp column (`Flow ID`, IPs, ports, `Timestamp`) ever

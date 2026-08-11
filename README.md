@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.14.0`.** The build plan in
+**Released `v0.15.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and thirteen post-release waves build on top — the
+tested, and committed, and fourteen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -81,8 +81,8 @@ deployed ensemble, gated on reproducing LightGBM's own scores; group DRO whose a
 declined to reweight and whose emphasis made the worst group monotonically worse;
 Byzantine-robust aggregation where one lying site in twelve costs a third of FedAvg; and
 Kaplan-Meier time-to-detection showing the naive latency understates by 8x because it deletes
-the attacks nobody caught).
-`make check` is green (lint + type-check + **930 passing tests**, property-based invariants and a
+the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses).
+`make check` is green (lint + type-check + **1,063 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -205,6 +205,13 @@ what actually ships.
 | Worst-group training | group DRO over capture days, against a size-balanced control; the premise fails and the report says why (Sagawa et al. 2020) | ✅ Done |
 | Byzantine robustness | one lying site costs a third of FedAvg; median / trimmed mean / Krum priced, including when nobody attacks (Blanchard 2017, Yin 2018) | ✅ Done |
 | Survival analysis | Kaplan-Meier time-to-detection with the never-detected campaigns in the denominator; log-rank across operating points | ✅ Done |
+| Decision latency | feature-availability tiers: when a flow verdict can first exist, and the dominated frontier showing waiting for the flow to end *costs* detection | ✅ Done |
+| Taxonomy-aware evaluation | hierarchical P/R/F1 over the ATT&CK tree + a five-way error decomposition priced by playbook (Kiritchenko et al. 2006) | ✅ Done |
+| Learning to defer | expected-loss escalation to a capacity-bound analyst, with the analyst's competence as the experimental variable (Madras et al. 2018) | ✅ Done |
+| Causal invariance | ICP screening + IRMv1 over capture days, with the premise checked first and found to fail (Peters 2016, Arjovsky 2019) | ✅ Done |
+| Monotone constraints | inflation evasion made impossible by construction: 100% provably robust, proved + attacked + probed, at no detection cost | ✅ Done |
+| Optimal sparse trees | branch-and-bound optimal decision trees with an exhaustion certificate; greedy CART is up to 69% off (Hu, Rudin & Seltzer 2019) | ✅ Done |
+| Streaming sketches | Count-Min / HyperLogLog / Misra-Gries / reservoir from scratch, every bound graded against exact truth (Cormode 2005, Flajolet 2007) | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -1454,6 +1461,157 @@ median of 3 flows, Bot/PortScan/Web Attack in none — nothing in between, so th
 mean is a **mixture artefact**. There is no latency to tune; the quantity is governed
 entirely by which classes are visible at all.
 See [`docs/reports/survival.md`](docs/reports/survival.md).
+
+## Decision latency (when the verdict can exist)
+
+Every other metric here is quoted as though the detector decides the moment the attack
+does. Flow exporters emit **one record per finished flow**, so it cannot: `Total Fwd
+Packets` is not a running counter read at the end, it is a quantity that does not exist
+until then. `netsentry earliness` partitions the features by *when their value is
+knowable* — fixed at connection setup, intensive statistics estimable from a prefix, or
+extensive/teardown quantities that only exist at flow end — refits at each tier, and
+times each verdict per flow (a flow the exporter saw close waits its own duration; a flow
+that merely stopped waits out the idle timer).
+
+The result inverts the assumed ordering: **the in-flight tier beats the deployed model**,
+0.574 vs 0.529 PR-AUC and 16.7% vs 9.1% detection at the 0.1% budget, on half the
+features, deciding while the connection is still open. The 40 features it drops are the
+*extensive* ones, and an extensive feature measures how big *that particular burst* was —
+a property of Wednesday's campaign, not of hostile behaviour — so it does not survive the
+temporal boundary. The detected-in-time frontier is **dominated**: there is no horizon,
+however patient, at which waiting for the flow to end pays for itself. On the wait itself
+the stand-in is honest about its own limits — its generator stamps a teardown on every
+flow, so the idle timer never fires — and reports the sweep instead: past a 50% unclosed
+share the median verdict jumps from 80 ms to the full 120 s timeout, a 1,500x change in
+the traffic with the model held fixed. See
+[`docs/reports/earliness.md`](docs/reports/earliness.md).
+
+## Streaming sketches (host analytics at line rate)
+
+The host-graph scan detector keeps a set of destinations per source, and sets grow with what
+they hold — on a link doing tens of thousands of flows a second that is a design that runs
+out of memory during the incident it was bought for. `netsentry sketches` implements the four
+structures production flow analytics actually use, from scratch: **Count-Min**
+(Cormode & Muthukrishnan 2005), **HyperLogLog** (Flajolet et al. 2007), **Misra-Gries**
+(1982) and **reservoir sampling** (Vitter 1985), on a deterministic keyed blake2b hash so
+every number reproduces.
+
+What makes it a study is that every guarantee is *checked* against exact ground truth rather
+than cited: Count-Min never undercounts a single host and its `epsilon x N` bound holds for
+100% of keys at each sizing; HyperLogLog's measured error tracks `1.04/sqrt(m)` at all four
+precisions; Misra-Gries recovers 100% of true heavy hitters; the reservoir is statistically
+indistinguishable from its stream. Then the question that matters — **does the scan ranking
+survive the approximation?** — where all three planted scanners stay in the top 10.
+
+The report also argues against itself where the numbers demand it: at p ≥ 8 the per-source
+sketch costs *more* than exact counting here, because memory scales with sources while exact
+sets scale with fan-out, and on this stream fan-out is small. The shape is what generalises,
+not the ratio. See [`docs/reports/sketches.md`](docs/reports/sketches.md).
+
+## Provably optimal sparse trees (what greedy costs)
+
+The distilled surrogate is grown by CART, which is greedy — it takes the split that looks
+best now and never reconsiders. Nobody usually asks what that costs, because optimal decision
+trees are NP-hard and the field settled for greedy decades ago. At *interpretable* sizes it is
+computable: `netsentry opttree` runs branch and bound over a binarised feature set (Hu, Rudin
+& Seltzer 2019; Lin et al. 2020) minimising `weighted error + lambda x leaves`, with two sound
+prunes and a **certificate** that the space was exhausted.
+
+Greedy CART is provably suboptimal at **all five** penalty settings, by up to **69%**. At the
+headline penalty the optimal tree reaches better held-out detection than greedy with **half
+the leaves** (4 vs 8) — smaller *and* better, which is what sparsity regularisation is
+supposed to produce and greedy growth routinely fails to deliver. The search is validated
+against exhaustive enumeration of every tree on 15 small problems, so "optimal" is a proof
+rather than a hope, and an uncertified row is reported as an upper bound instead. See
+[`docs/reports/optimal_tree.md`](docs/reports/optimal_tree.md).
+
+## Monotone constraints (an evasion family made impossible)
+
+The evasion study attacks this detector by padding; adversarial training makes that harder;
+verification finds only ~56% of alerts provably safe against an attacker who can inflate but
+not deflate. Half is a measurement, and it moves on every retrain. `netsentry monotonic`
+takes the structural route instead: constrain the model **non-decreasing** in all 39
+attacker-inflatable features, so adding bytes can never lower the attack score — not
+usually, never. Both backends enforce it at split time, so the property holds for every
+input in the domain, not just inputs resembling training rows.
+
+Measured three independent ways: **100% of the constrained model's alerts are provably
+immune to inflation** (against 0% unconstrained) under an *unbounded* inflation box; a
+greedy padding search destroys **44% of the deployed model's alerts and none at all** of the
+constrained one's; and a random probe finds 375 score-lowering additions against the
+deployed model, zero against the constrained one. The proof is gated on the flattened trees
+reproducing LightGBM's own raw scores, and is sound-but-incomplete so it errs toward
+under-claiming.
+
+The guarantee is **better than free**: −0.001 PR-AUC (a wash) and **+3.6% detection**.
+Getting more detection from a strictly smaller hypothesis class is what a correct prior looks
+like — "more bytes is never less suspicious" is true of network traffic, and the
+unconstrained model had only three capture days in which to learn it. See
+[`docs/reports/monotonic.md`](docs/reports/monotonic.md).
+
+## Causal invariance (is the temporal gap fixable?)
+
+The temporal split costs roughly half the stratified PR-AUC, and causal ML offers a
+specific hypothesis: the model leans on correlations that held during the training days and
+did not survive the boundary. `netsentry invariance` tests it with both standard tools,
+implemented from scratch over capture days as environments — **Invariant Causal Prediction**
+screening (Peters et al. 2016) and **IRMv1**'s gradient penalty on a linear head (Arjovsky
+et al. 2019, with the paper's own loss rescaling so the sweep measures the objective rather
+than optimiser blow-up).
+
+The premise is checked before the methods are believed, and it fails — informatively.
+**42% of features point in opposite directions on different capture days**: Tuesday is
+brute force (many short low-volume connections) and Wednesday is denial of service
+(sustained high-volume ones), so a feature separating attack from benign one way on Tuesday
+separates it the other way on Wednesday. Both methods therefore reject genuine
+class-specific structure rather than spurious correlation: the invariant subset (2 of 76
+features) loses 0.32 PR-AUC, and no IRM penalty weight beats plain ERM. Also caught: Monday
+is entirely benign, and scoring a single-class environment as "zero strength" — the obvious
+implementation — would reject almost the whole feature vector for a reason with nothing to
+do with invariance. See [`docs/reports/invariance.md`](docs/reports/invariance.md).
+
+## Learning to defer (when to ask a human)
+
+Conformal abstention declines to decide where the *model* is unsure, which silently assumes
+the human is better there. `netsentry defer` states the decision the way Madras et al.
+(2018) do — a comparison of two expected losses under a review budget — and makes the
+analyst the experimental variable: skill that is constant, skill that tracks the model's
+confidence, and skill that tracks the flow's *distance from the training data*. The
+policies form an ablation (nothing → random → least-confident → cost-aware → learned), so
+each row prices one ingredient, and the uniform analyst is a control where the last two are
+identical by construction.
+
+Three findings, one of them a **clean negative**. Random deferral is worse than not
+deferring, so a policy has to earn its budget before anything else. Cost-awareness changes
+*nothing* — identical digit for digit — because at a 0.1% FPR budget the model calls
+everything benign, so the only mistake available is a miss and the 20:1 asymmetry has
+nothing left to re-rank. And knowing where the human is better made the system **worse**
+(−450 against a ±25 control noise floor) in exactly the regime the method was designed for.
+The diagnosis is a ratio, not a mystery: among flows in contention the analyst's skill
+varies 1.5x while the model's attack probability varies 2.7x, so the model's term decides
+the order and a *fitted* human term only adds variance to it. The signal was real (31%
+skill spread); it was not worth acting on. See
+[`docs/reports/defer.md`](docs/reports/defer.md).
+
+## Taxonomy-aware errors (not every mistake costs the same)
+
+Flat multiclass accuracy charges the same for confusing `DoS Hulk` with `DoS GoldenEye`
+(same playbook, same containment) as for confusing it with `BENIGN` (no response at all).
+`netsentry hierarchy` scores against the four-level ATT&CK taxonomy this repo already
+publishes — verdict / tactic / technique / class — with hierarchical precision/recall/F1
+(Kiritchenko et al. 2006) and an error decomposition into the five outcomes that differ
+operationally.
+
+The result is not the softer metric people expect. Only **8% of the deployed model's
+errors are the forgivable kind**; **65% are missed attacks**, so hierarchical F1 lands at
+0.840 *below* the 0.868 flat accuracy reports — because hierarchical recall divides by
+path length, and an attack is four levels deep where benign is two, so calling an attack
+benign automatically costs twice as much with nobody choosing a weight. Training
+hierarchically (a local classifier per parent node) then gives up 1.3% exact accuracy and
+returns a **9% cut in expected response cost**, converting missed attacks (8.6% → 7.3%)
+into false alarms, plus +0.017 macro-F1 on the rare classes. A flat metric scores that
+model as the worse of the two; an operator would deploy it. See
+[`docs/reports/hierarchy.md`](docs/reports/hierarchy.md).
 
 ## Provenance & supply chain
 
