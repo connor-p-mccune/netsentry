@@ -45,14 +45,15 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 from sklearn.metrics import average_precision_score
+from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeClassifier
 
 from netsentry.data.clean import BINARY_TARGET
 from netsentry.data.split import load_split
 from netsentry.evaluation import plots
 from netsentry.evaluation.metrics import attack_probability, rates_at_threshold, threshold_at_fpr
-from netsentry.features.feature_sets import display_feature_name
-from netsentry.features.pipeline import build_pipeline
+from netsentry.features.feature_sets import display_feature_name, numeric_features
+from netsentry.features.pipeline import NUMERIC_BRANCH, build_pipeline
 from netsentry.log import get_logger
 from netsentry.models.supervised import SupervisedClassifier
 from netsentry.seed import seed_everything
@@ -203,8 +204,31 @@ def tree_objective(
 # --------------------------------------------------------------------------------------
 # Binarisation (fit on train only)
 # --------------------------------------------------------------------------------------
+def scaler_stats(pipeline: Pipeline) -> dict[str, tuple[float, float]]:
+    """Per-feature (mean, scale) from the fitted numeric branch, for printing raw thresholds.
+
+    The pipeline hands the model standardised columns, so a split learned at ``z = -0.004``
+    is meaningless to the auditor the tree exists for. Inverting the scaler prints the same
+    split as "more than 4.2 packets", which is the form a human can argue with. Returns an
+    empty mapping when the pipeline has no scaler, in which case the columns are already raw.
+    """
+    branch = pipeline.named_steps["features"].named_transformers_.get(NUMERIC_BRANCH)
+    scaler = getattr(branch, "named_steps", {}).get("scale") if branch is not None else None
+    if scaler is None or not hasattr(scaler, "mean_"):
+        return {}
+    return {
+        name: (float(mean), float(scale))
+        for name, mean, scale in zip(numeric_features(), scaler.mean_, scaler.scale_, strict=False)
+    }
+
+
 def build_predicates(
-    x: np.ndarray, y: np.ndarray, names: list[str], n_features: int, n_thresholds: int
+    x: np.ndarray,
+    y: np.ndarray,
+    names: list[str],
+    n_features: int,
+    n_thresholds: int,
+    stats: dict[str, tuple[float, float]] | None = None,
 ) -> tuple[np.ndarray, list[str], list[tuple[int, float]]]:
     """Binarise the strongest features at quantile thresholds, fitted on training rows only.
 
@@ -235,7 +259,8 @@ def build_predicates(
             if column.all() or not column.any():
                 continue
             columns.append(column)
-            labels.append(f"{names[j]} > {threshold:.3g}")
+            mean, scale = (stats or {}).get(names[j], (0.0, 1.0))
+            labels.append(f"{names[j]} > {mean + threshold * scale:.4g}")
             spec.append((int(j), threshold))
     if not columns:  # degenerate input: one constant predicate keeps the search well-defined
         columns = [np.zeros(len(x), dtype=np.uint8)]
@@ -355,7 +380,7 @@ def run_optimal_tree(settings: Settings) -> OptimalTreeStudy:
     )
     x_train, y_train = x_train_full[take], y_train_full[take]
     binary, labels, spec = build_predicates(
-        x_train, y_train, names, cfg.n_features, cfg.n_thresholds
+        x_train, y_train, names, cfg.n_features, cfg.n_thresholds, scaler_stats(pipeline)
     )
     weights = np.where(
         y_train == 1, 0.5 / max(y_train.mean(), 1e-9), 0.5 / max(1 - y_train.mean(), 1e-9)
@@ -640,7 +665,9 @@ def _scale_read(study: OptimalTreeStudy) -> str:
 _SCOPE = """The optimum is optimal **for a binarisation**, and the binarisation is a modelling
 choice that sits outside the proof. Features are ranked by a single-feature separation score
 and cut at fixed quantiles rather than at thresholds chosen to maximise purity, because a
-purity-optimal threshold is a greedy split smuggled into the exhaustive search — but a
+purity-optimal threshold is a greedy split smuggled into the exhaustive search. Thresholds are
+printed in **raw feature units** by inverting the fitted scaler, since a split quoted at
+`z = -0.004` is unreadable to the auditor the tree exists for — but a
 different candidate set would give a different optimum, and the certificate says nothing about
 that. The honest phrasing is the one used throughout: optimal for this predicate set, this
 depth limit and this penalty.

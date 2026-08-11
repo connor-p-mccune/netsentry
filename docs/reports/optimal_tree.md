@@ -58,11 +58,11 @@ The optimal tree at the headline penalty, in full — which is the entire point 
 small one:
 
 ```
-if Total Fwd Packets > -0.00384:
+if Total Fwd Packets > 26.5:
   predict ATTACK
 else:
-  if Flow Packets/s > -0.0584:
-    if Flow Bytes/s > -0.0335:
+  if Flow Packets/s > 241.3:
+    if Flow Bytes/s > 2405:
       predict ATTACK
     else:
       predict benign
@@ -75,7 +75,9 @@ else:
 The optimum is optimal **for a binarisation**, and the binarisation is a modelling
 choice that sits outside the proof. Features are ranked by a single-feature separation score
 and cut at fixed quantiles rather than at thresholds chosen to maximise purity, because a
-purity-optimal threshold is a greedy split smuggled into the exhaustive search — but a
+purity-optimal threshold is a greedy split smuggled into the exhaustive search. Thresholds are
+printed in **raw feature units** by inverting the fitted scaler, since a split quoted at
+`z = -0.004` is unreadable to the auditor the tree exists for — but a
 different candidate set would give a different optimum, and the certificate says nothing about
 that. The honest phrasing is the one used throughout: optimal for this predicate set, this
 depth limit and this penalty.
