@@ -142,7 +142,11 @@ response {class, prob, anomaly_score, is_anomaly, top_features, version}`.
 Live/streaming packet capture and IPv6 (offline pcap/pcapng ingestion is
 in scope via `netsentry pcap`; NetFlow extraction is not) and multi-node production
 serving infrastructure. Adversarial evasion is
-measured (`docs/reports/robustness.md`) *and* acted on (`docs/reports/hardening.md`
-— adversarial training recovers full-mimicry detection, defending only the
-perturbation it trains on, as the report states). NetSentry is a rigorous reference
-implementation and demo, not a drop-in enterprise NIDS — and the model card says so.
+measured (`docs/reports/robustness.md`) *and* acted on — first empirically
+(`docs/reports/hardening.md`: adversarial training recovers full-mimicry detection,
+defending only the perturbation it trains on, as the report states) and then
+structurally (`docs/reports/monotonic.md`: constraining the model non-decreasing in
+the attacker-inflatable features makes padding evasion impossible for *any* budget,
+which is a property of the hypothesis class rather than of a particular fit).
+NetSentry is a rigorous reference implementation and demo, not a drop-in enterprise
+NIDS — and the model card says so.
