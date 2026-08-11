@@ -74,9 +74,25 @@
   ~83% to ~0% at the 1%-FPR operating point). This is expected for a tabular tree
   model and is the explicit case for pairing it with the benign-only anomaly
   detector and not relying on it as a sole control.
+  **One family of that attack is removable.** A variant constrained non-decreasing
+  in the 39 attacker-inflatable features cannot be evaded by padding at all — the
+  property is structural rather than learned, holds for every input in the domain,
+  and costs nothing measurable (see
+  [`docs/reports/monotonic.md`](reports/monotonic.md)). An attacker who can *remove*
+  bytes or packets is outside that guarantee; the shipped model is unconstrained,
+  so the numbers above still describe it.
 - **Flow features, not packets.** The model consumes flow statistics, so it
   inherits any bias or error in the flow-extraction step — including NetSentry's
   own capture stack, whose documented departures from CICFlowMeter (bulk
   features, zero-duration rates, close semantics) apply to `netsentry pcap` input.
+- **It is a post-mortem detector, structurally.** Exporters emit one record per
+  *finished* flow, and most of the features are undefined until then, so the
+  earliest instant a verdict can exist is the instant the flow closes — which for a
+  flow that stops without a teardown is the exporter's idle timeout away. Detection
+  latency is therefore a property of the traffic rather than of the model, and it is
+  measured rather than assumed in
+  [`docs/reports/earliness.md`](reports/earliness.md), which also finds that the
+  features requiring the wait are the ones that transfer worst across the day
+  boundary.
 - **Explanations are local approximations.** SHAP values explain the model, not
   ground-truth causation; treat top features as investigative leads.
