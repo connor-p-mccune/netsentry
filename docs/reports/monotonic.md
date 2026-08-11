@@ -16,7 +16,7 @@ There is a structural alternative. Constrain the model to be **non-decreasing** 
 feature the attacker can inflate, and padding cannot lower the attack score — not usually,
 never. Gradient-boosted trees enforce this at split time, so the property holds for every
 input in the domain, including inputs no training row resembles. This report measures the
-security that buys, twice and independently, and what it costs.
+security that buys three independent ways, and what it costs.
 
 ## The three measurements
 

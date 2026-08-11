@@ -24,12 +24,19 @@ study measures three things rather than asserting one:
    `robustness.verify_trees` is run over an *unbounded* inflation box on both models. For the
    constrained model the provably-robust share should be total, and if it is not, the
    implementation is wrong and the report will say so instead of claiming a guarantee.
-2. **The security gain, measured.** The mimicry attack is re-run against both, restricted to
-   the moves the threat model allows. A proof about a flattened tree ensemble is only worth
-   something if the deployed object behaves the same way, so the empirical arm is the check
-   on the formal one rather than a second opinion.
+2. **The security gain, attacked.** A greedy inflation search is run against both: at each
+   round it takes whichever single addition lowers the score most, and stops when none does.
+   A proof about a flattened tree ensemble is only worth something if the deployed object
+   behaves the same way, so the empirical arm is a check on the formal one rather than a
+   second opinion. A random probe is the third and cheapest check.
 3. **The detection cost.** PR-AUC and detection at the operating budget, on the honest
    temporal split. A defence that is free is usually a defence that does nothing.
+
+The attack in (2) is deliberately not the mimicry walk the evasion study uses. Mimicry moves a
+flow toward the benign centroid, which for most features means *shrinking* it, so clipping that
+walk to the inflation direction produces something that raises the score for every model and
+discriminates nothing. The greedy search is the attack the inflate-only threat model actually
+admits.
 
 One subtlety worth stating because it is easy to get wrong: the constraint is applied in the
 *transformed* feature space the model actually sees, and the pipeline standardises with a
@@ -561,7 +568,7 @@ There is a structural alternative. Constrain the model to be **non-decreasing** 
 feature the attacker can inflate, and padding cannot lower the attack score — not usually,
 never. Gradient-boosted trees enforce this at split time, so the property holds for every
 input in the domain, including inputs no training row resembles. This report measures the
-security that buys, twice and independently, and what it costs.
+security that buys three independent ways, and what it costs.
 
 ## The three measurements
 
