@@ -1482,7 +1482,7 @@ temporal boundary. The detected-in-time frontier is **dominated**: there is no h
 however patient, at which waiting for the flow to end pays for itself. On the wait itself
 the stand-in is honest about its own limits — its generator stamps a teardown on every
 flow, so the idle timer never fires — and reports the sweep instead: past a 50% unclosed
-share the median verdict jumps from 80 ms to the full 120 s timeout, a 1,500x change in
+share the median verdict jumps from 80 ms to the full 120 s timeout, a 1,504x change in
 the traffic with the model held fixed. See
 [`docs/reports/earliness.md`](docs/reports/earliness.md).
 

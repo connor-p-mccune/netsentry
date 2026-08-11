@@ -23,7 +23,7 @@ real one: skill that does not vary at all, skill that tracks the model's confide
 reading the same ambiguity), and skill that tracks the flow's *distance from the training
 data* — the case where the human brings context the feature vector does not contain.
 
-## The four policies against the three analysts
+## The five policies against the three analysts
 
 _Total system cost at the operating review budget; lower is better._
 
