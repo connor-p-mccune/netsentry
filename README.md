@@ -17,7 +17,7 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.16.0`.** The build plan in
+**Released `v0.16.1`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
 tested, and committed, and fifteen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
@@ -218,6 +218,7 @@ what actually ships.
 | Tamper-evident ledger | hash-chained alert history: six attacks executed, the truncation gap closed with an anchor, O(log n) Merkle inclusion proofs | ✅ Done |
 | Rare-class estimation | Beta-Binomial partial pooling with empirical-Bayes hyperparameters; coverage validated by simulation, 1.4x narrower than Wilson | ✅ Done |
 | Strategic equilibrium | the arms race as a game: a kept negative result — evasion is irrational against a detector this weak, with the flip point quantified | ✅ Done |
+| Point-in-time feature store | as-of joins for host context, and the temporal leak the one-line `groupby` creates: 1.000 offline, 0.583 in production | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -1788,6 +1789,38 @@ than defended: evasion flips to rational at `k = 0.05`, where a 15% disguise cos
 pay unless disguising is nearly free**, with the flip point a number rather than an opinion. The
 report also carries the Stackelberg commitment solution, the myopic arms race with cycle
 detection, and a pure-Nash check — each a tested function over the payoff matrix.
+
+## Point-in-time correctness (a feature store, and the leak it prevents)
+
+The per-flow model never sees an IP, which is what stops it memorising *which host* attacked
+instead of *what an attack looks like*. The cost is real: one flow cannot say "this source has
+opened four hundred connections in the last minute". Host **context** recovers that signal
+without reintroducing identity — a behaviour count is not an address — and computing it correctly
+is what a feature store is for.
+
+```bash
+python -m netsentry.cli featurestore   # -> docs/reports/feature_store.md
+```
+
+| detector | held-out PR-AUC |
+|---|---|
+| no host context | 0.467 |
+| point-in-time context (as-of join) | 0.993 |
+| whole-capture context (the one-line `groupby`) | 1.000 |
+| **whole-capture context, served point-in-time** | **0.583** |
+
+The first three rows are the comparison everyone runs, and they make the leak look harmless: the
+incorrect join buys only +0.007 over the correct one. The fourth row is what actually happens.
+A model trained on whole-capture aggregates and then deployed against features a serving path can
+compute scores **0.583 against the 1.000 it was benchmarked at** — a 0.417 collapse that would be
+diagnosed as drift, investigated as drift, and never fixed, because the cause is a join written
+six months earlier.
+
+The as-of join is a two-pointer sweep over time-sorted events per entity: each flow sees only its
+source's events in `[t - 60s, t)`, strictly earlier, never simultaneous — ties at one-second
+resolution being the usual way a label-bearing row leaks into its own feature. The synthetic
+stand-in cannot host this comparison and the report says so with the measurement that proves it
+(60,000 flows, 60,000 distinct sources), so the mechanism runs on a controlled stream instead.
 
 ## Provenance & supply chain
 

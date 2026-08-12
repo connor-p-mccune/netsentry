@@ -6,6 +6,31 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.16.1] — 2026-08-12
+
+Two additions in the same spirit as the 0.16.0 wave: take something the project had been
+treating as settled, and check it.
+
+### Added
+- **Point-in-time feature store** (`netsentry featurestore`, `netsentry/features/store.py`): the
+  per-flow model is identity-blind by design, which costs it the signal an analyst reaches for
+  first — how busy this source has been in the last minute. Host context recovers it without
+  reintroducing identity, because a behaviour count is not an address. Computing it correctly is
+  the part production ML infrastructure exists for: the obvious `groupby` hands a flow at 09:00
+  information about what its host did at 17:00, which is a **temporal leak** and the same class
+  of mistake as the identifier leakage this project was built around — one axis over, and the one
+  that survives dropping every identifier column. The store implements the as-of join (a
+  two-pointer sweep, linear rather than the quadratic of a per-row filter, and the same
+  computation an online lookup would run) alongside the leaky one so the difference can be
+  measured. The synthetic stand-in cannot host the comparison and the report says so with the
+  measurement that proves it — 60,000 raw flows carry 60,000 distinct source addresses, one per
+  flow — so the mechanism runs on a controlled stream instead. **The fourth row is the point**:
+  correct context is worth +0.525 PR-AUC and the leaky join adds only +0.007 on top, which makes
+  the offline comparison look harmless; but a model trained on the leaky join and served features
+  a serving path can actually compute scores **0.583 against the 1.000 it was benchmarked at** —
+  a 0.417 collapse that would be diagnosed as drift, investigated as drift, and never fixed,
+  because the cause is a join.
+
 ## [0.16.0] — 2026-08-11
 
 The **operations, oracles & honest-uncertainty wave**: five studies that each take something this

@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Regenerated 2026-08-12 23:28 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
+_Regenerated 2026-08-12 23:46 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -36,6 +36,7 @@ _Regenerated 2026-08-12 23:28 UTC via `netsentry analyze`. Synthetic stand-in un
 | Federated training | detection when traffic cannot be pooled: FedAvg vs pooled vs alone (McMahan 2017) | [open](federated.md) |
 | Poisoning defense | audit-and-drop sanitization vs label flips, re-measured | [open](poisoning_defense.md) |
 | Detection SLOs | error budgets and multiwindow burn-rate alerting, with the rules generated | [open](slo.md) |
+| Point-in-time feature store | host context joined correctly vs over the whole capture: the temporal leak, priced | [open](feature_store.md) |
 | Strategic equilibrium | the arms race as a game: myopic race vs commitment, with the attacker cost priced | [open](strategic.md) |
 | Metamorphic testing | a label-free correctness oracle, validated by injected mutants (Chen 1998, Xie 2011) | [open](metamorphic.md) |
 | Backdoor poisoning | trigger trojan (BadNets) + spectral-signatures defense (Tran et al. 2018) | [open](backdoor.md) |

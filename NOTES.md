@@ -2147,3 +2147,19 @@ broken premise was more interesting than the study would have been if it had wor
   removes a larger share of a weak detector's already-small detection. The read now derives the
   direction from the data instead of asserting it -- the second time this wave that a sentence
   written before the numbers arrived turned out to be backwards.
+
+- **The feature store found a hole in the stand-in, not in the join.** Both context variants came
+  back identical, with the leakage ratio reported as `inf`. The cause: `_add_identifiers_and_ports`
+  draws a fresh random address for every flow, so 60,000 flows have 60,000 distinct sources and no
+  host is ever observed twice. Every host context is structurally empty and both joins return the
+  same nothing. Regenerating the raw data with a bounded host pool would have been the "right" fix
+  and would also have invalidated every committed report through `prep`, so the report states the
+  measurement and demonstrates the mechanism on a controlled stream instead. Worth remembering for
+  any future study that needs entity structure: the graph and beaconing studies are looking at the
+  same absence.
+- **The obvious comparison understated the leak by a factor of sixty.** Leaky vs point-in-time,
+  scored the normal way, differed by +0.007 — which would have supported a shrug. The failure a
+  temporal leak actually causes is not offline optimism, it is train/serve skew: fit on features
+  computed one way, serve features computed another. Adding that fourth variant turned +0.007 into
+  a 0.417 collapse. The lesson generalises past this study — a leak's cost is measured at the
+  boundary it crosses, not on the side you can see.
