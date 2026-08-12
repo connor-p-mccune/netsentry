@@ -302,6 +302,24 @@ class NoveltyConfig(BaseModel):
     twin_epsilon: float = 0.5
 
 
+class RareRatesConfig(BaseModel):
+    """Hierarchical (partial-pooling) estimation of per-class detection rates.
+
+    ``split`` picks which protocol supplies the counts: the stratified split is the default here
+    because it is the one where every attack class appears at test, including the genuinely tiny
+    ones the report is about, and the question being asked is about *estimation uncertainty*
+    rather than about the detection level (which the temporal split still owns). ``level`` is the
+    interval level, ``grid_points`` the resolution of the empirical-Bayes hyperparameter search,
+    ``coverage_replicates`` the number of simulated redraws behind the coverage check, and
+    ``target_half_width`` the precision the sample-size table solves for."""
+
+    split: Literal["stratified", "temporal"] = "stratified"
+    level: float = 0.95
+    grid_points: int = 60  # per axis of the (mean, concentration) marginal-likelihood grid
+    coverage_replicates: int = 400
+    target_half_width: float = 0.05  # the +/- precision the sample-size table asks for
+
+
 class OpenSetConfig(BaseModel):
     """Open-set recognition: rank the novelty rules on classes the model was never taught.
 
@@ -2134,6 +2152,7 @@ class Settings(BaseSettings):
     campaigns: CampaignsConfig = Field(default_factory=CampaignsConfig)
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)
     openset: OpenSetConfig = Field(default_factory=OpenSetConfig)
+    rare_rates: RareRatesConfig = Field(default_factory=RareRatesConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     adaptive_conformal: AdaptiveConformalConfig = Field(default_factory=AdaptiveConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)

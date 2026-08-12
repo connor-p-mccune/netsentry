@@ -1411,6 +1411,19 @@ def openset(
     logger.info("Open-set report ready", extra={"path": str(out)})
 
 
+@app.command("rarerates")
+def rare_rates_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Partial-pool the per-class detection rates so a twelve-flow class reads honestly."""
+    from netsentry.evaluation.rare_rates import run_rare_rates_report
+
+    settings = _load(config, override)
+    out = run_rare_rates_report(settings)
+    logger.info("Rare-rates report ready", extra={"path": str(out)})
+
+
 @app.command("labelaudit")
 def label_audit_cmd(
     config: ConfigOpt = None,

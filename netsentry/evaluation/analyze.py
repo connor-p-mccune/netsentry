@@ -43,6 +43,7 @@ from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.ope import run_ope_report
 from netsentry.evaluation.openset import run_openset_report
 from netsentry.evaluation.ppi import run_ppi_report
+from netsentry.evaluation.rare_rates import run_rare_rates_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.seed_variance import run_seed_variance_report
@@ -488,6 +489,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection vs distance-to-training; the split gap decomposed",
         "novelty.md",
         run_novelty_report,
+    ),
+    (
+        "Rare-class rate estimation",
+        "partial pooling so a twelve-flow class does not read like a thousand-flow one",
+        "rare_rates.md",
+        run_rare_rates_report,
     ),
     (
         "Open-set recognition",
