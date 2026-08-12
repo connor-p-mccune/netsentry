@@ -2037,3 +2037,90 @@ tree and already shipped in the API, so it cannot be accused of being shaped to 
    number is reported only as an optimistic reference, with the gap called out.
 4. Lead with PR-AUC, per-class P/R/F1, and TPR@fixed-FPR — never accuracy.
 5. Every run is reproducible from logged config + seed.
+
+## Wave 15 — operations, oracles & honest uncertainty (v0.16.0)
+
+The theme that emerged while building this one was **check the premise before using the tool**.
+Three of the five studies found their premise broken on the first run, and in each case the
+broken premise was more interesting than the study would have been if it had worked.
+
+- **The temporal split is an open-set problem and nobody said so.** Loading the class tables side
+  by side to set up the study, train came back with `{BENIGN, DoS Hulk, DoS GoldenEye,
+  DoS Slowhttptest, DoS slowloris, FTP-Patator, SSH-Patator, Heartbleed}` and test with
+  `{BENIGN, PortScan, DDoS, Bot, Web Attack, Infiltration}`. Zero attack-class overlap. That fact
+  has been sitting in `split.py`'s output since the first wave and every report since has scored
+  it with a closed-set protocol. Openness works out to 0.127 by Scheirer's measure, which is not
+  extreme, but the *structure* is: the model is being asked to recognise nothing it was taught.
+- **The fusion rule scored 0.498 — worse than both of its members.** Diagnosed in about a minute
+  once the number was on the page, and the bug is a nice one: I was rank-averaging each block
+  against *itself*, so the known flows' ranks spanned [0, 1] and the unknown flows' ranks spanned
+  [0, 1], and the fused score carried no information about which block a flow came from. Ranking
+  against the *validation* distribution fixes it (0.688) and is also the only version that is
+  computable at deployment time, since the unknown block does not exist yet. There is now a
+  regression test that constructs two perfectly separated blocks and asserts the fusion preserves
+  the separation.
+- **The metamorphic relations failed on the deployed model, which broke the mutation study.**
+  First run: clock rescale flipped 0.36–0.65% of verdicts on the *unmutated* path, so every
+  mutant "failed" that relation too and the kill matrix was uniformly "caught". The fix was
+  conceptual rather than numerical — split the relations into **structural** (the transformed
+  input is the same input; a deviation is a code defect) and **semantic** (the transformed input
+  is a different record of the same behaviour; a deviation is a modelling finding), and only use
+  the structural half as a bug oracle. Both halves then say something worth saying: all four
+  structural relations hold at exactly 0.00e+00, and the semantic failure means one alert in 154
+  is decided by the exporter's clock. I would not have found the second result if the first run
+  had come out clean.
+- **The mutation study needed a third oracle to be honest.** With two, the story was "invariants
+  catch what labels miss", which is true but self-serving. Adding the load-time canary — which
+  this repo already ships — turned it into a proper taxonomy: labels find a model that is worse,
+  invariants find an implementation that is inconsistent, a recorded reference finds a change
+  that is neither. Zero-filled missing fields is caught *only* by the canary, and float16 escapes
+  all three. Three oracles, three blind spots, none subsumed.
+- **The `per-request rank normalisation` mutant is the one worth keeping.** Average precision and
+  ROC-AUC are invariant to any monotone transform of the scores, so replacing a score with its
+  percentile inside the batch is not *approximately* invisible to the offline metrics — it is
+  exactly invisible, by a property of the metric. Offline scores one batch of thousands; the API
+  scores one flow, whose percentile is 0 or 1. Constructing a defect that provably cannot be seen
+  by any ranking metric made the argument better than any number could have.
+- **The SLO objective was violated before any incident.** Specified 2% alert-ratio budget; the
+  healthy model alerts on 2.31% at its own operating point. That is a 1.16x burn with nothing
+  wrong, and the consequences are mechanical: the slow rows page permanently, the fast rows can
+  never be reached. Rather than quietly picking a number that worked, the report leads with the
+  failure and calibrates from the measured baseline. This is the most common way an SLO programme
+  dies and it is an arithmetic error, not a judgement call.
+- **Two SLO replay bugs, both instructive.** (1) Window warm-up: a moving average over a
+  half-filled window is dominated by its first few samples, so one alert in the first two events
+  reads as a 50% rate and manufactures a page. Evaluation now waits for the long window to fill.
+  (2) The regression has to be a **step**, not a uniform lift, or the measured detection delay is
+  not comparable with the closed form (which assumes a step from a clean window). After both
+  fixes: predicted 0.98 h vs measured 0.96 h, and 2.45 h vs 2.21 h. The replay also can only
+  reach rows whose window fits in the captured 16 hours, which the table marks rather than
+  silently omitting.
+- **The live SLI is not the one anyone cares about.** The false-alarm rate needs labels, so it
+  cannot page. The alert ratio can, and at this split's prevalence it overstates false alarms by
+  39x because it counts true alerts too. That is conservative, which is the right direction, but
+  it means the live SLO tightens during a real incident — exactly when nobody wants to be paged
+  about alert volume. Kept both, and said explicitly that the first does not measure the second.
+- **Hash chains cannot see tail truncation, and pretending otherwise would have been the easy
+  mistake.** A prefix of a valid chain is a valid chain; nothing inside the file records how long
+  the file was supposed to be. The tamper table has a `no` in it for exactly that reason, and the
+  anchor row next to it turns the `no` into a `yes`. The careful-attacker case (edit the payload
+  *and* recompute its digest) was worth building because it demonstrates why the entry hash covers
+  the payload hash rather than the payload: repairing one hash invalidates the one above it.
+- **Rare-class rates: the naive number is not just imprecise, it is misleading in a specific
+  direction.** `Heartbleed: 0.0%` on two flows reads as "we never catch it". The posterior says
+  4.2% with a `[0%, 34.6%]` interval, and 43% of that estimate is borrowed from the other classes
+  — which is the correct amount, because two flows genuinely do not distinguish Heartbleed from
+  the population. 8 of 12 classes change rank under pooling. The per-class leaderboard was
+  substantially a leaderboard of sample sizes and nobody had checked.
+- **Validating the intervals before using them mattered.** It would have been easy to publish
+  posterior intervals and move on. Simulating from the fitted prior and measuring actual coverage
+  (94.9% against a nominal 95%, 1.4x narrower than Wilson) turns "Bayesian methods are better
+  here" from a preference into a measurement — and forced the honest caveat into the report: the
+  coverage is conditional on the prior, because the simulation draws from the same Beta the
+  estimator assumes. A class that genuinely does not belong to the population would be shrunk
+  toward a rate it does not have.
+- **Empirical Bayes needed the right parameterisation.** Fitting `(alpha, beta)` directly is
+  nearly unidentified — the likelihood surface is a long flat ridge. Reparameterising as
+  `(mean, concentration)` and gridding the concentration in log space fixed it. The grid is
+  deliberately coarse: with twelve classes the surface *is* flat, and a gradient optimiser would
+  have reported a precision the data cannot support.

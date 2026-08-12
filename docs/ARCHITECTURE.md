@@ -79,15 +79,24 @@ learning, learning curves, cross-dataset transfer, and an auto-generated model c
 
 **Robustness (`netsentry/robustness`)** — the adversarial studies: evasion (mimicry
 + adaptive query search) at inference time and label-flip / benign-pool-contamination
-poisoning at training time, each reported as detection-vs-attacker-effort curves.
+poisoning at training time, each reported as detection-vs-attacker-effort curves; plus
+the metamorphic suite, which is the only correctness oracle here that needs no labels and
+can therefore run against production traffic, separated into structural relations (a
+violation is a code defect) and semantic ones (a violation is a statement about the model).
 
 **Monitoring (`netsentry/monitoring`)** — PSI drift detection (offline report and
-rolling serving gauges) and the prequential streaming study that closes the
-drift → retrain → recover loop on the later-day stream.
+rolling serving gauges), the prequential streaming study that closes the
+drift → retrain → recover loop on the later-day stream, and the detection SLOs:
+error budgets with multiwindow burn-rate alerting, whose Prometheus rules are
+*generated* from the measured operating point so the thresholds cannot drift from
+the objective they encode.
 
 **Intel & governance (`netsentry/intel`, `netsentry/governance`)** — MITRE ATT&CK
 tactic/technique mapping in predictions and a coverage report; CycloneDX SBOM and a
-model-integrity manifest with a `netsentry verify` CI gate.
+model-integrity manifest with a `netsentry verify` CI gate; and a hash-chained,
+tamper-evident alert ledger with a published anchor (the only defence against tail
+truncation) and Merkle inclusion proofs, so the alert history can be attested without
+being disclosed.
 
 **Explain (`netsentry/explain`)** — SHAP global importance and per-prediction
 attributions (in the report and in API responses), plus counterfactual recourse:

@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.15.0`.** The build plan in
+**Released `v0.16.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and fourteen post-release waves build on top — the
+tested, and committed, and fifteen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -81,7 +81,7 @@ deployed ensemble, gated on reproducing LightGBM's own scores; group DRO whose a
 declined to reweight and whose emphasis made the worst group monotonically worse;
 Byzantine-robust aggregation where one lying site in twelve costs a third of FedAvg; and
 Kaplan-Meier time-to-detection showing the naive latency understates by 8x because it deletes
-the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses).
+the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses), and the **operations, oracles & honest-uncertainty wave** (open-set recognition, which reframes the temporal split as what its class table says it is — train and test share *zero* attack classes, so every attack the model meets is an unknown one — and finds the deployed novelty rule's lead carried entirely by `DDoS` while it is blind to `PortScan` at 0.2%, below the false-alarm rate itself; metamorphic testing, a correctness oracle that needs **no labels** and can therefore run against production traffic, whose structural relations hold bit-exactly and whose semantic ones show the model is not invariant to its own exporter's clock — one alert in 154 is decided by the capture's timing resolution; a three-oracle mutation study where none of labelled accuracy, label-free invariants, or the canary dominates the others; SLO error budgets with multiwindow burn-rate alerting whose first finding is that the objective it was handed is already violated by the *healthy* system; a hash-chained alert ledger with every tamper attack executed against it, the tail-truncation gap demonstrated and then closed with a published anchor, and O(log n) Merkle inclusion proofs; and Beta-Binomial partial pooling so a two-flow class stops reading like a seven-hundred-flow one, with the credible intervals' coverage validated by simulation before anyone is asked to read them).
 `make check` is green (lint + type-check + **1,063 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
@@ -212,6 +212,11 @@ what actually ships.
 | Monotone constraints | inflation evasion made impossible by construction: 100% provably robust, proved + attacked + probed, at no detection cost | ✅ Done |
 | Optimal sparse trees | branch-and-bound optimal decision trees with an exhaustion certificate; greedy CART is up to 69% off (Hu, Rudin & Seltzer 2019) | ✅ Done |
 | Streaming sketches | Count-Min / HyperLogLog / Misra-Gries / reservoir from scratch, every bound graded against exact truth (Cormode 2005, Flajolet 2007) | ✅ Done |
+| Open-set recognition | the temporal split scored as what it is: train and test share zero attack classes, so seven novelty rules compete on OSCR + an openness sweep (Scheirer 2013, Dhamija 2018) | ✅ Done |
+| Metamorphic testing | a label-free correctness oracle: structural relations hold bit-exactly, semantic ones expose a clock dependence, validated by a three-oracle mutation study (Chen 1998, Xie 2011) | ✅ Done |
+| Detection SLOs | error budgets + multiwindow burn-rate alerting, closed form and replay-checked, with generated Prometheus rules (Google SRE Workbook) | ✅ Done |
+| Tamper-evident ledger | hash-chained alert history: six attacks executed, the truncation gap closed with an anchor, O(log n) Merkle inclusion proofs | ✅ Done |
+| Rare-class estimation | Beta-Binomial partial pooling with empirical-Bayes hyperparameters; coverage validated by simulation, 1.4x narrower than Wilson | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -1612,6 +1617,145 @@ returns a **9% cut in expected response cost**, converting missed attacks (8.6% 
 into false alarms, plus +0.017 macro-F1 on the rare classes. A flat metric scores that
 model as the worse of the two; an operator would deploy it. See
 [`docs/reports/hierarchy.md`](docs/reports/hierarchy.md).
+
+## Open-set recognition (the test days share no attack class with training)
+
+The temporal split's own class table says something every other report here quietly assumes
+away: training carries the DoS family and the patators, test carries `PortScan`, `DDoS`, `Bot`,
+`Web Attack` and `Infiltration`. **Zero overlap.** Every attack the deployed model meets at
+evaluation time is formally an *unknown class*, which makes this open-set recognition (Scheirer
+et al. 2013), not classification — "can it tell that something is not one of the classes it was
+taught" rather than "can it separate them".
+
+```bash
+python -m netsentry.cli openset      # -> docs/reports/openset.md
+```
+
+Seven novelty rules compete, all computable from artefacts the deployment already has: the
+deployed `1 - P(BENIGN)`, MSP (Hendrycks & Gimpel 2017), predictive entropy, the top-two margin,
+class-conditional Mahalanobis distance (Lee et al. 2018), the benign-fit Isolation Forest, and a
+rank-fused combination calibrated against the validation split.
+
+| rule | open-set AUROC | UDR @ 1% FPR | `DDoS` | `PortScan` |
+|---|---|---|---|---|
+| `attack_prob` (deployed) | 0.693 | 21.8% | 54.9% | **0.2%** |
+| `fused` | 0.688 | 15.2% | 33.5% | 3.6% |
+| `iforest` | 0.663 | 7.2% | 15.8% | 1.7% |
+
+The deployed rule holds its field on aggregate, and the per-class columns say why that is not
+the whole story: a **285x spread** across families, with `PortScan` detection at or *below* the
+1% false-alarm rate itself — the score is not weak there, it carries no signal at all. The
+**OSCR curve** (Dhamija et al. 2018) adds the constraint AUROC drops, counting a known flow only
+when it is both accepted and classified correctly; an **openness sweep** finds the ranking
+**inverts** as more classes are withheld (Mahalanobis leads at 0.020 openness and gives up 0.429
+AUROC by 0.127), which is the argument against picking a novelty rule at one holdout
+configuration.
+
+## Metamorphic testing (a correctness oracle with no labels)
+
+Every other quality claim here is settled by comparing a prediction to a label — a check
+production cannot run. Metamorphic testing (Chen et al. 1998; Xie et al. 2011) removes the label
+by testing **relations between outputs**: if a transformation of the input cannot change the
+right answer, the two answers must agree, and that is checkable on traffic nobody has labelled.
+
+```bash
+python -m netsentry.cli metamorphic  # -> docs/reports/metamorphic.md
+```
+
+The relations are split by what a violation would *mean*. **Structural** ones transform the
+input into the same input — a different batch position, batch size, or column order — so the
+scores must be bit-identical, and all four hold at exactly `0.00e+00` across 8,000 unlabelled
+flows. The single-vs-batch result is the useful one: direct evidence that the API and the offline
+evaluation compute the same function. **Semantic** ones transform it into a different *record* of
+the same behaviour, and there the model does not hold: re-timing a flow by 10% (durations up,
+rates correspondingly down, not one byte changed) flips **0.65% of verdicts**. Roughly one alert
+in 154 is decided by the exporter's timing resolution rather than by the traffic.
+
+Nine mutants then put three oracles against each other, and **none dominates**:
+
+| injected defect | labelled accuracy | metamorphic | canary |
+|---|---|---|---|
+| per-request rank normalisation | missed (PR-AUC *provably* unchanged) | **caught** | caught |
+| exporter unit slip | caught (−0.344 PR-AUC) | **missed** (a consistent function, just worse) | caught |
+| zero-filled missing fields | missed | missed | **caught** |
+| float16 cast | missed | missed | missed |
+
+Labels find a model that is worse. Invariants find an implementation that is inconsistent. A
+recorded reference finds a change that is neither. One mutant escapes all three, and the report
+says so.
+
+## Detection SLOs and burn-rate alerting
+
+The alert rules this repo shipped first were static thresholds. Tight enough to catch a
+regression means paging on noise; loose enough to stay quiet means a slow degradation spends the
+whole month's tolerance for false alarms without tripping the wire.
+
+```bash
+python -m netsentry.cli slo   # -> docs/reports/slo.md + docker/prometheus/slo_rules.yml
+```
+
+Error budgets, burn rates, and a multiwindow multi-burn-rate policy (Google SRE Workbook ch. 5),
+closed form and unit-tested against the published figures — then **checked by replaying the
+temporal split** through the same rolling-window logic Prometheus applies:
+
+| windows | burn | predicted page | budget spent | measured on replay |
+|---|---|---|---|---|
+| 1h/5m | 14.4x | 0.98 h | 2.0% | 0.96 h |
+| 6h/30m | 6x | 2.45 h | 5.0% | 2.21 h |
+
+The report's **first** finding is that the specified 2% objective is already violated by the
+healthy model at 2.31% — a 1.16x burn with nothing wrong, which makes every burn alert downstream
+meaningless — so the budget is calibrated from the measurement rather than the wish. And the only
+SLI computable live is the *alert ratio*, not the false-alarm rate, which needs labels; at this
+prevalence the live proxy overstates false alarms 39x, so both are kept and neither is claimed to
+measure the other. `docker/prometheus/slo_rules.yml` is generated, not hand-written, so the
+thresholds cannot drift from the objective they encode.
+
+## Tamper-evident alert ledger
+
+A detector's output is evidence: read during incident review, quoted in post-mortems, relied on
+to establish what a system did and when. A JSON-lines file on disk supports none of that —
+anyone who can write it can delete the alert that fired on the host they compromised.
+
+```bash
+python -m netsentry.cli ledger audit    # -> docs/reports/ledger.md (builds + attacks a ledger)
+python -m netsentry.cli ledger anchor   # publish (count, head_hash)
+python -m netsentry.cli ledger verify   # exits non-zero, naming the broken sequence
+```
+
+Each entry carries its predecessor's digest, with the sequence number and timestamp inside the
+hash, so editing, deleting, reordering and backdating are all caught and localised — including
+the careful attacker who recomputes the payload digest after editing it. **Tail truncation is
+the exception**: a prefix of a valid chain is a valid chain, and no amount of hashing fixes it.
+The report demonstrates that gap and then closes it with a published anchor, after which all six
+attacks are detected. A Merkle tree gives O(log n) inclusion proofs — **9 sibling hashes** prove
+one of 500 alerts to a third party without disclosing the other 499. The claim is narrow and
+stated: integrity, not authenticity.
+
+## Rare-class rates, estimated honestly
+
+`DoS Hulk: 47.0%` rests on 717 test flows and means what it says. `Heartbleed: 0.0%` rests on 2,
+and the same detector on a different sample of that size could plausibly have printed 50%. They
+are printed in the same column, in the same font.
+
+```bash
+python -m netsentry.cli rarerates    # -> docs/reports/rare_rates.md
+```
+
+| class | detected / total | naive | Wilson 95% | posterior | posterior 95% | borrowed |
+|---|---|---|---|---|---|---|
+| `DoS Hulk` | 337 / 717 | 47.0% | [43.4%, 50.7%] | 46.9% | [43.3%, 50.6%] | 0% |
+| `Infiltration` | 0 / 8 | 0.0% | [0.0%, 32.4%] | 1.6% | [0.0%, 13.2%] | 16% |
+| `Heartbleed` | 0 / 2 | 0.0% | [0.0%, 65.8%] | 4.2% | [0.0%, 34.6%] | **43%** |
+
+Beta-Binomial partial pooling with empirical-Bayes hyperparameters fitted across all classes at
+once: a class with hundreds of flows borrows nothing, a class with two borrows 43%, and the
+weighting vanishes exactly where the data is sufficient. **8 of 12 classes change rank** once
+point estimates become posterior means — a raw per-class leaderboard is substantially a
+leaderboard of sample sizes. The intervals are validated before they are used: simulating from
+the fitted prior, they cover at 94.9% against a nominal 95% while running **1.4x narrower** than
+Wilson's, and the report names the condition (a class that genuinely does not belong to the
+population) under which that would not transfer.
 
 ## Provenance & supply chain
 
