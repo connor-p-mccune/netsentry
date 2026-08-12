@@ -528,6 +528,19 @@ def ledger_audit_cmd(
 
 
 @app.command()
+def strategic(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Solve the evasion arms race as a game: myopic race, Stackelberg commitment, equilibria."""
+    from netsentry.robustness.strategic import run_strategic_report
+
+    settings = _load(config, override)
+    out = run_strategic_report(settings)
+    logger.info("Strategic report ready", extra={"path": str(out)})
+
+
+@app.command()
 def metamorphic(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

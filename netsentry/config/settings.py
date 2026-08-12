@@ -1919,6 +1919,29 @@ class LedgerConfig(BaseModel):
     demo_alerts: int = 500  # alerts the tamper-evidence report seals
 
 
+class StrategicConfig(BaseModel):
+    """The evasion arms race as a game: payoff matrix, myopic race, and the commitment solution.
+
+    defence_fractions are the deployable defences (0 is the clean model; the rest are
+    adversarial training at that mimicry level), and attack_fractions the attacker's
+    strategies. effectiveness_exponent controls how fast an attack loses its point as it is
+    disguised -- (1 - fraction)^k -- and it is the term that stops the attacker's best reply
+    from being total mimicry; the qualitative conclusions were checked to survive changing it.
+    fpr_budgets re-thresholds the same fitted defences across operating points, which is
+    what locates the *evasion frontier*: below some detection level the attacker's best move is
+    to do nothing, because the disguise costs more attack value than it buys. rounds is the
+    length of the simulated myopic race, and max_attack_flows bounds the per-cell scoring
+    work (the matrix is |defences| x |attacks| evaluations, reused across every budget)."""
+
+    defence_fractions: list[float] = Field(default_factory=lambda: [0.0, 0.15, 0.3, 0.5])
+    attack_fractions: list[float] = Field(default_factory=lambda: [0.0, 0.15, 0.3, 0.5, 0.75])
+    effectiveness_exponent: float = 1.0  # linear decay of attack value with disguise
+    fpr_budgets: list[float] = Field(default_factory=lambda: [0.001, 0.01, 0.05, 0.1, 0.25, 0.5])
+    cost_sweep: list[float] = Field(default_factory=lambda: [1.0, 0.5, 0.25, 0.1, 0.05])
+    rounds: int = 6
+    max_attack_flows: int = 4000
+
+
 class MetamorphicConfig(BaseModel):
     """Metamorphic relations as a label-free correctness oracle, validated by mutation.
 
@@ -2218,6 +2241,7 @@ class Settings(BaseSettings):
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
     metamorphic: MetamorphicConfig = Field(default_factory=MetamorphicConfig)
+    strategic: StrategicConfig = Field(default_factory=StrategicConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

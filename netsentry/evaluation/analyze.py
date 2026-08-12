@@ -92,6 +92,7 @@ from netsentry.robustness.metamorphic import run_metamorphic_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
+from netsentry.robustness.strategic import run_strategic_report
 from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.cascade import run_cascade_report
@@ -316,6 +317,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "error budgets and multiwindow burn-rate alerting, with the rules generated",
         "slo.md",
         run_slo_report,
+    ),
+    (
+        "Strategic equilibrium",
+        "the arms race as a game: myopic race vs commitment, with the attacker cost priced",
+        "strategic.md",
+        run_strategic_report,
     ),
     (
         "Metamorphic testing",
