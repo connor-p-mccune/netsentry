@@ -6,6 +6,113 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.16.0] — 2026-08-11
+
+The **operations, oracles & honest-uncertainty wave**: five studies that each take something this
+project has been treating as settled and show it was a choice. The temporal split has been scored
+as a classification problem for fifteen versions; its own class table says it is an open-set
+problem, and the deployed decision rule is only one of seven candidate novelty scores. Every
+quality claim has been settled by comparing predictions to labels; production has no labels, and
+a whole class of defect is correct on average and wrong per request. Alerting has been static
+thresholds; error budgets are what an operator actually reasons about. The alert history has been
+a JSON-lines file that anyone with write access can rewrite. And the per-class table has printed
+a two-flow rate in the same column, in the same font, as a seven-hundred-flow one.
+
+The recurring move this time is **checking the premise before using the tool**. The SLO report's
+first finding is that the objective it was handed is already violated by the healthy system, which
+makes every burn-rate alert downstream of it meaningless — so the budget is calibrated from the
+measurement and the failure is reported rather than quietly fixed. The metamorphic suite splits
+its relations into structural (a violation is a code defect) and semantic (a violation is a
+statement about the model) before drawing any conclusion, because conflating them is what makes
+the technique look either trivial or unreliable. The rare-rate study validates its own credible
+intervals by simulation before asking anyone to read them, and then names the condition under
+which that validation would not transfer.
+
+Three results are **uncomfortable, and kept**. The deployed novelty rule's aggregate lead is
+carried entirely by one attack family: it catches 54.9% of `DDoS` and 0.2% of `PortScan` at the
+same false-alarm budget — below the false-alarm rate itself, meaning the score carries no signal
+on that family at all. The model is not invariant to its own exporter's clock: re-timing a flow by
+10%, with durations up and rates correspondingly down and not one byte changed, flips 0.65% of
+verdicts, so roughly one alert in 154 is decided by the timing resolution of the capture rather
+than by the traffic. And no defect oracle dominates: of nine injected mutants, six are caught by
+labelled accuracy, three by the label-free invariants, eight by the canary, and one escapes all
+three.
+
+### Added
+- **Open-set recognition** (`netsentry openset`, `netsentry/evaluation/openset.py`): the temporal
+  split's class table shows train and test share **zero** attack classes, so every attack the
+  deployed model meets at evaluation time is formally an unknown class — the problem is open-set
+  recognition (Scheirer et al. 2013), not classification. Seven novelty rules are scored on it,
+  all computable from artefacts the deployment already has: the deployed `1 - P(BENIGN)`, MSP
+  (Hendrycks & Gimpel 2017), predictive entropy, the top-two margin, class-conditional
+  Mahalanobis distance with a shrunk pooled covariance (Lee et al. 2018), the benign-fit Isolation
+  Forest, and a rank-fused combination. The deployed rule holds its field at **0.693 open-set
+  AUROC and 21.8% unknown-detection** at the 1% budget, but the per-class table is the result: a
+  **285x spread** across families, with `PortScan` detection at 0.2% — at or below the false-alarm
+  rate, so the score is not weak there but blind. The **OSCR curve** (Dhamija et al. 2018) adds
+  the constraint AUROC drops, counting a known flow only when it is both accepted and classified
+  correctly. An **openness sweep** withholds a growing number of classes from the stratified split
+  and finds the ranking **inverts**: Mahalanobis leads at 0.020 openness and gives up 0.429 AUROC
+  by 0.127. Fusion is calibrated against the validation split, because ranking each block against
+  itself makes both uniform on [0, 1] and destroys the separation the fusion exists to combine —
+  pinned by a regression test.
+- **Metamorphic testing** (`netsentry metamorphic`, `netsentry/robustness/metamorphic.py`): a
+  correctness oracle that needs **no labels**, so unlike everything else here it can run against
+  production traffic continuously. Relations are split by what a violation would mean.
+  **Structural** ones (batch permutation, batch duplication, single-vs-batch, column reorder)
+  transform the input into *the same input*, so the scores must be bit-identical — and all four
+  hold at exactly `0.00e+00` across 8,000 unlabelled flows, which is direct evidence that the API
+  and the offline evaluation compute the same function. **Semantic** ones do not: re-timing a flow
+  to a different exporter clock flips **0.65% of verdicts**, a modelling finding rather than a
+  bug. Nine mutants then put three oracles against each other. Per-request rank normalisation is
+  *provably* invisible to accuracy (PR-AUC is invariant to monotone score transforms) and is
+  caught immediately by batch duplication; the exporter unit slip costs 0.344 PR-AUC and breaks no
+  relation at all, because it is a consistent function of its input — just a worse one; zero-filled
+  missing fields are caught only by the canary. **No oracle subsumes another**, which is the
+  argument for running all three, and one mutant escapes all of them, which the report states
+  plainly.
+- **Detection SLOs and burn-rate alerting** (`netsentry slo`, `netsentry/monitoring/slo.py`):
+  error budgets, burn rates, and a multiwindow multi-burn-rate policy (Google SRE Workbook ch. 5)
+  replacing the static thresholds this repo shipped first. Every quantity is closed form and
+  unit-tested against the published worked figures — 14.4x exhausts a 30-day budget in 50 hours,
+  the 1h/5m row pages at 2% of budget spent, the 6h/30m row at 5% — and then **checked by
+  replay**: predicted 0.98 h against measured 0.96 h on the fast row, 2.45 h against 2.21 h on the
+  second, with zero false pages on the healthy stream. The report's first finding is that the
+  specified 2% objective is **already violated** by the healthy model at 2.31%, a 1.16x burn with
+  nothing wrong, so the budget is calibrated from the measurement. The only live SLI is the alert
+  ratio, not the false-alarm rate, which needs labels; at this split's prevalence the live proxy
+  overstates false alarms **39x**, so both are kept and neither is claimed to measure the other.
+  Ships a generated `docker/prometheus/slo_rules.yml`, wired into the compose stack.
+- **Tamper-evident alert ledger** (`netsentry ledger verify|anchor|audit`,
+  `netsentry/governance/ledger.py`): the alert history is evidence, and a JSON-lines file supports
+  none of the assumptions made about it. Each entry now carries its predecessor's digest, with the
+  sequence number and timestamp inside the hash so moving or restamping an entry is caught too;
+  verification names the sequence where the chain breaks. The spool watcher seals every alert it
+  emits, best-effort, so bookkeeping can never drop a detection. Six tamper attacks are **executed
+  against the real ledger**, including the careful attacker who recomputes the payload digest
+  after editing it. **Tail truncation is the exception** — a prefix of a valid chain is a valid
+  chain, and no amount of hashing fixes it — so the report demonstrates the gap and closes it with
+  a published `(count, head_hash)` anchor. A Merkle tree gives O(log n) inclusion proofs: **9
+  sibling hashes** prove one of 500 alerts to a third party without disclosing the other 499. The
+  claim is narrow and stated: integrity, not authenticity.
+- **Rare-class rate estimation** (`netsentry rarerates`, `netsentry/evaluation/rare_rates.py`):
+  Beta-Binomial partial pooling with empirical-Bayes hyperparameters fitted across all classes by
+  marginal likelihood, so each class's posterior is a compromise between its own data and the
+  population, weighted by how much data it has. `DoS Hulk` (717 flows) borrows **0%**; `Heartbleed`
+  (2 flows) borrows **43%**, and its interval narrows from Wilson's useless `[0%, 65.8%]` to
+  `[0%, 34.6%]` while its point estimate moves off the misleading zero. **8 of 12 classes change
+  rank** once point estimates become posterior means — the concrete statement that a raw per-class
+  leaderboard is substantially a leaderboard of sample sizes. Coverage is validated by simulation
+  (94.9% against a nominal 95%, **1.4x narrower** than Wilson at the same coverage) and the
+  condition under which that validation would not transfer is named.
+
+### Changed
+- `netsentry analyze` runs five more reports; `docs/reports/INDEX.md` regenerated.
+- `docker/prometheus/prometheus.yml` and the compose stack load the generated SLO burn-rate rules
+  alongside the hand-written alerts.
+- The spool watcher (`netsentry watch`) seals emitted alerts into the ledger when
+  `ledger.enabled` is set (off by default).
+
 ## [0.15.0] — 2026-08-10
 
 The **decision-time, structure & proof wave**: seven studies that each take a claim this
