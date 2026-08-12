@@ -81,7 +81,7 @@ deployed ensemble, gated on reproducing LightGBM's own scores; group DRO whose a
 declined to reweight and whose emphasis made the worst group monotonically worse;
 Byzantine-robust aggregation where one lying site in twelve costs a third of FedAvg; and
 Kaplan-Meier time-to-detection showing the naive latency understates by 8x because it deletes
-the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses), and the **operations, oracles & honest-uncertainty wave** (open-set recognition, which reframes the temporal split as what its class table says it is — train and test share *zero* attack classes, so every attack the model meets is an unknown one — and finds the deployed novelty rule's lead carried entirely by `DDoS` while it is blind to `PortScan` at 0.2%, below the false-alarm rate itself; metamorphic testing, a correctness oracle that needs **no labels** and can therefore run against production traffic, whose structural relations hold bit-exactly and whose semantic ones show the model is not invariant to its own exporter's clock — one alert in 154 is decided by the capture's timing resolution; a three-oracle mutation study where none of labelled accuracy, label-free invariants, or the canary dominates the others; SLO error budgets with multiwindow burn-rate alerting whose first finding is that the objective it was handed is already violated by the *healthy* system; a hash-chained alert ledger with every tamper attack executed against it, the tail-truncation gap demonstrated and then closed with a published anchor, and O(log n) Merkle inclusion proofs; and Beta-Binomial partial pooling so a two-flow class stops reading like a seven-hundred-flow one, with the credible intervals' coverage validated by simulation before anyone is asked to read them).
+the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses), and the **operations, oracles & honest-uncertainty wave** (open-set recognition, which reframes the temporal split as what its class table says it is — train and test share *zero* attack classes, so every attack the model meets is an unknown one — and finds the deployed novelty rule's lead carried entirely by `DDoS` while it is blind to `PortScan` at 0.2%, below the false-alarm rate itself; metamorphic testing, a correctness oracle that needs **no labels** and can therefore run against production traffic, whose structural relations hold bit-exactly and whose semantic ones show the model is not invariant to its own exporter's clock — one alert in 154 is decided by the capture's timing resolution; a three-oracle mutation study where none of labelled accuracy, label-free invariants, or the canary dominates the others; SLO error budgets with multiwindow burn-rate alerting whose first finding is that the objective it was handed is already violated by the *healthy* system; a hash-chained alert ledger with every tamper attack executed against it, the tail-truncation gap demonstrated and then closed with a published anchor, and O(log n) Merkle inclusion proofs; and Beta-Binomial partial pooling so a two-flow class stops reading like a seven-hundred-flow one, with the credible intervals' coverage validated by simulation before anyone is asked to read them; and the evasion arms race solved as a game, which returns a kept negative — against a detector this weak, disguising is irrational at every operating point, because an attacker who does nothing already gets 91% of their traffic through with the attack intact).
 `make check` is green (lint + type-check + **1,063 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
@@ -217,6 +217,7 @@ what actually ships.
 | Detection SLOs | error budgets + multiwindow burn-rate alerting, closed form and replay-checked, with generated Prometheus rules (Google SRE Workbook) | ✅ Done |
 | Tamper-evident ledger | hash-chained alert history: six attacks executed, the truncation gap closed with an anchor, O(log n) Merkle inclusion proofs | ✅ Done |
 | Rare-class estimation | Beta-Binomial partial pooling with empirical-Bayes hyperparameters; coverage validated by simulation, 1.4x narrower than Wilson | ✅ Done |
+| Strategic equilibrium | the arms race as a game: a kept negative result — evasion is irrational against a detector this weak, with the flip point quantified | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
 release notes in [`CHANGELOG.md`](CHANGELOG.md).
@@ -1756,6 +1757,37 @@ leaderboard of sample sizes. The intervals are validated before they are used: s
 the fitted prior, they cover at 94.9% against a nominal 95% while running **1.4x narrower** than
 Wilson's, and the report names the condition (a class that genuinely does not belong to the
 population) under which that would not transfer.
+
+## Is this detector even worth evading?
+
+The [evasion](#adversarial-robustness) and [hardening](#adversarial-hardening-measure--fix--re-measure)
+studies each measure one move. Treating the exchange as a game — with the attacker's cost made
+explicit, since a flow that looks benign *is* less of an attack — forces a question neither of
+them asks.
+
+```bash
+python -m netsentry.cli strategic    # -> docs/reports/strategic.md
+```
+
+| FPR budget | clean-model detection | attacker's best reply | is disguising worth it? |
+|---|---|---|---|
+| 0.1% (deployed) | 8.9% | 0% mimicry | no |
+| 10.0% | 35.4% | 0% mimicry | no |
+| 50.0% | 68.3% | 0% mimicry | no |
+
+**At every operating point, the attacker's best move is to do nothing.** A detector catching
+8.9% of attacks is already letting 91% through with the attack fully intact, and no disguise buys
+more evasion than it costs in attack value. That is arithmetic, not a quirk of the utility
+function: mimicry at fraction `f` only pays if it cuts detection by more than roughly `f`. It
+inverts the usual framing — evasion resistance is not a property to buy before the detector
+works, it is a problem you *earn* by making the detector good enough to be worth attacking.
+
+Because the conclusion rests entirely on what a disguise costs, that assumption is swept rather
+than defended: evasion flips to rational at `k = 0.05`, where a 15% disguise costs the attacker
+1% of the attack instead of 15%. So the claim is not *evasion never pays* but **evasion does not
+pay unless disguising is nearly free**, with the flip point a number rather than an opinion. The
+report also carries the Stackelberg commitment solution, the myopic arms race with cycle
+detection, and a pure-Nash check — each a tested function over the payoff matrix.
 
 ## Provenance & supply chain
 

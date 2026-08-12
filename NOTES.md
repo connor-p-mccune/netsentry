@@ -2124,3 +2124,26 @@ broken premise was more interesting than the study would have been if it had wor
   `(mean, concentration)` and gridding the concentration in log space fixed it. The grid is
   deliberately coarse: with twelve classes the surface *is* flat, and a gradient optimiser would
   have reported a precision the data cannot support.
+- **The strategic game turned out to be degenerate, and that was the result.** First run of the
+  payoff matrix: the attacker's best reply is 0% mimicry against every defence. I assumed a bug,
+  then did the arithmetic. With utility (1-d)(1-f), disguising at fraction f only beats doing
+  nothing when d_0 - d_f > f(1 - d_f) -- roughly, when it cuts detection by more than f. At
+  d_0 = 8.9% there simply is not that much detection to remove. Sweeping the operating point up
+  to a 50% FPR budget (68.3% detection) did not change it either. The evasion literature
+  implicitly assumes a detector worth evading; this one is not, and saying so is more useful than
+  a prettier equilibrium would have been.
+- **The frontier is the reusable output.** Re-thresholding the same fitted defences across
+  operating points costs nothing (only the threshold moves) and answers a question I had not
+  thought to ask: *how good does a detector have to be before an adversary has any reason to
+  adapt to it?* That reframes evasion resistance as something you earn rather than something you
+  buy up front.
+- **Sweeping the cost assumption rescued the report from resting on it.** The whole negative
+  result depends on how expensive a disguise is, so the exponent is swept: evasion flips to
+  rational at k = 0.05, where a 15% disguise costs 1% of the attack instead of 15%. The claim
+  becomes conditional and checkable rather than absolute.
+- **The sensitivity sweep contradicted my own summary sentence.** I had written that the
+  condition binds hardest at the strongest operating point, which is the intuitive reading. The
+  table said the opposite: it flips at the *deployed* 0.1% budget first, because a disguise
+  removes a larger share of a weak detector's already-small detection. The read now derives the
+  direction from the data instead of asserting it -- the second time this wave that a sentence
+  written before the numbers arrived turned out to be backwards.

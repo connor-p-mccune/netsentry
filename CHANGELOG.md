@@ -95,6 +95,22 @@ three.
   a published `(count, head_hash)` anchor. A Merkle tree gives O(log n) inclusion proofs: **9
   sibling hashes** prove one of 500 alerts to a third party without disclosing the other 499. The
   claim is narrow and stated: integrity, not authenticity.
+- **Strategic equilibrium** (`netsentry strategic`, `netsentry/robustness/strategic.py`): the
+  evasion arms race solved as a game, with the attacker's cost made explicit — not an L2 norm,
+  because a flow that looks benign *is* less of an attack. The headline is a **negative result and
+  it is kept**: at every operating point swept, the attacker's utility-maximising move is to do
+  *nothing*. A detector catching 8.9% of attacks already lets 91% through with the attack fully
+  intact, so no disguise on offer buys more evasion than it costs in attack value — arithmetic
+  rather than a quirk of the utility function, since mimicry at fraction `f` only pays if it cuts
+  detection by more than roughly `f`. It inverts the usual framing: evasion resistance is not a
+  property to buy before the detector works, it is a problem you **earn** by making the detector
+  good enough to be worth attacking. The cost assumption is swept rather than defended — evasion
+  flips to rational at `k = 0.05`, where a 15% disguise costs 1% of the attack instead of 15% —
+  and the sweep contradicted the intuitive reading: it flips at the *deployed* budget before the
+  strongest one, because a disguise removes a larger share of a weak detector's already-small
+  detection. Best response, Stackelberg commitment, pure Nash, the myopic race and cycle detection
+  are pure functions over a payoff matrix, tested on hand-solved matrices including a
+  rock-paper-scissors one where the race provably cycles with period 3.
 - **Rare-class rate estimation** (`netsentry rarerates`, `netsentry/evaluation/rare_rates.py`):
   Beta-Binomial partial pooling with empirical-Bayes hyperparameters fitted across all classes by
   marginal likelihood, so each class's posterior is a compromise between its own data and the
