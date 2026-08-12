@@ -302,6 +302,39 @@ class NoveltyConfig(BaseModel):
     twin_epsilon: float = 0.5
 
 
+class OpenSetConfig(BaseModel):
+    """Open-set recognition: rank the novelty rules on classes the model was never taught.
+
+    The temporal split contains no attack class the training days showed, so the deployment is
+    an open-set problem and the deployed rule (``attack_prob`` = ``1 - P(BENIGN)``) is only one
+    candidate novelty score. ``rules`` names the field, all computed from artefacts the
+    deployment already has; ``fusion_members`` are the rules the rank-average ``fused`` rule
+    combines. ``budgets`` are the false-alarm budgets the unknown-detection rate is read at
+    (the first is used for the per-class breakdown). ``holdout_counts`` drive the openness
+    sweep on the stratified split — how many attack classes (rarest first) to withhold from
+    training. ``mahalanobis_shrinkage`` shrinks the pooled covariance toward a scaled identity
+    so the precision matrix survives a class with a handful of rows, and ``max_rows`` caps each
+    split because the feature-space scorers are dense."""
+
+    rules: list[str] = Field(
+        default_factory=lambda: [
+            "attack_prob",
+            "msp",
+            "entropy",
+            "margin",
+            "mahalanobis",
+            "iforest",
+            "fused",
+        ]
+    )
+    fusion_members: list[str] = Field(default_factory=lambda: ["attack_prob", "mahalanobis"])
+    budgets: list[float] = Field(default_factory=lambda: [0.01, 0.001])
+    primary_budget: float = 0.01  # budget the per-unknown-class breakdown is read at
+    holdout_counts: list[int] = Field(default_factory=lambda: [1, 2, 3, 4, 5])
+    mahalanobis_shrinkage: float = 0.1
+    max_rows: int = 30000  # per-split cap (the dense scorers are the bottleneck)
+
+
 class ConformalConfig(BaseModel):
     """Split-conformal prediction: distribution-free coverage + selective alerting.
 
@@ -2030,6 +2063,7 @@ class Settings(BaseSettings):
     subgroups: SubgroupsConfig = Field(default_factory=SubgroupsConfig)
     campaigns: CampaignsConfig = Field(default_factory=CampaignsConfig)
     novelty: NoveltyConfig = Field(default_factory=NoveltyConfig)
+    openset: OpenSetConfig = Field(default_factory=OpenSetConfig)
     conformal: ConformalConfig = Field(default_factory=ConformalConfig)
     adaptive_conformal: AdaptiveConformalConfig = Field(default_factory=AdaptiveConformalConfig)
     monitoring: MonitoringConfig = Field(default_factory=MonitoringConfig)

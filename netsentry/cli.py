@@ -1313,6 +1313,19 @@ def novelty(
     logger.info("Novelty report ready", extra={"path": str(out)})
 
 
+@app.command()
+def openset(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Rank novelty rules on attack classes the model was never trained on (OSCR + openness)."""
+    from netsentry.evaluation.openset import run_openset_report
+
+    settings = _load(config, override)
+    out = run_openset_report(settings)
+    logger.info("Open-set report ready", extra={"path": str(out)})
+
+
 @app.command("labelaudit")
 def label_audit_cmd(
     config: ConfigOpt = None,
