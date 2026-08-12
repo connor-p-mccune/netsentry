@@ -63,6 +63,7 @@ from netsentry.explain.influence import run_influence_report
 from netsentry.explain.interactions import run_interactions_report
 from netsentry.explain.optimal_tree import run_optimal_tree_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
+from netsentry.features.store_report import run_store_report
 from netsentry.governance.ledger_report import run_ledger_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.atlas import run_atlas_report
@@ -317,6 +318,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "error budgets and multiwindow burn-rate alerting, with the rules generated",
         "slo.md",
         run_slo_report,
+    ),
+    (
+        "Point-in-time feature store",
+        "host context joined correctly vs over the whole capture: the temporal leak, priced",
+        "feature_store.md",
+        run_store_report,
     ),
     (
         "Strategic equilibrium",

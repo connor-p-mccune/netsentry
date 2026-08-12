@@ -1919,6 +1919,28 @@ class LedgerConfig(BaseModel):
     demo_alerts: int = 500  # alerts the tamper-evidence report seals
 
 
+class FeatureStoreConfig(BaseModel):
+    """Point-in-time-correct host context, and the temporal leak the naive join creates.
+
+    lookback_seconds bounds the window each flow's context is aggregated over -- strictly
+    earlier events only, which is what a serving path could reproduce at request time.
+    max_rows caps the raw capture the study reads (the as-of sweep is linear, but the raw
+    files carry every identifier column and are the largest thing here). The entity is the source
+    host; identifiers are used to *compute* the aggregates and never reach the model, which sees
+    four behaviour counts."""
+
+    lookback_seconds: float = 60.0
+    max_rows: int = 60000  # raw rows read for the host-structure diagnostic
+    # The controlled stream the mechanism is demonstrated on, because the stand-in draws a fresh
+    # address for every flow and therefore has no host to have context about.
+    n_hosts: int = 400
+    n_scanners: int = 20
+    benign_flows: int = 12  # upper bound on an ordinary host's connections
+    scanner_flows: int = 60  # connections in a scanner's burst
+    scan_gap_seconds: float = 1.5
+    stream_seconds: int = 8 * 3600
+
+
 class StrategicConfig(BaseModel):
     """The evasion arms race as a game: payoff matrix, myopic race, and the commitment solution.
 
@@ -2242,6 +2264,7 @@ class Settings(BaseSettings):
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
     metamorphic: MetamorphicConfig = Field(default_factory=MetamorphicConfig)
     strategic: StrategicConfig = Field(default_factory=StrategicConfig)
+    feature_store: FeatureStoreConfig = Field(default_factory=FeatureStoreConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

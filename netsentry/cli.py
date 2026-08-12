@@ -527,6 +527,19 @@ def ledger_audit_cmd(
     logger.info("Ledger report ready", extra={"path": str(out)})
 
 
+@app.command("featurestore")
+def feature_store_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price the temporal leak: host context joined point-in-time vs over the whole capture."""
+    from netsentry.features.store_report import run_store_report
+
+    settings = _load(config, override)
+    out = run_store_report(settings)
+    logger.info("Feature-store report ready", extra={"path": str(out)})
+
+
 @app.command()
 def strategic(
     config: ConfigOpt = None,
