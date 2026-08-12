@@ -1854,6 +1854,29 @@ class BackdoorConfig(BaseModel):
     removal_multiplier: float = 1.5  # remove this many times the injected count, by score
 
 
+class MetamorphicConfig(BaseModel):
+    """Metamorphic relations as a label-free correctness oracle, validated by mutation.
+
+    ``clock_factors`` are the exporter re-timing multipliers (kept near unity: a large dilation
+    changes the traffic's character rather than just how it was recorded, so it would no longer
+    be a semantics-preserving transformation). ``significant_digits`` is the precision a
+    serialised payload is rounded to. ``max_single_rows`` caps the single-vs-batch relation,
+    which is the only one that costs one model call per flow. The kill matrix puts three oracles
+    against the same mutants: a *structural* relation violation (exact, so no tolerance), a
+    labelled PR-AUC drop beyond ``accuracy_tolerance``, and a canary deviation beyond
+    ``canary_tolerance`` on ``canary_rows`` pinned flows. ``stale_fraction`` is the training
+    share behind the deliberately under-trained control mutant."""
+
+    clock_factors: list[float] = Field(default_factory=lambda: [1.1, 0.9])
+    significant_digits: int = 6
+    max_rows: int = 8000  # unlabelled probe flows the suite runs on
+    max_single_rows: int = 300  # per-flow calls for the single-vs-batch relation
+    accuracy_tolerance: float = 0.01  # PR-AUC drop the labelled oracle would call a regression
+    canary_rows: int = 8  # pinned flows the reference-comparison oracle checks
+    canary_tolerance: float = 1e-6  # score deviation the canary oracle calls a failure
+    stale_fraction: float = 0.1  # training share behind the under-trained control mutant
+
+
 class SanitizeConfig(BaseModel):
     """Audit-and-drop defense against poisoned training labels, re-measured.
 
@@ -2128,6 +2151,7 @@ class Settings(BaseSettings):
     poisoning: PoisoningConfig = Field(default_factory=PoisoningConfig)
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
+    metamorphic: MetamorphicConfig = Field(default_factory=MetamorphicConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)

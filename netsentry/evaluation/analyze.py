@@ -85,6 +85,7 @@ from netsentry.robustness.dp import run_dp_report
 from netsentry.robustness.extraction import run_extraction_report
 from netsentry.robustness.hardening import run_hardening_report
 from netsentry.robustness.membership import run_membership_report
+from netsentry.robustness.metamorphic import run_metamorphic_report
 from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
@@ -306,6 +307,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "audit-and-drop sanitization vs label flips, re-measured",
         "poisoning_defense.md",
         run_sanitize_report,
+    ),
+    (
+        "Metamorphic testing",
+        "a label-free correctness oracle, validated by injected mutants (Chen 1998, Xie 2011)",
+        "metamorphic.md",
+        run_metamorphic_report,
     ),
     (
         "Backdoor poisoning",

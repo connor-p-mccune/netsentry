@@ -456,6 +456,19 @@ def backdoor(
 
 
 @app.command()
+def metamorphic(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Check label-free metamorphic relations and score them against injected mutants."""
+    from netsentry.robustness.metamorphic import run_metamorphic_report
+
+    settings = _load(config, override)
+    out = run_metamorphic_report(settings)
+    logger.info("Metamorphic report ready", extra={"path": str(out)})
+
+
+@app.command()
 def sanitize(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
