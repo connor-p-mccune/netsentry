@@ -77,6 +77,7 @@ from netsentry.monitoring.experts import run_experts_report
 from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
+from netsentry.monitoring.slo import run_slo_report
 from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.robustness.backdoor import run_backdoor_report
 from netsentry.robustness.certify import run_certify_report
@@ -307,6 +308,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "audit-and-drop sanitization vs label flips, re-measured",
         "poisoning_defense.md",
         run_sanitize_report,
+    ),
+    (
+        "Detection SLOs",
+        "error budgets and multiwindow burn-rate alerting, with the rules generated",
+        "slo.md",
+        run_slo_report,
     ),
     (
         "Metamorphic testing",

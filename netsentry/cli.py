@@ -456,6 +456,19 @@ def backdoor(
 
 
 @app.command()
+def slo(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price the detection SLOs and generate the multiwindow burn-rate Prometheus rules."""
+    from netsentry.monitoring.slo import run_slo_report
+
+    settings = _load(config, override)
+    out = run_slo_report(settings)
+    logger.info("SLO report ready", extra={"path": str(out)})
+
+
+@app.command()
 def metamorphic(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

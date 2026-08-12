@@ -1854,6 +1854,38 @@ class BackdoorConfig(BaseModel):
     removal_multiplier: float = 1.5  # remove this many times the injected count, by score
 
 
+class SLOConfig(BaseModel):
+    """Detection SLOs and the multiwindow burn-rate policy derived from them.
+
+    The objectives are given as *budgets* (the tolerable bad-event share) because that is the
+    quantity every downstream number is a function of: ``alert_ratio_objective_budget`` is the
+    live, label-free SLI the generated Prometheus rules evaluate, and
+    ``false_alarm_objective_budget`` is the retrospective one that needs confirmed-benign labels
+    and therefore cannot page. ``period_days`` is the compliance window the budget is measured
+    over, ``regression_multiplier`` is the alert-ratio lift the replay injects to measure
+    detection time against the closed form, ``regression_sweep`` is the range of lifts the
+    policy table is priced across, and ``assumed_error_ratio`` stands in for the serving error
+    rate until the service has run long enough to supply one. ``headroom`` is the multiple of
+    the *measured* healthy alert ratio the calibrated budget allows: an objective the system
+    already violates when nothing is wrong makes every burn-rate alert meaningless, so the
+    report checks the specified objective against reality and calibrates when it fails.
+    ``rules_dir`` is where the generated rule file lands — next to the hand-written alerts the
+    compose stack already loads."""
+
+    alert_ratio_objective_budget: float = 0.02  # tolerable share of scored flows that alert
+    false_alarm_objective_budget: float = 0.01  # tolerable share of benign flows that alert
+    availability_objective: float = 0.999  # request success ratio
+    assumed_error_ratio: float = 0.0005  # stand-in serving error rate
+    period_days: int = 30
+    headroom: float = 2.0  # multiple of the measured healthy rate the calibrated budget allows
+    regression_multiplier: float = 30.0  # alert-ratio lift the replay steps to (an abrupt
+    # break: only a large, fast lift exercises the page rows, which are the rows whose
+    # windows fit inside the replayed capture; the sweep covers the gentle end)
+    regression_sweep: list[float] = Field(default_factory=lambda: [1.5, 3.0, 10.0, 50.0])
+    replay_hours: float = 16.0  # wall-clock the replayed capture days stand for (2 x 8h)
+    rules_dir: Path = Path("docker/prometheus")
+
+
 class MetamorphicConfig(BaseModel):
     """Metamorphic relations as a label-free correctness oracle, validated by mutation.
 
@@ -2152,6 +2184,7 @@ class Settings(BaseSettings):
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
     metamorphic: MetamorphicConfig = Field(default_factory=MetamorphicConfig)
+    slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)
     crossdata: CrossDatasetConfig = Field(default_factory=CrossDatasetConfig)

@@ -7,6 +7,9 @@ global:
 
 rule_files:
   - /etc/prometheus/alerts.yml
+  # Error-budget burn-rate rules, generated from the measured operating point by
+  # `netsentry slo` so the thresholds cannot drift from the objective they encode.
+  - /etc/prometheus/slo_rules.yml
 
 scrape_configs:
   - job_name: netsentry
