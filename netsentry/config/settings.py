@@ -1886,6 +1886,21 @@ class SLOConfig(BaseModel):
     rules_dir: Path = Path("docker/prometheus")
 
 
+class LedgerConfig(BaseModel):
+    """Tamper-evident alert ledger: a hash chain over the alerts the service emits.
+
+    ``path`` is the append-only chain and ``anchor_path`` the published ``(count, head_hash)``
+    pair -- the only thing that makes tail-truncation detectable, so it belongs somewhere the
+    ledger's writer does not control. ``enabled`` gates the spool watcher's sealing step (off by
+    default: sealing is cheap but it is still a write the operator should opt into), and
+    ``demo_alerts`` bounds the ledger the tamper report builds."""
+
+    enabled: bool = False  # seal alerts emitted by the spool watcher
+    path: Path = Path("data/ledger/alerts.jsonl")
+    anchor_path: Path = Path("data/ledger/anchor.json")
+    demo_alerts: int = 500  # alerts the tamper-evidence report seals
+
+
 class MetamorphicConfig(BaseModel):
     """Metamorphic relations as a label-free correctness oracle, validated by mutation.
 
@@ -2184,6 +2199,7 @@ class Settings(BaseSettings):
     backdoor: BackdoorConfig = Field(default_factory=BackdoorConfig)
     sanitize: SanitizeConfig = Field(default_factory=SanitizeConfig)
     metamorphic: MetamorphicConfig = Field(default_factory=MetamorphicConfig)
+    ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)
     rules: RulesConfig = Field(default_factory=RulesConfig)

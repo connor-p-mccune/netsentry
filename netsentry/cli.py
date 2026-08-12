@@ -468,6 +468,65 @@ def slo(
     logger.info("SLO report ready", extra={"path": str(out)})
 
 
+ledger_app = typer.Typer(help="Tamper-evident alert ledger.", no_args_is_help=True)
+app.add_typer(ledger_app, name="ledger")
+
+
+@ledger_app.command("verify")
+def ledger_verify_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    path: Annotated[Path | None, typer.Option(help="Ledger file (default: config).")] = None,
+    anchor: Annotated[
+        Path | None, typer.Option(help="Published anchor to check the head against.")
+    ] = None,
+) -> None:
+    """Walk the alert hash chain; exit non-zero (and name the sequence) on any break."""
+    from netsentry.governance.ledger import AlertLedger, Anchor
+
+    settings = _load(config, override)
+    ledger = AlertLedger(path or settings.ledger.path)
+    anchor_path = anchor or settings.ledger.anchor_path
+    published = Anchor.load(anchor_path) if Path(anchor_path).exists() else None
+    result = ledger.verify(published)
+    logger.info(
+        "Ledger verification complete",
+        extra={"ok": result.ok, "entries": result.n_entries, "detail": result.summary},
+    )
+    if not result.ok:
+        raise typer.Exit(code=1)
+
+
+@ledger_app.command("anchor")
+def ledger_anchor_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+    out: Annotated[Path | None, typer.Option(help="Where to publish the anchor.")] = None,
+) -> None:
+    """Publish the ledger head so tail-truncation stops being undetectable."""
+    from netsentry.governance.ledger import AlertLedger
+
+    settings = _load(config, override)
+    ledger = AlertLedger(settings.ledger.path)
+    published = ledger.write_anchor(out or settings.ledger.anchor_path)
+    logger.info(
+        "Anchor published", extra={"count": published.count, "head": published.head_hash[:16]}
+    )
+
+
+@ledger_app.command("audit")
+def ledger_audit_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Seal real alerts into a ledger and run every tamper attack against it."""
+    from netsentry.governance.ledger_report import run_ledger_report
+
+    settings = _load(config, override)
+    out = run_ledger_report(settings)
+    logger.info("Ledger report ready", extra={"path": str(out)})
+
+
 @app.command()
 def metamorphic(
     config: ConfigOpt = None,

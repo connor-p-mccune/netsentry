@@ -225,6 +225,23 @@ def _append_alerts(alerts_path: Path, alerts: list[dict[str, object]]) -> None:
             fh.write(json.dumps(alert) + "\n")
 
 
+def _seal_alerts(settings: Settings, alerts: list[dict[str, object]]) -> None:
+    """Also seal each emitted alert into the hash-chained ledger, when one is configured.
+
+    Sealing happens on the path that already emits the SIEM document rather than as a separate
+    bookkeeping step, so the ledger cannot silently fall behind the alerts it is meant to
+    attest. It is best-effort: an audit trail must never be the reason a detection is lost.
+    """
+    if not settings.ledger.enabled or not alerts:
+        return
+    try:
+        from netsentry.governance.ledger import AlertLedger
+
+        AlertLedger(settings.ledger.path).extend([dict(a) for a in alerts])
+    except Exception as exc:
+        logger.warning("Could not seal alerts into the ledger: %s", exc)
+
+
 def scan_spool(spool: Path, state: WatchState) -> list[Path]:
     """New or changed flow files in the spool, oldest first (stable processing order)."""
     candidates = [
@@ -269,6 +286,7 @@ def run_watch(
                 state.save(state_path)
                 continue
             _append_alerts(alerts_out, alerts)
+            _seal_alerts(settings, alerts)
             state.mark(path)
             state.save(state_path)
             totals["files"] += 1
