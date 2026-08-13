@@ -541,6 +541,19 @@ def feature_store_cmd(
 
 
 @app.command()
+def control(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Closed-loop threshold control: hold alert volume at the analyst budget, and its attack."""
+    from netsentry.monitoring.control import run_control_report
+
+    settings = _load(config, override)
+    out = run_control_report(settings)
+    logger.info("Control report ready", extra={"path": str(out)})
+
+
+@app.command()
 def online(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

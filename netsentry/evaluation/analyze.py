@@ -74,6 +74,7 @@ from netsentry.intel.sigma import run_sigma_export
 from netsentry.intel.sketches import run_sketches_report
 from netsentry.log import get_logger
 from netsentry.models.monotonic import run_monotonic_report
+from netsentry.monitoring.control import run_control_report
 from netsentry.monitoring.covariate_shift import run_covariate_shift_report
 from netsentry.monitoring.exchangeability import run_exchangeability_report
 from netsentry.monitoring.experts import run_experts_report
@@ -327,6 +328,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "host context joined correctly vs over the whole capture: the temporal leak, priced",
         "feature_store.md",
         run_store_report,
+    ),
+    (
+        "Closed-loop control",
+        "alert volume held at the analyst budget by feedback, and the attack on the loop",
+        "control.md",
+        run_control_report,
     ),
     (
         "Online learning",

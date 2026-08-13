@@ -391,6 +391,40 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class ControlConfig(BaseModel):
+    """Closed-loop threshold control: hold alert volume at the analyst budget under drift.
+
+    ``target_alert_rate`` is the fraction of flows the analyst team can actually review, so the
+    setpoint is that rate times ``batch_rows``. The actuator is ``log10`` of the alert-rate
+    parameter -- the parameterisation in which the plant is nearly unit gain, so ``kp`` near 1 is
+    roughly deadbeat and a gain means the same thing across the operating range. ``max_step``
+    rate-limits it in decades per batch. ``gain_sweep`` locates the stability boundary
+    empirically and ``delay_sweep`` prices late feedback. The attack block defines the
+    control-loop attack: ``decoys_per_batch`` loud flows (above ``decoy_quantile`` of the score
+    distribution) for ``attack_batches`` batches, whose only purpose is to make the controller
+    raise its own threshold; ``freeze_above`` and ``guarded_max_step`` are the mitigation."""
+
+    batch_rows: int = 500
+    target_alert_rate: float = 0.02
+    kp: float = 0.6
+    ki: float = 0.1
+    max_step: float = 0.2  # decades of alert rate per batch
+    tracker_step: float = 0.05
+    gain_sweep: list[float] = Field(default_factory=lambda: [0.1, 0.25, 0.5, 1.0, 1.5, 2.5])
+    delay_sweep: list[int] = Field(default_factory=lambda: [0, 1, 2, 5])
+    # The settling band has to clear the setpoint's own counting noise: at 10 alerts a
+    # batch, Poisson variation alone is about 30%, so a tighter band would measure the
+    # arrival process rather than the controller.
+    settling_tolerance: float = 0.5
+    attack_start_batch: int = 20
+    attack_batches: int = 10
+    decoys_per_batch: int = 250
+    decoy_quantile: float = 0.98
+    freeze_above: float = 0.5  # decades of error beyond which the integrator stops learning
+    guarded_max_step: float = 0.05
+    recovery_tolerance: float = 0.1  # relative, on the realised alert rate
+
+
 class OnlineConfig(BaseModel):
     """Prequential streaming: a one-pass learner against the batch pipeline that ships.
 
@@ -2345,6 +2379,7 @@ class Settings(BaseSettings):
     mmd: MMDConfig = Field(default_factory=MMDConfig)
     continual: ContinualConfig = Field(default_factory=ContinualConfig)
     online: OnlineConfig = Field(default_factory=OnlineConfig)
+    control: ControlConfig = Field(default_factory=ControlConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

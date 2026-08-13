@@ -950,3 +950,19 @@ def test_online_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "prequential" in text and "hoeffding" in text
     assert "label delay" in text
+
+
+@pytest.mark.slow
+def test_control_report_is_written(prepared: Settings) -> None:
+    from netsentry.monitoring.control import run_control_report
+
+    prepared.control.batch_rows = 200
+    prepared.control.gain_sweep = [0.25, 1.0]
+    prepared.control.delay_sweep = [0, 2]
+    prepared.control.attack_start_batch = 2
+    prepared.control.attack_batches = 3
+    prepared.control.decoys_per_batch = 60
+    out = run_control_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "setpoint" in text and "control-loop attack" in text
+    assert "suppression" in text
