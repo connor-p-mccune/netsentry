@@ -99,6 +99,7 @@ from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.cascade import run_cascade_report
 from netsentry.training.byzantine import run_byzantine_report
+from netsentry.training.continual import run_continual_report
 from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.invariance import run_invariance_report
@@ -325,6 +326,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "host context joined correctly vs over the whole capture: the temporal leak, priced",
         "feature_store.md",
         run_store_report,
+    ),
+    (
+        "Continual learning",
+        "class-incremental updates: forgetting, replay and the compute argument, measured",
+        "continual.md",
+        run_continual_report,
     ),
     (
         "Multivariate drift (MMD)",

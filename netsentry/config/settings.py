@@ -391,6 +391,23 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class ContinualConfig(BaseModel):
+    """Class-incremental updates: what folding in a new attack family costs the old ones.
+
+    Each capture day is one task. ``train_fraction`` splits a day *by position* rather than at
+    random -- an attack burst is a run of near-duplicate flows, so a shuffled within-day split
+    would score memory as retention. ``buffer_rows`` is the replay reservoir the headline policy
+    carries, and ``buffer_sweep`` traces the stability-plasticity frontier between its two
+    degenerate ends: an empty buffer *is* naive fine-tuning, and a buffer larger than the history
+    is a warm-started full retrain. ``max_rows_per_task`` bounds the per-day work."""
+
+    train_fraction: float = 0.6
+    max_rows_per_task: int = 20000
+    buffer_rows: int = 4000
+    buffer_sweep: list[int] = Field(default_factory=lambda: [0, 500, 2000, 8000, 32000])
+    bench_rows: int = 5000  # flows scored to price each final model's inference cost
+
+
 class MMDConfig(BaseModel):
     """Multivariate drift: the kernel two-sample test, and the marginal monitors it backstops.
 
@@ -2301,6 +2318,7 @@ class Settings(BaseSettings):
     strategic: StrategicConfig = Field(default_factory=StrategicConfig)
     feature_store: FeatureStoreConfig = Field(default_factory=FeatureStoreConfig)
     mmd: MMDConfig = Field(default_factory=MMDConfig)
+    continual: ContinualConfig = Field(default_factory=ContinualConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

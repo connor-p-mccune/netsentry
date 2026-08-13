@@ -920,3 +920,17 @@ def test_mmd_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "maximum mean discrepancy" in text
     assert "false-alarm rate" in text and "dependence" in text
+
+
+@pytest.mark.slow
+def test_continual_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.continual import run_continual_report
+
+    prepared.continual.max_rows_per_task = 800
+    prepared.continual.buffer_rows = 200
+    prepared.continual.buffer_sweep = [0, 400]
+    prepared.continual.bench_rows = 200
+    out = run_continual_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "backward transfer" in text and "replay" in text
+    assert "retention matrices" in text

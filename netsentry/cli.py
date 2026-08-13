@@ -541,6 +541,19 @@ def feature_store_cmd(
 
 
 @app.command()
+def continual(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Class-incremental updates: what folding in a new attack family costs the old ones."""
+    from netsentry.training.continual import run_continual_report
+
+    settings = _load(config, override)
+    out = run_continual_report(settings)
+    logger.info("Continual-learning report ready", extra={"path": str(out)})
+
+
+@app.command()
 def mmd(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -110,6 +110,15 @@ class SupervisedClassifier(BaseModel):
             n_iter_no_change=max(10, cfg.early_stopping_rounds // 2),
         )
 
+    def supports_warm_start(self) -> bool:
+        """Whether ``fit(..., init_model=...)`` continues boosting rather than starting over.
+
+        Only the LightGBM backend can; the scikit-learn fallback's ``warm_start`` needs the same
+        estimator object and a raised iteration cap, which is a different contract. Continual
+        learning asks the question directly, so it needs a truthful answer rather than a silent
+        degradation to full retraining."""
+        return self.backend == "lightgbm"
+
     def fit(
         self,
         X: np.ndarray,
@@ -117,9 +126,15 @@ class SupervisedClassifier(BaseModel):
         *,
         eval_set: EvalSet | None = None,
         sample_weight: np.ndarray | None = None,
+        init_model: Any | None = None,
     ) -> SupervisedClassifier:
         """Fit, balancing classes; optional per-row ``sample_weight`` (e.g. weak-label
-        confidence) multiplies into the balanced weight rather than replacing it."""
+        confidence) multiplies into the balanced weight rather than replacing it.
+
+        ``init_model`` continues boosting from an already-fitted classifier instead of starting
+        from scratch -- the incremental update a continual-learning policy applies when a new
+        capture day (and a new attack family) arrives. It is honoured only on the LightGBM
+        backend; see ``supports_warm_start``."""
         self.model = self._build_estimator()
         balanced = (
             compute_sample_weight("balanced", y)
@@ -131,12 +146,17 @@ class SupervisedClassifier(BaseModel):
             sample_weight = extra * balanced if balanced is not None else extra
         else:
             sample_weight = balanced
+        booster = None
+        if init_model is not None and self.supports_warm_start():
+            booster = getattr(init_model, "model", init_model)
+            booster = getattr(booster, "booster_", booster)
         if self.backend == "lightgbm" and eval_set is not None:
             import lightgbm as lgb
 
             self.model.fit(
                 X,
                 y,
+                init_model=booster,
                 sample_weight=sample_weight,
                 eval_set=[eval_set],
                 callbacks=[
@@ -146,10 +166,20 @@ class SupervisedClassifier(BaseModel):
                     lgb.log_evaluation(0),
                 ],
             )
+        elif booster is not None:
+            self.model.fit(X, y, init_model=booster, sample_weight=sample_weight)
         else:
             self.model.fit(X, y, sample_weight=sample_weight)
         self.classes_ = np.asarray(self.model.classes_)
         return self
+
+    def n_trees(self) -> int:
+        """Trees in the fitted ensemble -- the size a warm-started model keeps growing."""
+        booster = getattr(self.model, "booster_", None)
+        if booster is not None:
+            return int(booster.num_trees())
+        estimators = getattr(self.model, "_predictors", [])
+        return int(sum(len(stage) for stage in estimators))
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         return np.asarray(self.model.predict(X))
