@@ -391,6 +391,41 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class MMDConfig(BaseModel):
+    """Multivariate drift: the kernel two-sample test, and the marginal monitors it backstops.
+
+    ``window_rows`` is the window each side of the test gets; ``permutations`` the exact-null
+    budget for the headline tests and ``power_permutations`` the cheaper budget the repeated
+    sweeps use (power is dominated by the window, not by the permutation count, so spending the
+    budget on repeats buys more). ``repeats``/``power_repeats`` size the false-alarm and power
+    estimates. ``shift_sigmas`` and ``n_faulted_features`` define the two controlled faults --
+    a mean shift both monitor families can see, and the same features permuted across rows,
+    which preserves every marginal *exactly* and is therefore invisible to all of them by
+    construction. ``psi_threshold`` is the operator's PSI alarm level, and ``psi_bins`` mirrors
+    the deployed monitor so the comparison is against what actually ships."""
+
+    window_rows: int = 1000
+    permutations: int = 200
+    power_permutations: int = 100
+    alpha: float = 0.05
+    repeats: int = 30  # null draws behind the false-alarm rate
+    power_repeats: int = 20  # draws per (fault, window) cell
+    window_sweep: list[int] = Field(default_factory=lambda: [125, 250, 500, 1000])
+    cost_sweep: list[int] = Field(default_factory=lambda: [250, 500, 1000, 2000])
+    shift_sigmas: float = 0.25
+    n_faulted_features: int = 6
+    # The dependence sweep. The modelled features of the synthetic stand-in are very nearly
+    # independent, under which a row-permutation fault is a no-op rather than an invisible
+    # change -- so the joint test's reach is measured on controlled windows whose pairwise
+    # dependence is a dial and whose marginals are identical at every setting.
+    dependence_rhos: list[float] = Field(default_factory=lambda: [0.0, 0.15, 0.3, 0.6, 0.9])
+    stream_features: int = 20
+    psi_threshold: float = 0.2
+    psi_bins: int = 10
+    bandwidth_points: int = 500  # subsample behind the median heuristic
+    attribution_points: int = 400  # subsample behind the per-feature (marginal) MMD
+
+
 class DistillConfig(BaseModel):
     """Surrogate distillation: the model's closest small, auditable imitation.
 
@@ -2265,6 +2300,7 @@ class Settings(BaseSettings):
     metamorphic: MetamorphicConfig = Field(default_factory=MetamorphicConfig)
     strategic: StrategicConfig = Field(default_factory=StrategicConfig)
     feature_store: FeatureStoreConfig = Field(default_factory=FeatureStoreConfig)
+    mmd: MMDConfig = Field(default_factory=MMDConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

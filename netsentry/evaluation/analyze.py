@@ -77,6 +77,7 @@ from netsentry.models.monotonic import run_monotonic_report
 from netsentry.monitoring.covariate_shift import run_covariate_shift_report
 from netsentry.monitoring.exchangeability import run_exchangeability_report
 from netsentry.monitoring.experts import run_experts_report
+from netsentry.monitoring.mmd import run_mmd_report
 from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
@@ -324,6 +325,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "host context joined correctly vs over the whole capture: the temporal leak, priced",
         "feature_store.md",
         run_store_report,
+    ),
+    (
+        "Multivariate drift (MMD)",
+        "kernel two-sample testing: the joint change the per-feature monitors cannot see",
+        "mmd.md",
+        run_mmd_report,
     ),
     (
         "Strategic equilibrium",

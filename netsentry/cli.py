@@ -541,6 +541,19 @@ def feature_store_cmd(
 
 
 @app.command()
+def mmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Kernel two-sample drift testing: the joint change the per-feature monitors cannot see."""
+    from netsentry.monitoring.mmd import run_mmd_report
+
+    settings = _load(config, override)
+    out = run_mmd_report(settings)
+    logger.info("MMD drift report ready", extra={"path": str(out)})
+
+
+@app.command()
 def strategic(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -901,3 +901,22 @@ def test_sketches_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "count-min" in text and "hyperloglog" in text
     assert "misra-gries" in text and "reservoir" in text
+
+
+@pytest.mark.slow
+def test_mmd_report_is_written(prepared: Settings) -> None:
+    from netsentry.monitoring.mmd import run_mmd_report
+
+    prepared.mmd.window_rows = 120
+    prepared.mmd.permutations = 19
+    prepared.mmd.power_permutations = 19
+    prepared.mmd.repeats = 2
+    prepared.mmd.power_repeats = 2
+    prepared.mmd.window_sweep = [80, 120]
+    prepared.mmd.cost_sweep = [80, 120]
+    prepared.mmd.dependence_rhos = [0.0, 0.9]
+    prepared.mmd.stream_features = 8
+    out = run_mmd_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "maximum mean discrepancy" in text
+    assert "false-alarm rate" in text and "dependence" in text
