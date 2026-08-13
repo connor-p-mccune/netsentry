@@ -934,3 +934,19 @@ def test_continual_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "backward transfer" in text and "replay" in text
     assert "retention matrices" in text
+
+
+@pytest.mark.slow
+def test_online_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.online import run_online_report
+
+    prepared.online.warmup_rows = 1500
+    prepared.online.max_stream_rows = 1200
+    prepared.online.batch_rows = 400
+    prepared.online.retrain_every = 800
+    prepared.online.grace_period = 100
+    prepared.online.label_delays = [0, 1]
+    out = run_online_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "prequential" in text and "hoeffding" in text
+    assert "label delay" in text

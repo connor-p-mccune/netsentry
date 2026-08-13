@@ -391,6 +391,31 @@ class MonitoringConfig(BaseModel):
     reference_rows: int = 5000  # reference sample summarised into the serving bundle
 
 
+class OnlineConfig(BaseModel):
+    """Prequential streaming: a one-pass learner against the batch pipeline that ships.
+
+    ``batch_rows`` is the prequential unit (score the batch, then learn from it), ``warmup_rows``
+    the training days every arm starts from, and ``max_stream_rows`` the later-day stream they
+    are all judged on. The tree parameters are the VFDT's: ``grace_period`` amortises the split
+    test, ``split_delta`` is the Hoeffding bound's confidence and ``tie_threshold`` the escape
+    hatch for genuinely equal candidates. ``label_delays`` is the honest part -- online learning
+    assumes the label arrives with the flow, and a SOC's arrives hours later, so the assumption
+    is swept rather than stated."""
+
+    batch_rows: int = 1000
+    warmup_rows: int = 20000
+    max_stream_rows: int = 25000
+    retrain_every: int = 8000  # flows between full refits for the periodic-retrain arm
+    grace_period: int = 200
+    split_delta: float = 1e-6
+    tie_threshold: float = 0.05
+    n_thresholds: int = 10
+    max_depth: int = 12
+    min_leaf_samples: float = 20.0
+    adwin_delta: float = 0.002
+    label_delays: list[int] = Field(default_factory=lambda: [0, 1, 5, 20])
+
+
 class ContinualConfig(BaseModel):
     """Class-incremental updates: what folding in a new attack family costs the old ones.
 
@@ -2319,6 +2344,7 @@ class Settings(BaseSettings):
     feature_store: FeatureStoreConfig = Field(default_factory=FeatureStoreConfig)
     mmd: MMDConfig = Field(default_factory=MMDConfig)
     continual: ContinualConfig = Field(default_factory=ContinualConfig)
+    online: OnlineConfig = Field(default_factory=OnlineConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)
     label_audit: LabelAuditConfig = Field(default_factory=LabelAuditConfig)

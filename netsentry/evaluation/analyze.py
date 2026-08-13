@@ -103,6 +103,7 @@ from netsentry.training.continual import run_continual_report
 from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.invariance import run_invariance_report
+from netsentry.training.online import run_online_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.unlearn import run_unlearn_report
@@ -326,6 +327,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "host context joined correctly vs over the whole capture: the temporal leak, priced",
         "feature_store.md",
         run_store_report,
+    ),
+    (
+        "Online learning",
+        "one-pass Hoeffding tree + ADWIN, prequentially, against static and periodic retraining",
+        "online.md",
+        run_online_report,
     ),
     (
         "Continual learning",

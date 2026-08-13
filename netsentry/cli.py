@@ -541,6 +541,19 @@ def feature_store_cmd(
 
 
 @app.command()
+def online(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Prequential streaming: a one-pass Hoeffding tree against static and periodic retraining."""
+    from netsentry.training.online import run_online_report
+
+    settings = _load(config, override)
+    out = run_online_report(settings)
+    logger.info("Online-learning report ready", extra={"path": str(out)})
+
+
+@app.command()
 def continual(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
