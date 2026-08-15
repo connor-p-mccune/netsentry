@@ -966,3 +966,21 @@ def test_control_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "setpoint" in text and "control-loop attack" in text
     assert "suppression" in text
+
+
+@pytest.mark.slow
+def test_deep_tabular_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.deep_tabular import run_deep_tabular_report
+
+    prepared.deep_tabular.max_train_rows = 600
+    prepared.deep_tabular.epochs = 2
+    prepared.deep_tabular.batch_size = 128
+    prepared.deep_tabular.hidden_sizes = [16]
+    prepared.deep_tabular.token_dim = 8
+    prepared.deep_tabular.n_heads = 2
+    prepared.deep_tabular.n_blocks = 1
+    prepared.deep_tabular.data_fractions = [0.5, 1.0]
+    out = run_deep_tabular_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "pr-auc" in text and "sample efficiency" in text
+    assert "logistic regression" in text

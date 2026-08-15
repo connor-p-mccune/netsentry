@@ -101,6 +101,7 @@ from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.cascade import run_cascade_report
 from netsentry.training.byzantine import run_byzantine_report
 from netsentry.training.continual import run_continual_report
+from netsentry.training.deep_tabular import run_deep_tabular_report
 from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.invariance import run_invariance_report
@@ -334,6 +335,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "alert volume held at the analyst budget by feedback, and the attack on the loop",
         "control.md",
         run_control_report,
+    ),
+    (
+        "Deep tabular models",
+        "MLP and FT-Transformer against the boosted incumbent under one shared protocol",
+        "deep_tabular.md",
+        run_deep_tabular_report,
     ),
     (
         "Online learning",

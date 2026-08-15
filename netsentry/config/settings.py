@@ -425,6 +425,34 @@ class ControlConfig(BaseModel):
     recovery_tolerance: float = 0.1  # relative, on the realised alert rate
 
 
+class DeepTabularConfig(BaseModel):
+    """Deep tabular models against the boosted incumbent, under one shared protocol.
+
+    ``hidden_sizes``/``dropout`` size the MLP; ``token_dim``, ``n_heads`` and ``n_blocks`` size
+    the FT-Transformer's per-feature tokens and attention stack. Early stopping watches
+    validation **PR-AUC** with ``patience`` epochs of grace, because under 20% prevalence the
+    loss and the deployment metric do not agree and the metric is what ships. ``data_fractions``
+    is the sample-efficiency sweep -- the "neural models need more data" claim, tested rather
+    than repeated."""
+
+    hidden_sizes: list[int] = Field(default_factory=lambda: [256, 128])
+    dropout: float = 0.1
+    token_dim: int = 32
+    n_heads: int = 4
+    n_blocks: int = 2
+    batch_size: int = 1024
+    epochs: int = 15
+    learning_rate: float = 1e-3
+    weight_decay: float = 1e-5
+    patience: int = 4
+    # Every arm sees the same capped training set. The cap exists because attention over 76
+    # feature tokens is the expensive thing here, and a study nobody can afford to re-run is a
+    # study nobody will check -- so the transformer's cost sets the budget and the *whole*
+    # comparison is held to it, rather than quietly giving the trees more data.
+    max_train_rows: int = 12000
+    data_fractions: list[float] = Field(default_factory=lambda: [0.15, 0.5, 1.0])
+
+
 class OnlineConfig(BaseModel):
     """Prequential streaming: a one-pass learner against the batch pipeline that ships.
 
@@ -2379,6 +2407,7 @@ class Settings(BaseSettings):
     mmd: MMDConfig = Field(default_factory=MMDConfig)
     continual: ContinualConfig = Field(default_factory=ContinualConfig)
     online: OnlineConfig = Field(default_factory=OnlineConfig)
+    deep_tabular: DeepTabularConfig = Field(default_factory=DeepTabularConfig)
     control: ControlConfig = Field(default_factory=ControlConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)

@@ -554,6 +554,19 @@ def control(
 
 
 @app.command()
+def deeptabular(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Deep tabular models (MLP, FT-Transformer) against the boosted incumbent, one protocol."""
+    from netsentry.training.deep_tabular import run_deep_tabular_report
+
+    settings = _load(config, override)
+    out = run_deep_tabular_report(settings)
+    logger.info("Deep-tabular report ready", extra={"path": str(out)})
+
+
+@app.command()
 def online(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
