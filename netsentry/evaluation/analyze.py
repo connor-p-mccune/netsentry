@@ -108,6 +108,7 @@ from netsentry.training.invariance import run_invariance_report
 from netsentry.training.online import run_online_report
 from netsentry.training.operating_point import run_operating_point_report
 from netsentry.training.pu_learning import run_pu_learning_report
+from netsentry.training.secagg import run_secagg_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.unlearn import run_unlearn_report
 from netsentry.training.weak_supervision import run_weak_supervision_report
@@ -312,6 +313,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection when traffic cannot be pooled: FedAvg vs pooled vs alone (McMahan 2017)",
         "federated.md",
         run_federated_report,
+    ),
+    (
+        "Secure aggregation",
+        "federate without the coordinator seeing any site's update -- and what hiding it "
+        "costs in robustness (Bonawitz et al. 2017)",
+        "secagg.md",
+        run_secagg_report,
     ),
     (
         "Poisoning defense",

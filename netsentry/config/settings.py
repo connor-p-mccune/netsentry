@@ -1661,6 +1661,41 @@ class FederatedConfig(BaseModel):
     delta: float = 1e-5  # DP delta the per-site epsilon is reported at
 
 
+class SecAggConfig(BaseModel):
+    """Secure aggregation over the federation (Bonawitz et al., CCS 2017).
+
+    FedAvg sends weights instead of flows, which moves the data-protection problem rather
+    than solving it: an update is a function of the data, and the study shows a coordinator
+    naming the attack family a site holds from the update alone. Secure aggregation removes
+    the channel — pairwise Diffie-Hellman masks that cancel in the sum, a self-mask that
+    stops a coordinator unmasking a live site by declaring it dropped, and Shamir shares so
+    the round survives real dropouts. ``shards_per_day`` splits each capture day so the
+    federation is large enough for a recovery threshold and an anonymity set to mean
+    something; ``threshold_fraction`` sets the `t`-of-`n` share threshold. ``scale_bits`` is
+    the fixed-point scale the field encoding uses (``scale_bits_sweep`` measures both of its
+    failure modes: a quantization floor and a wraparound ceiling). ``group_sizes`` sweeps the
+    privacy/robustness frontier — larger groups hide more and leave less for a robust
+    aggregation rule to see — and ``range_bound`` is the coordinate bound an *ideal* range
+    proof would enforce, used to price the strongest attack such a proof still permits."""
+
+    shards_per_day: int = 4  # sites per capture day (3 days -> 12 participants)
+    rounds: int = 6  # federated aggregation rounds
+    local_epochs: int = 2
+    batch_size: int = 256
+    learning_rate: float = 0.1
+    l2: float = 0.0001
+    threshold_fraction: float = 0.5  # Shamir recovery threshold as a fraction of the sites
+    scale_bits: int = 20  # fixed-point scale used for the headline run
+    scale_bits_sweep: list[int] = Field(default_factory=lambda: [0, 8, 20, 32, 40, 44, 46, 48])
+    dropout_counts: list[int] = Field(default_factory=lambda: [0, 1, 3, 6, 7])
+    group_sizes: list[int] = Field(default_factory=lambda: [1, 2, 3, 6, 12])
+    privacy_rounds: int = 3  # rounds the identification attack is averaged over
+    reference_benign_rows: int = 2000  # benign flows behind each per-family reference update
+    attack_scale: float = 10.0  # sign-flip amplification of the single malicious site
+    range_bounds: list[float] = Field(default_factory=lambda: [0.02, 0.05, 0.1, 0.25, 1.0])
+    cost_sites: list[int] = Field(default_factory=lambda: [4, 8, 16, 32])
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2411,6 +2446,7 @@ class Settings(BaseSettings):
     cascade: CascadeConfig = Field(default_factory=CascadeConfig)
     sequential: SequentialConfig = Field(default_factory=SequentialConfig)
     federated: FederatedConfig = Field(default_factory=FederatedConfig)
+    secagg: SecAggConfig = Field(default_factory=SecAggConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

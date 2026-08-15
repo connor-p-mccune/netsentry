@@ -999,3 +999,22 @@ def test_operating_point_report_is_written(prepared: Settings) -> None:
     out = run_operating_point_report(prepared)
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "partial auc" in text and "budget" in text
+
+
+@pytest.mark.slow
+def test_secagg_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.secagg import run_secagg_report
+
+    prepared.secagg.shards_per_day = 2
+    prepared.secagg.rounds = 2
+    prepared.secagg.scale_bits_sweep = [8, 20, 48]
+    prepared.secagg.dropout_counts = [0, 1, 5]
+    prepared.secagg.group_sizes = [1, 2]
+    prepared.secagg.range_bounds = [0.05, 1.0]
+    prepared.secagg.cost_sites = [4, 6]
+    prepared.secagg.privacy_rounds = 1
+    prepared.secagg.reference_benign_rows = 200
+    out = run_secagg_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "secure aggregation" in text
+    assert "dropout" in text and "anonymity set" in text

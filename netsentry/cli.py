@@ -1347,6 +1347,19 @@ def federated(
 
 
 @app.command()
+def secagg(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Aggregate the federation's updates under masking, and price what hiding them costs."""
+    from netsentry.training.secagg import run_secagg_report
+
+    settings = _load(config, override)
+    out = run_secagg_report(settings)
+    logger.info("Secure-aggregation report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
