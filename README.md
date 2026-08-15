@@ -147,6 +147,7 @@ what actually ships.
 | Continual learning | class-incremental updates across capture days: forgetting, replay, and the compute argument checked (Lopez-Paz & Ranzato 2017) | ✅ Done |
 | Closed-loop control | alert volume held at the analyst budget by PI feedback — and the control-loop attack that suppresses detection by *generating* alerts | ✅ Done |
 | Deep tabular models | FT-Transformer + MLP against the boosted incumbent under one protocol (Gorishniy 2021): the trees-win claim checked, not cited | ✅ Done |
+| Operating-point training | a differentiable **partial-AUC** surrogate — train for the false-positive budget the SOC deploys, not for the loss (Narasimhan & Agarwal 2013) | ✅ Done |
 | Expert advice (online) | Hedge + fixed-share track the best model under drift with a **regret bound** (Herbster & Warmuth 1998) | ✅ Done |
 | Self-training | the pseudo-label shortcut priced against the labeled ceiling | ✅ Done |
 | Weak supervision | the signatures as labeling functions: a detector trained on zero labels, agreement-gated label model (Ratner 2016) | ✅ Done |
@@ -1988,6 +1989,35 @@ The caveat is kept rather than buried: the transformer's curve is the steepest i
 sample-efficiency sweep (**+0.223 PR-AUC** from 1,800 to 12,000 rows, against the tree's +0.017),
 so part of this gap is data size, and the follow-up is the real CIC-IDS2017 rather than a 60k-row
 stand-in. Rank-averaging the incumbent with any of them buys +0.012 to +0.021.
+
+## Training for the operating point (partial AUC)
+
+Every evaluation here leads with detection at a fixed false-positive budget. Every model here is
+trained on cross-entropy, which spends its capacity being right about the obviously benign
+majority — while the operating point is decided entirely by the few benign flows that score
+highest. The **partial AUC** is the metric that knows the difference, and it has a differentiable
+surrogate: rank positives against the top `ceil(alpha * n_negatives)` negatives only.
+
+```bash
+python -m netsentry.cli operatingpoint   # -> docs/reports/operating_point.md
+```
+
+| model | PR-AUC | TPR @ 0.1% | TPR @ 1.0% | TPR @ 5.0% |
+|---|---|---|---|---|
+| LightGBM (cross-entropy) | 0.537 | 7.4% | 20.7% | 28.9% |
+| MLP (cross-entropy) | 0.559 | 12.3% | 19.5% | **32.9%** |
+| MLP (partial-AUC) @ 0.1% | 0.425 | 9.4% | 15.0% | 21.6% |
+| **MLP (partial-AUC) @ 1.0%** | 0.505 | **12.7%** | **21.1%** | 29.5% |
+
+Same architecture, same data, same seed, same early stopping — one term of the loss different.
+Training for a 1% budget **wins at 1%** (+1.6 points over the cross-entropy control) and gives up
+0.054 PR-AUC and 3.4 points at 5% to do it: a partial objective is worst in the region it ignores.
+
+Training for **0.1% loses everywhere**, and the reason is mechanical rather than conceptual: the
+surrogate ranks against the top negatives *in each minibatch*, and at that budget a 4,096-row
+batch supplies **four** of them. Wanting ten would need a batch of ~12,500 — most of the training
+set, at which point it stops being a minibatch objective. The constraint is the budget's, not the
+model's, and the report states it next to the result rather than in a footnote.
 
 ## Provenance & supply chain
 

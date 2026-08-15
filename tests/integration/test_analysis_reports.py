@@ -984,3 +984,18 @@ def test_deep_tabular_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "pr-auc" in text and "sample efficiency" in text
     assert "logistic regression" in text
+
+
+@pytest.mark.slow
+def test_operating_point_report_is_written(prepared: Settings) -> None:
+    from netsentry.training.operating_point import run_operating_point_report
+
+    prepared.operating_point.max_train_rows = 800
+    prepared.operating_point.epochs = 2
+    prepared.operating_point.batch_rows = 256
+    prepared.operating_point.budgets = [0.01, 0.05]
+    prepared.operating_point.train_budgets = [0.05]
+    prepared.deep_tabular.hidden_sizes = [16]
+    out = run_operating_point_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "partial auc" in text and "budget" in text

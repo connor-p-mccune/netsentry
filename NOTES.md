@@ -2267,3 +2267,19 @@ operational metric next to the ranking one.
   architecture. Reporting the headline without that column would have been the easy version of
   this study; naming the follow-up (the real CIC-IDS2017, not a 60k-row stand-in) is the honest
   one.
+- **The partial-AUC study produced its own control's failure, and that was the result.** Training
+  for a 1% budget beats the identical cross-entropy network at 1% (+1.6 points) and loses 3.4 at
+  5% -- the expected trade. Training for 0.1% loses *everywhere*, including at 0.1%. The cause is
+  not the idea but the sampling: the surrogate ranks positives against the top
+  `ceil(alpha * n_negatives)` negatives in each minibatch, and at 0.1% with a 4,096-row batch that
+  is four flows. Four is not an estimate of the population's hardest negatives. The report prints
+  the count next to the result and works out what a usable batch would be (~12,500 rows -- most of
+  the training set), because "the technique underperformed" and "the technique had four samples"
+  are very different sentences.
+- **The first pAUC normalisation was wrong and the test caught it.** I wrote "normalised so a
+  random ranker scores 0.5" in the docstring and implemented the *average TPR inside the strip*,
+  which scores a random ranker at alpha/2 -- 0.025 at a 5% budget. The test asserting the 0.5
+  baseline failed immediately. Fixed to McClish (1989) normalisation against the strip's own
+  chance and perfect bounds. Worth noting because the wrong version would have looked plausible in
+  a table: small numbers that shrink with the budget, exactly as a reader would expect a hard
+  metric to behave.

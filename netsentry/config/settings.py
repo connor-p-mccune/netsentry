@@ -425,6 +425,23 @@ class ControlConfig(BaseModel):
     recovery_tolerance: float = 0.1  # relative, on the realised alert rate
 
 
+class OperatingPointConfig(BaseModel):
+    """Training *for* the false-positive budget instead of for the loss.
+
+    ``budgets`` are the operating points every arm is scored at; ``train_budgets`` are the ones a
+    partial-AUC network is trained for (one model each), which is what turns the result into a
+    matrix rather than a number. ``batch_rows`` is part of the objective's specification rather
+    than a performance knob: the surrogate ranks positives against the top
+    ``ceil(alpha * n_negatives)`` negatives *in the batch*, so at a 0.1% budget a batch of 1,000
+    supplies exactly one, and the estimate is only as good as the batch is large."""
+
+    budgets: list[float] = Field(default_factory=lambda: [0.001, 0.005, 0.01, 0.05])
+    train_budgets: list[float] = Field(default_factory=lambda: [0.001, 0.01])
+    batch_rows: int = 4096
+    epochs: int = 30
+    max_train_rows: int = 12000
+
+
 class DeepTabularConfig(BaseModel):
     """Deep tabular models against the boosted incumbent, under one shared protocol.
 
@@ -449,6 +466,7 @@ class DeepTabularConfig(BaseModel):
     # feature tokens is the expensive thing here, and a study nobody can afford to re-run is a
     # study nobody will check -- so the transformer's cost sets the budget and the *whole*
     # comparison is held to it, rather than quietly giving the trees more data.
+    pauc_temperature: float = 0.5  # score margin at which a pair stops contributing gradient
     max_train_rows: int = 12000
     data_fractions: list[float] = Field(default_factory=lambda: [0.15, 0.5, 1.0])
 
@@ -2408,6 +2426,7 @@ class Settings(BaseSettings):
     continual: ContinualConfig = Field(default_factory=ContinualConfig)
     online: OnlineConfig = Field(default_factory=OnlineConfig)
     deep_tabular: DeepTabularConfig = Field(default_factory=DeepTabularConfig)
+    operating_point: OperatingPointConfig = Field(default_factory=OperatingPointConfig)
     control: ControlConfig = Field(default_factory=ControlConfig)
     ledger: LedgerConfig = Field(default_factory=LedgerConfig)
     slo: SLOConfig = Field(default_factory=SLOConfig)

@@ -90,6 +90,21 @@ alerts. Reporting the ranking metric alone would have missed all three.
   *generating alerts*. The static threshold is immune because it is not listening: adaptivity is
   the attack surface. Freezing the integrator past half a decade of error and rate-limiting the
   actuator recovers 1.2 points and cuts recovery from 20 batches to 2.
+- **Operating-point training** (`netsentry operatingpoint`, `netsentry/models/pauc.py`,
+  `netsentry/training/operating_point.py`): every evaluation here leads with detection at a fixed
+  false-positive budget and every model here is trained on cross-entropy, which is a different
+  objective — log-loss spends capacity on the obviously benign majority while the operating point
+  is decided by the few benign flows that score highest. This adds the **partial-AUC** metric
+  (McClish-normalised, so budgets are comparable) and a differentiable surrogate that ranks
+  positives against the top `ceil(alpha * n_negatives)` negatives only, then trains the same MLP
+  under both objectives and scores every model at every budget — a matrix, because an objective
+  that concentrates on one budget has no reason to be good at another. Training for 1% **wins at
+  1%** (+1.6 points over the identical cross-entropy network) and pays 0.054 PR-AUC and 3.4 points
+  at 5% for it. Training for **0.1% loses everywhere**, and the report gives the mechanical reason
+  rather than a shrug: the surrogate sees the hardest negatives *in each minibatch*, and at that
+  budget a 4,096-row batch supplies four of them — wanting ten would take a batch of ~12,500, at
+  which point it is no longer a minibatch objective. The constraint belongs to the budget, not to
+  the model.
 - **Deep tabular models** (`netsentry deeptabular`, `netsentry/models/tabular_nn.py`,
   `netsentry/training/deep_tabular.py`): the reason this project uses boosted trees is a citation
   (Grinsztajn et al. 2022; Shwartz-Ziv & Armon 2022), not a measurement, so the claim is checked

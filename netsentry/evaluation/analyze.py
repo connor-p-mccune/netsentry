@@ -106,6 +106,7 @@ from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.invariance import run_invariance_report
 from netsentry.training.online import run_online_report
+from netsentry.training.operating_point import run_operating_point_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.selftrain import run_selftrain_report
 from netsentry.training.unlearn import run_unlearn_report
@@ -335,6 +336,12 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "alert volume held at the analyst budget by feedback, and the attack on the loop",
         "control.md",
         run_control_report,
+    ),
+    (
+        "Operating-point training",
+        "a partial-AUC surrogate against cross-entropy, scored at every false-positive budget",
+        "operating_point.md",
+        run_operating_point_report,
     ),
     (
         "Deep tabular models",

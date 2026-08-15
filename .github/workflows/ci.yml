@@ -119,6 +119,7 @@ jobs:
           python -m netsentry.cli online -o configs/ci.yaml
           python -m netsentry.cli control -o configs/ci.yaml
           python -m netsentry.cli deeptabular -o configs/ci.yaml
+          python -m netsentry.cli operatingpoint -o configs/ci.yaml
       - name: Model-integrity gate (SBOM + manifest, verify bytes, replay canaries)
         run: |
           python -m netsentry.cli provenance -o configs/ci.yaml

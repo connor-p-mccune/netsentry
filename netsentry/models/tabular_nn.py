@@ -33,6 +33,7 @@ import numpy as np
 from sklearn.metrics import average_precision_score
 
 from netsentry.log import get_logger
+from netsentry.models.pauc import pairwise_pauc_surrogate
 from netsentry.utils.optional import require
 
 if TYPE_CHECKING:
@@ -132,10 +133,23 @@ class TorchTabularClassifier:
     prevalence and it is the metric that decides what ships.
     """
 
-    def __init__(self, settings: Settings, architecture: str = "mlp") -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        architecture: str = "mlp",
+        *,
+        objective: str = "bce",
+        pauc_alpha: float | None = None,
+    ) -> None:
         require("torch", purpose="The deep tabular models")
         self.settings = settings
         self.architecture = architecture
+        # ``objective`` selects what the network is actually trained to do: "bce" is
+        # class-weighted cross-entropy (the incumbent), "pauc" is the partial-AUC surrogate that
+        # only cares about how positives rank against the highest-scoring negatives -- i.e. the
+        # flows that decide where the deployed threshold lands.
+        self.objective = objective
+        self.pauc_alpha = pauc_alpha
         self.cfg: DeepTabularConfig = settings.deep_tabular
         self.model: Any = None
         self.classes_: np.ndarray = np.array([0, 1])
@@ -174,6 +188,9 @@ class TorchTabularClassifier:
         negatives = float(np.sum(y == 0))
         pos_weight = torch.tensor([negatives / max(positives, 1.0)], dtype=torch.float32)
         criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+        alpha = (
+            self.pauc_alpha if self.pauc_alpha is not None else self.settings.thresholds.primary_fpr
+        )
         optimizer = optim.AdamW(
             self.model.parameters(), lr=self.cfg.learning_rate, weight_decay=self.cfg.weight_decay
         )
@@ -194,7 +211,16 @@ class TorchTabularClassifier:
                     continue
                 optimizer.zero_grad()
                 logits = self.model(x_train[index]).squeeze(-1)
-                loss = criterion(logits, y_train[index])
+                targets = y_train[index]
+                if self.objective == "pauc":
+                    loss = pairwise_pauc_surrogate(
+                        logits[targets > 0.5],
+                        logits[targets <= 0.5],
+                        alpha=alpha,
+                        temperature=self.cfg.pauc_temperature,
+                    )
+                else:
+                    loss = criterion(logits, targets)
                 loss.backward()
                 optimizer.step()
 

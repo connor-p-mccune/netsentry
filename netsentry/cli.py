@@ -554,6 +554,19 @@ def control(
 
 
 @app.command()
+def operatingpoint(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Train for the false-positive budget (partial-AUC surrogate) instead of for the loss."""
+    from netsentry.training.operating_point import run_operating_point_report
+
+    settings = _load(config, override)
+    out = run_operating_point_report(settings)
+    logger.info("Operating-point report ready", extra={"path": str(out)})
+
+
+@app.command()
 def deeptabular(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Regenerated 2026-08-13 17:22 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
+_Regenerated 2026-08-15 01:14 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -38,6 +38,7 @@ _Regenerated 2026-08-13 17:22 UTC via `netsentry analyze`. Synthetic stand-in un
 | Detection SLOs | error budgets and multiwindow burn-rate alerting, with the rules generated | [open](slo.md) |
 | Point-in-time feature store | host context joined correctly vs over the whole capture: the temporal leak, priced | [open](feature_store.md) |
 | Closed-loop control | alert volume held at the analyst budget by feedback, and the attack on the loop | [open](control.md) |
+| Operating-point training | a partial-AUC surrogate against cross-entropy, scored at every false-positive budget | [open](operating_point.md) |
 | Deep tabular models | MLP and FT-Transformer against the boosted incumbent under one shared protocol | [open](deep_tabular.md) |
 | Online learning | one-pass Hoeffding tree + ADWIN, prequentially, against static and periodic retraining | [open](online.md) |
 | Continual learning | class-incremental updates: forgetting, replay and the compute argument, measured | [open](continual.md) |
