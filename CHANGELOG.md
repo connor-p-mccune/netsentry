@@ -6,6 +6,107 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.17.0] — 2026-08-13
+
+The **adaptation, control & architecture wave**: five studies about what happens *after* a model
+is trained, and one about whether the model should have been that model at all. The thread
+running through them is that this project has been treating three decisions as settled which are
+actually choices — how a model absorbs new attack families, how its threshold responds to the
+traffic it sees, and whether gradient boosting is the right architecture for flow data — and each
+one turns out to have a measurable answer that is not the obvious one.
+
+Three of the five report a **cost that only appears at the operating point or at deployment
+time**. The streaming learner beats the frozen incumbent on PR-AUC and cannot be deployed at the
+false-positive budget, because thirty leaves cannot resolve one alert in a thousand. Warm-start
+fine-tuning saves 19% of training time and quadruples inference cost. Closing the alert-volume
+loop delivers the analyst budget and hands an attacker a way to suppress detection by generating
+alerts. Reporting the ranking metric alone would have missed all three.
+
+### Added
+- **Continual learning** (`netsentry continual`, `netsentry/training/continual.py`): the capture
+  introduces a new set of attack families every day, so folding in a day *is* the
+  class-incremental problem rather than a stand-in for it. Four update policies — frozen,
+  warm-start fine-tuning, replay with a bounded reservoir, full retrain — are measured with the
+  full retention matrix R[i][j] (train through task i, evaluate on task j) rather than a single
+  number, giving plasticity on the diagonal, stability below it and transfer above it. **Fine-tuning
+  forgets**: Tuesday's patators score 0.404 PR-AUC the day they are learned and 0.159 three days
+  later, a 61% relative loss on a family nobody removed and nothing in the monitoring would report
+  (backward transfer -0.172). Boosting is additive, so the old trees are still physically present
+  — the new ones do not delete them, they outvote them. **Even full retraining forgets** (-0.064),
+  which cannot be the update rule because there is no update: it is interference, one decision
+  surface now separating five families at once. And **the compute argument fails at this scale**:
+  fine-tuning fits a third of the rows for 19% less time, because boosting cost tracks trees
+  rather than rows and warm starting *adds* trees — a 4x larger ensemble costing 6.3x more per
+  thousand flows at inference. Includes `init_model` warm-start support on `SupervisedClassifier`
+  (with `supports_warm_start`, so the study can state the backend's limits rather than silently
+  degrading) and a reservoir buffer implementing Algorithm R in two vectorised phases.
+- **Online learning at line rate** (`netsentry online`, `netsentry/models/hoeffding.py`,
+  `netsentry/training/online.py`): a **Hoeffding tree** (VFDT, Domingos & Hulten 2000) and
+  **ADWIN** (Bifet & Gavaldà 2007) implemented from scratch — per-class Gaussian sufficient
+  statistics, information gain, the Hoeffding bound with the tie-break that makes it terminate,
+  naive-Bayes or majority leaves; and an exponential histogram whose window is cut wherever any
+  split shows a significant difference in mean. Both are tested against their guarantees rather
+  than a reference implementation (no split before the bound allows one, memory a function of the
+  structure and not the stream, no ADWIN false alarm in 3,000 stationary samples, detection within
+  200 of an abrupt change, 20,000 values in under 120 buckets). Evaluated **prequentially** —
+  test then train — the streaming tree beats the frozen incumbent (0.581 against 0.529 PR-AUC) on
+  0.11 MB of state against 28 MB of retained history and is never more than one flow out of date,
+  **but cannot be deployed at the operating point**: 30 leaves emit 527 distinct scores against
+  the boosted model's 24,952, and a threshold can only sit between two of them, so at the 0.1%
+  budget it detects 2.7% against the incumbent's 10.3% *having beaten it on PR-AUC*. Naive-Bayes
+  leaves lose 0.125 to majority leaves (flow features are mechanically dependent, so the
+  independence product saturates), ADWIN's resets cost 0.090, and a 20,000-flow label delay — the
+  SOC's actual situation — costs 0.100.
+- **Multivariate drift detection** (`netsentry mmd`, `netsentry/monitoring/mmd.py`): the deployed
+  drift monitors are marginal ones, and a change that re-pairs values between rows leaves every
+  column's multiset intact, so every per-feature statistic is *mathematically constant* under it —
+  the blind spot the sensor-failure study recorded as a limitation. A kernel two-sample test
+  (MMD, Gretton et al. 2012) with a characteristic RBF kernel is consistent against any
+  alternative, dependence included; the permutation null is batched into a single matrix product
+  against the pooled kernel (one GEMM, not 200 kernel rebuilds), which is what makes an exact test
+  affordable in a monitoring loop, and the linear-time estimator is implemented alongside it for
+  the streaming budget. The report leads with the **false-alarm rate on stationary traffic**,
+  because a monitor nobody trusts is switched off whatever its power. Under the dependence fault
+  the KS statistics come back **bit-identical** to the unfaulted run. **The fault is also a no-op
+  on this data**, and the report says so rather than reporting a null as a result: the stand-in's
+  76 modelled features have a mean absolute pairwise correlation of 0.005, and under independence
+  re-pairing columns samples the same joint law — so the reach is measured on controlled windows
+  whose dependence is a dial and whose marginals are identical at every setting, where pairwise
+  dependence of 0.15 is already enough for 100% detection at 1,000 flows while the marginal
+  monitors stay at their false-alarm rate forever.
+- **Closed-loop threshold control** (`netsentry control`, `netsentry/monitoring/control.py`):
+  alert volume as a measured output, the threshold as an actuator, the analyst budget as a
+  setpoint. The actuator is `log10` of the alert rate rather than the threshold or its quantile —
+  near the operating point a thousandth of a quantile separates ten alerts from a hundred, so a
+  gain tuned in one regime is wrong in the next, while in log-rate units the plant is nearly unit
+  gain and `kp = 1` is roughly deadbeat. The **open-loop threshold does not deliver the budget it
+  was calibrated for** (100% under; a threshold fixed in score space is a promise about a
+  distribution that has moved), the integral term *hurts* on this stream (batch-to-batch noise is
+  not a persistent error, and integrating noise is how a loop chases it — the unit tests pin the
+  same controller doing what the theory promises against a genuine drift), and two batches of
+  measurement delay quadruple the tracking error. **Then the loop is attacked**: ten batches of
+  loud decoys push the operating point from 2.01% of flows to 0.143% and suppress detection of the
+  genuine attacks behind them from 6.0% to 1.6% — the attacker buys 4.4 points of invisibility by
+  *generating alerts*. The static threshold is immune because it is not listening: adaptivity is
+  the attack surface. Freezing the integrator past half a decade of error and rate-limiting the
+  actuator recovers 1.2 points and cuts recovery from 20 batches to 2.
+- **Deep tabular models** (`netsentry deeptabular`, `netsentry/models/tabular_nn.py`,
+  `netsentry/training/deep_tabular.py`): the reason this project uses boosted trees is a citation
+  (Grinsztajn et al. 2022; Shwartz-Ziv & Armon 2022), not a measurement, so the claim is checked
+  here — an **FT-Transformer** (Gorishniy et al. 2021, one learned token per feature plus
+  self-attention) and an MLP against LightGBM and logistic regression, on the same pipeline,
+  split, seed, validation set and operating metric, with rank correlation and a rank-averaged
+  ensemble to ask whether the architectures see anything different, and a training-fraction sweep
+  to ask whether the gap is a data-size artefact. **The transformer lands last** (0.555 PR-AUC
+  against logistic regression's 0.564 and the incumbent's 0.537) for **28x the training time and
+  13x the inference cost**, which extends the leaderboard study's finding one architecture
+  further — capacity is penalised on this split, and the open-set structure is the mechanism.
+  All four arms see the same 12,000 capped training rows, the cap set by the transformer's cost
+  and applied to everyone rather than quietly giving the trees more data. The caveat is kept
+  rather than buried: the transformer's sample-efficiency curve is the steepest in the sweep
+  (+0.223 PR-AUC between 1,800 and 12,000 rows against the tree's +0.017), so part of the gap is
+  data size and the follow-up is named.
+
 ## [0.16.1] — 2026-08-12
 
 Two additions in the same spirit as the 0.16.0 wave: take something the project had been

@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Regenerated 2026-08-12 23:46 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
+_Regenerated 2026-08-13 17:22 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -37,6 +37,11 @@ _Regenerated 2026-08-12 23:46 UTC via `netsentry analyze`. Synthetic stand-in un
 | Poisoning defense | audit-and-drop sanitization vs label flips, re-measured | [open](poisoning_defense.md) |
 | Detection SLOs | error budgets and multiwindow burn-rate alerting, with the rules generated | [open](slo.md) |
 | Point-in-time feature store | host context joined correctly vs over the whole capture: the temporal leak, priced | [open](feature_store.md) |
+| Closed-loop control | alert volume held at the analyst budget by feedback, and the attack on the loop | [open](control.md) |
+| Deep tabular models | MLP and FT-Transformer against the boosted incumbent under one shared protocol | [open](deep_tabular.md) |
+| Online learning | one-pass Hoeffding tree + ADWIN, prequentially, against static and periodic retraining | [open](online.md) |
+| Continual learning | class-incremental updates: forgetting, replay and the compute argument, measured | [open](continual.md) |
+| Multivariate drift (MMD) | kernel two-sample testing: the joint change the per-feature monitors cannot see | [open](mmd.md) |
 | Strategic equilibrium | the arms race as a game: myopic race vs commitment, with the attacker cost priced | [open](strategic.md) |
 | Metamorphic testing | a label-free correctness oracle, validated by injected mutants (Chen 1998, Xie 2011) | [open](metamorphic.md) |
 | Backdoor poisoning | trigger trojan (BadNets) + spectral-signatures defense (Tran et al. 2018) | [open](backdoor.md) |

@@ -2163,3 +2163,107 @@ broken premise was more interesting than the study would have been if it had wor
   computed one way, serve features computed another. Adding that fourth variant turned +0.007 into
   a 0.417 collapse. The lesson generalises past this study — a leak's cost is measured at the
   boundary it crosses, not on the side you can see.
+
+## Wave 17 — adaptation, control & architecture (v0.17.0)
+
+The recurring lesson this wave was **the ranking metric is not the deliverable**. Three of the
+five studies produced a headline number that looked like a win and a deployment consequence that
+was not, and in every case the consequence only appeared because the report carried the
+operational metric next to the ranking one.
+
+- **The streaming tree beat the deployed model and still cannot be deployed.** Prequential PR-AUC
+  0.581 against the frozen model's 0.529 — a real win, on 0.11 MB of state. Then the TPR column:
+  2.7% at the 0.1% budget against the incumbent's 10.3%. The cause is not the model, it is the
+  *cardinality of its output*: a tree with 30 leaves emits at most 30 distinct scores, a threshold
+  can only be placed between two distinct scores, and one alert in a thousand is finer than the
+  gaps. I nearly shipped this study with PR-AUC as the headline and no TPR column. The general
+  form is worth remembering: any model whose score is a piecewise-constant function of the input
+  has a resolution limit at the operating point that ranking metrics are blind to.
+- **The naive-Bayes leaf lost by 0.125, which is the opposite of the literature.** MOA's default
+  leaf predictor is naive Bayes because it is strictly better on standard streaming benchmarks.
+  Here it is much worse, and the reason is in the feature set: CICFlowMeter statistics are
+  mechanically dependent (a duration is a sum of inter-arrival times; a rate is a count divided by
+  the duration), so multiplying per-feature likelihoods counts the same evidence repeatedly, the
+  log-posterior saturates and the scores pile up at the ends of the interval. A ranking metric has
+  nothing left to rank. Kept both arms in the table: an ablation that only confirms the choice
+  already made is not an ablation.
+- **ADWIN never fired at first, then fired six times and made things worse.** The first version
+  fed it the naive-Bayes arm's error, which is saturated and therefore nearly constant — nothing
+  for a change detector to find. Switching the arm to majority leaves gave it a real signal, it
+  detected six times, and each reset cost detection (-0.090 overall). That is a legitimate
+  finding rather than a bug: rebuilding from scratch is the crude end of the response spectrum,
+  and a learner that already adapts per flow does not accumulate the staleness a change detector
+  exists to remove. The reset policy earns its place on a base learner that *cannot* adapt.
+- **Catastrophic forgetting turned out to have two causes, and only one is the update rule.**
+  Fine-tuning loses 61% of the first family's detection, which is the expected result. Full
+  retraining — refitting on every day seen — still loses 0.064 backward transfer, which cannot be
+  forgetting in the update sense because there is no update. It is interference: one decision
+  surface, five attack families, a moving class balance. Having the frozen control in the table
+  is what made this readable; without it the retrain row looks like a good number rather than a
+  compromised one.
+- **The incremental-compute argument did not survive being measured.** The premise of every
+  warm-start story is "refitting the history is expensive". Fine-tuning fitted 39,729 rows against
+  retraining's 110,749 — a third of the data — and saved 19% of the wall clock, because boosting
+  cost is dominated by trees rather than rows. Worse, warm starting *adds* trees: the fine-tuned
+  model ended at 2,400 against 600 and cost 6.3x more per thousand flows at inference. The
+  crossover where incremental training wins exists, but it is further out than four capture days,
+  and the honest way to quote the saving is with the crossover attached.
+- **The MMD study's fault was a no-op, and finding out why was the study.** The dependence-only
+  fault permutes a block of columns across rows; on the stand-in, neither the marginal monitors
+  *nor* the kernel test fired. Mean absolute pairwise correlation across the 76 modelled features:
+  **0.005**. Under independence, re-pairing columns produces a sample from the same joint law, so
+  a test that fired would have been wrong. This is the second time this repo's synthetic stand-in
+  has been found to reproduce the dataset's marginals without its structure (the feature store hit
+  the same wall looking for repeat hosts), and the fix is the same: measure the absence, say so,
+  and demonstrate the mechanism on a controlled stream whose structure is a dial. The sweep is a
+  better result than the single point would have been — it answers *how much* dependence must
+  exist before a joint test earns its place (0.15 pairwise, at 1,000 flows).
+- **The control loop had to be re-parameterised before it was worth reporting.** The first version
+  controlled the score quantile directly: gain 0.1 produced 190% overshoot and never settled,
+  because near q = 0.98 the map from quantile to alert volume is extremely steep and a gain tuned
+  at one operating point is wrong at the next. Moving the actuator to `log10` of the alert rate
+  makes the plant nearly unit gain, the error a ratio, and `kp = 1` roughly deadbeat — after which
+  the gain sweep says something about the loop rather than about the parameterisation. The
+  bug-fix-shaped lesson: when a controller behaves badly at every gain, suspect the units before
+  the gains.
+- **Two loop details that would have quietly biased the result.** (1) The error started as
+  `log10((measured + 0.5) / setpoint)` to keep `log(0)` out; that offset moves the loop's fixed
+  point to 9.5 alerts against a 10-alert setpoint — a permanent 5% error nobody would ever find.
+  Flooring the measurement instead of offsetting it removes the bias. (2) The settling band has to
+  clear the setpoint's own counting noise: at ten alerts a batch, Poisson variation alone is 30%,
+  so a 10% band measures the arrival process rather than the controller.
+- **The integral term made things worse, and the unit tests are why that is reportable.** PI ends
+  at +52% steady-state error against P's +27% on the real stream. Rather than tune until the
+  expected result appeared, the tests establish the mechanism on a controlled plant — a static
+  disturbance is rejected completely by P alone, a *drifting* one needs the integrator — and the
+  report states both: the mechanism works, and this plant is not the one it is for. Integrating
+  noise is how a loop ends up chasing it.
+- **The control-loop attack is the finding I did not plan.** It came out of writing the module
+  docstring: the loop's input is attacker-influenced, and no control-theory treatment mentions
+  that because its plants are not adversarial. Ten batches of loud decoys drive the operating
+  point from 2.01% of flows to 0.143% and suppress detection of the genuine attacks behind them
+  from 6.0% to 1.6%. The first version measured it against the *static* threshold, which flattered
+  the loop; the correct counterfactual is the same policy on the same flows without the flood, and
+  it changed the number from "no effect" to a 4.4-point suppression. Every adaptive component in a
+  security system is an attack surface, and the mitigation (freeze the integrator on large
+  excursions, rate-limit the actuator) has to be designed in — the version without it is the
+  version a textbook hands you.
+- **The transformer study had to be capped before it was worth having.** The first full-data run
+  was still going after 100 minutes of wall clock and roughly five core-hours, because attention
+  over 76 feature tokens is quadratic in the feature count and the sample-efficiency sweep
+  multiplies the cost by another 1.9. A study nobody can afford to re-run is a study nobody will
+  check, so the training set is capped at 12,000 rows -- and the cap is applied to *every* arm,
+  including the trees, because capping only the expensive model would have been a thumb on the
+  scale dressed up as a budget.
+- **Logistic regression won.** 0.564 PR-AUC against the MLP's 0.561, the transformer's 0.555 and
+  LightGBM's 0.537. That is not a surprise given the leaderboard study (which already had
+  logistic at 0.569 and Gaussian naive Bayes leading the honest split), but it is worth stating
+  what the two studies together now say: on a split whose test days share no attack class with
+  training, *every* increment of model capacity has been paid for and none has been recovered.
+  The transformer is the cleanest instance -- most flexible, most expensive, last.
+- **The honest caveat is the sample-efficiency curve, and it points the other way.** The
+  transformer gains +0.223 PR-AUC between 1,800 and 12,000 rows while the tree gains +0.017. At
+  the cap the curves have not converged, so some of the gap is data size rather than
+  architecture. Reporting the headline without that column would have been the easy version of
+  this study; naming the follow-up (the real CIC-IDS2017, not a 60k-row stand-in) is the honest
+  one.

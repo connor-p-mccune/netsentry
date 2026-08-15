@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.16.1`.** The build plan in
+**Released `v0.17.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and fifteen post-release waves build on top — the
+tested, and committed, and sixteen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -81,8 +81,8 @@ deployed ensemble, gated on reproducing LightGBM's own scores; group DRO whose a
 declined to reweight and whose emphasis made the worst group monotonically worse;
 Byzantine-robust aggregation where one lying site in twelve costs a third of FedAvg; and
 Kaplan-Meier time-to-detection showing the naive latency understates by 8x because it deletes
-the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses), and the **operations, oracles & honest-uncertainty wave** (open-set recognition, which reframes the temporal split as what its class table says it is — train and test share *zero* attack classes, so every attack the model meets is an unknown one — and finds the deployed novelty rule's lead carried entirely by `DDoS` while it is blind to `PortScan` at 0.2%, below the false-alarm rate itself; metamorphic testing, a correctness oracle that needs **no labels** and can therefore run against production traffic, whose structural relations hold bit-exactly and whose semantic ones show the model is not invariant to its own exporter's clock — one alert in 154 is decided by the capture's timing resolution; a three-oracle mutation study where none of labelled accuracy, label-free invariants, or the canary dominates the others; SLO error budgets with multiwindow burn-rate alerting whose first finding is that the objective it was handed is already violated by the *healthy* system; a hash-chained alert ledger with every tamper attack executed against it, the tail-truncation gap demonstrated and then closed with a published anchor, and O(log n) Merkle inclusion proofs; and Beta-Binomial partial pooling so a two-flow class stops reading like a seven-hundred-flow one, with the credible intervals' coverage validated by simulation before anyone is asked to read them; and the evasion arms race solved as a game, which returns a kept negative — against a detector this weak, disguising is irrational at every operating point, because an attacker who does nothing already gets 91% of their traffic through with the attack intact).
-`make check` is green (lint + type-check + **1,063 passing tests**, property-based invariants and a
+the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses), and the **operations, oracles & honest-uncertainty wave** (open-set recognition, which reframes the temporal split as what its class table says it is — train and test share *zero* attack classes, so every attack the model meets is an unknown one — and finds the deployed novelty rule's lead carried entirely by `DDoS` while it is blind to `PortScan` at 0.2%, below the false-alarm rate itself; metamorphic testing, a correctness oracle that needs **no labels** and can therefore run against production traffic, whose structural relations hold bit-exactly and whose semantic ones show the model is not invariant to its own exporter's clock — one alert in 154 is decided by the capture's timing resolution; a three-oracle mutation study where none of labelled accuracy, label-free invariants, or the canary dominates the others; SLO error budgets with multiwindow burn-rate alerting whose first finding is that the objective it was handed is already violated by the *healthy* system; a hash-chained alert ledger with every tamper attack executed against it, the tail-truncation gap demonstrated and then closed with a published anchor, and O(log n) Merkle inclusion proofs; and Beta-Binomial partial pooling so a two-flow class stops reading like a seven-hundred-flow one, with the credible intervals' coverage validated by simulation before anyone is asked to read them; and the evasion arms race solved as a game, which returns a kept negative — against a detector this weak, disguising is irrational at every operating point, because an attacker who does nothing already gets 91% of their traffic through with the attack intact), and the **adaptation, control & architecture wave** (what happens *after* training, where three of five studies produced a headline that looked like a win next to a deployment consequence that was not: a from-scratch Hoeffding tree + ADWIN that beats the frozen model prequentially on a tenth of a megabyte of state and still cannot be deployed, because thirty leaves cannot resolve a one-in-a-thousand false-alarm budget; continual learning showing warm-start fine-tuning forgets **61%** of the first attack family's detection while saving only 19% of the training time and quadrupling inference cost; a closed-loop threshold controller that delivers the analyst budget the open-loop threshold misses by 100% and then hands an attacker **4.4 points of invisibility bought by generating alerts**, with the mitigation measured too; kernel two-sample drift testing that catches the joint change the deployed per-feature monitors are blind to *by construction* — their KS statistics under the fault come back bit-identical to the unfaulted run — and reports that the same fault is a no-op on this stand-in because its features are nearly independent; and an FT-Transformer put against the boosted incumbent under one shared protocol, because the reason this project uses trees was a citation rather than a measurement).
+`make check` is green (lint + type-check + **1,254 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -132,6 +132,7 @@ what actually ships.
 | Statistical drift | per-feature KS + Benjamini–Hochberg FDR, online Page–Hinkley / DDM | ✅ Done |
 | Anytime-valid drift | conformal test martingale: a Ville-bounded false-alarm rate at any stopping time (Vovk 2003) | ✅ Done |
 | Covariate shift | zero-label density-ratio diagnosis (domain classifier) + importance-weighted retraining; the temporal gap diagnosed as concept, not covariate, shift (Shimodaira 2000) | ✅ Done |
+| Multivariate drift | kernel two-sample testing (MMD): the joint change per-feature monitors are blind to *by construction*, with the null calibrated first (Gretton 2012) | ✅ Done |
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
 | Coherent metric | the H-measure: a shared, explicit cost prior fixes ROC-AUC's incoherence (Hand 2009) | ✅ Done |
 | Prediction-powered inference | attack prevalence from few labels + the model, tighter than classical at valid coverage (Angelopoulos 2023) | ✅ Done |
@@ -142,6 +143,10 @@ what actually ships.
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
 | Streaming lifecycle | prequential static-vs-retrained on the later-day stream | ✅ Done |
+| Online learning | a from-scratch Hoeffding tree (VFDT) + ADWIN: per-flow updates in bounded memory, and the operating point a 30-leaf model cannot reach | ✅ Done |
+| Continual learning | class-incremental updates across capture days: forgetting, replay, and the compute argument checked (Lopez-Paz & Ranzato 2017) | ✅ Done |
+| Closed-loop control | alert volume held at the analyst budget by PI feedback — and the control-loop attack that suppresses detection by *generating* alerts | ✅ Done |
+| Deep tabular models | FT-Transformer + MLP against the boosted incumbent under one protocol (Gorishniy 2021): the trees-win claim checked, not cited | ✅ Done |
 | Expert advice (online) | Hedge + fixed-share track the best model under drift with a **regret bound** (Herbster & Warmuth 1998) | ✅ Done |
 | Self-training | the pseudo-label shortcut priced against the labeled ceiling | ✅ Done |
 | Weak supervision | the signatures as labeling functions: a detector trained on zero labels, agreement-gated label model (Ratner 2016) | ✅ Done |
@@ -1821,6 +1826,168 @@ source's events in `[t - 60s, t)`, strictly earlier, never simultaneous — ties
 resolution being the usual way a label-bearing row leaks into its own feature. The synthetic
 stand-in cannot host this comparison and the report says so with the measurement that proves it
 (60,000 flows, 60,000 distinct sources), so the mechanism runs on a controlled stream instead.
+
+## Continual learning (what the detector forgets)
+
+Attack families arrive one after another — brute force on Tuesday, the DoS family on Wednesday,
+web attacks on Thursday, bots and scanning on Friday — and each arrival is a decision about how
+to fold it in. That decision is rarely "refit on the whole history", so the model gets *updated*,
+and nobody asks what the update cost the families it already knew.
+
+```bash
+python -m netsentry.cli continual   # -> docs/reports/continual.md
+```
+
+| policy | average PR-AUC | backward transfer | train time | final trees | inference / 1k |
+|---|---|---|---|---|---|
+| frozen | 0.367 | +0.000 | 13 s | 600 | 18 ms |
+| fine-tune (warm start on the new day) | 0.428 | **-0.172** | 43 s | 2,400 | 92 ms |
+| replay (4k-row reservoir) | 0.447 | -0.126 | 49 s | 2,400 | 89 ms |
+| full retrain | **0.520** | -0.064 | 56 s | 600 | 14 ms |
+
+**Fine-tuning forgets**: Tuesday's patators score 0.404 the day they are learned and 0.159 three
+days later — a 61% relative loss on a family nobody removed, that nothing in the monitoring would
+report. Boosting is additive, so the old trees are still physically present; the new ones do not
+delete them, they outvote them.
+
+**Even full retraining forgets** (-0.064). That cannot be the update rule, because there is no
+update: it is interference. One decision surface now separates five families at once, and
+capacity spent on `PortScan` is capacity not spent on `FTP-Patator`.
+
+**And the compute argument does not hold at this scale.** Fine-tuning fits a third of the rows
+but saves only 19% of the time, because boosting cost tracks trees rather than rows — and warm
+starting *adds* trees: a 4x larger ensemble that costs 6.3x more per thousand flows at inference.
+The crossover exists; it is further out than four days, and quoting the saving without quoting
+the crossover is how teams buy forgetting they did not need.
+
+## Online learning at line rate (a one-pass detector)
+
+The deployed model is frozen between retrains, so every flow in the gap is scored by a model that
+has already seen its last example. `netsentry/models/hoeffding.py` implements the third option
+from scratch — a **Hoeffding tree** (VFDT, Domingos & Hulten 2000) and **ADWIN** (Bifet &
+Gavaldà 2007) — and the comparison is prequential (**test then train**: every model scores a
+batch before it may learn from it).
+
+```bash
+python -m netsentry.cli online   # -> docs/reports/online.md
+```
+
+| learner | prequential PR-AUC | TPR @ 0.1% FPR | learn time | state | distinct scores |
+|---|---|---|---|---|---|
+| static (deployed) | 0.529 | 10.3% | — | 0.61 MB | 24,952 |
+| periodic retrain | **0.646** | **17.6%** | 42.2 s | 27.95 MB | 24,957 |
+| Hoeffding tree (majority leaves) | 0.581 | 2.7% | 9.6 s | **0.11 MB** | 527 |
+| Hoeffding tree (naive-Bayes leaves) | 0.456 | 0.0% | 9.4 s | 0.11 MB | 13,825 |
+| Hoeffding tree + ADWIN | 0.491 | 3.5% | 12.3 s | 0.03 MB | 110 |
+
+The streaming tree **beats the frozen incumbent** (0.581 vs 0.529) on 0.11 MB of sufficient
+statistics instead of 28 MB of retained history, and is never more than one flow out of date —
+but it **cannot be deployed at the operating point**. With 30 leaves it emits 527 distinct scores
+across the run against the boosted model's 24,952, and a threshold can only sit between two
+distinct scores: at the 0.1% budget it detects 2.7% against the frozen model's 10.3%, having
+*beaten* it on PR-AUC. A SOC deploys a threshold, not an average precision.
+
+Two more results worth keeping: naive-Bayes leaves **lose** 0.125 PR-AUC to majority-class leaves
+(flow features are mechanically dependent — a duration is a sum of inter-arrival times — so the
+independence product saturates), and ADWIN's resets cost 0.090, because a learner that already
+adapts per flow gives a change detector much less to find. Delaying labels by 20,000 flows —
+the SOC's actual situation — costs 0.100 PR-AUC, which is the honest version of every number
+above.
+
+## Multivariate drift (the change the marginals cannot see)
+
+PSI bins each feature on its own; the KS suite tests each feature on its own. Both are blind to a
+change that re-pairs values *between* rows — every column's multiset is untouched, so every
+per-feature statistic is **mathematically constant** under it. The sensor-failure study met this
+as a mis-assembling collector and recorded it as a limitation.
+
+```bash
+python -m netsentry.cli mmd   # -> docs/reports/mmd.md
+```
+
+A kernel two-sample test (MMD, Gretton et al. 2012) with a characteristic RBF kernel is
+consistent against *any* alternative, dependence included. The permutation null is batched into a
+single matrix product against the pooled kernel — one GEMM, not 200 kernel rebuilds — which is
+what makes an exact test affordable inside a monitoring loop.
+
+| pairwise dependence in the data | MMD (permutation) | MMD (linear) | KS + BH | PSI |
+|---|---|---|---|---|
+| 0 (independent) | 5% | 5% | 0% | 0% |
+| 0.15 | **100%** | 10% | 20% | 0% |
+| 0.6 | **100%** | 65% | 0% | 0% |
+| 0.9 | **100%** | 90% | 0% | 0% |
+
+The KS statistics under the fault come back **bit-identical** to the unfaulted run — the
+blindness is algebraic, not a matter of sensitivity. And the report's second finding is about
+this repository's own data: the stand-in's 76 modelled features have a mean absolute pairwise
+correlation of **0.005**, and under independence re-pairing columns samples the *same* joint law,
+so the fault is a no-op rather than an invisible change and a test that fired would be wrong.
+That is why the reach is measured on controlled windows whose dependence is a dial and whose
+marginals are identical at every setting.
+
+## Closed-loop threshold control (and the attack on it)
+
+Every threshold in this project is open-loop: chosen on validation, shipped, left. This makes
+alert volume a measured output, the threshold an actuator and the analyst budget a setpoint. The
+actuator is `log10` of the alert rate, not the threshold or its quantile — near the operating
+point a thousandth of a quantile separates ten alerts from a hundred, so a gain tuned in one
+regime is wrong in the next.
+
+```bash
+python -m netsentry.cli control   # -> docs/reports/control.md
+```
+
+| policy | mean volume error | steady-state | control effort | recall |
+|---|---|---|---|---|
+| static threshold | 8.0 | **-100%** | 0.000 | 1.6% |
+| proportional (P) | **4.6** | +27% | 0.046 | 5.2% |
+| proportional-integral (PI) | 6.0 | +52% | 0.064 | 5.8% |
+| score-space tracker (gain-free) | 5.2 | -55% | 0.003 | 5.0% |
+
+The open-loop threshold **does not deliver the budget it was calibrated for** — it lands 100%
+under, because a threshold fixed in score space is a promise about a distribution that has moved.
+The integral term *hurts* here (this stream's disturbance is batch-to-batch noise, and
+integrating noise is how a loop chases it); the unit tests pin the same controller doing exactly
+what the theory promises against a genuine drift. Two batches of measurement delay quadruple the
+tracking error.
+
+**Then the loop is attacked.** Ten batches of loud decoys — cheap, noisy, certain to alert — push
+the operating point from 2.01% of flows to 0.143% and suppress detection of the genuine attacks
+behind them from 6.0% to 1.6%: the attacker buys 4.4 points of invisibility *by generating
+alerts*. The static threshold is immune because it is not listening — adaptivity is the attack
+surface. Freezing the integrator on excursions past half a decade and rate-limiting the actuator
+recovers 1.2 points and cuts recovery from 20 batches to 2.
+
+## Deep tabular models vs the trees (the claim, checked)
+
+The reason this project uses boosted trees is a citation (Grinsztajn et al. 2022; Shwartz-Ziv &
+Armon 2022), not a measurement. So it is measured — an **FT-Transformer** (Gorishniy et al. 2021:
+one learned token per feature, self-attention across them) and an MLP against LightGBM and
+logistic regression, on the same pipeline, split, seed, validation set and operating metric.
+
+```bash
+python -m netsentry.cli deeptabular   # -> docs/reports/deep_tabular.md
+```
+
+| model | PR-AUC | TPR @ 0.1% FPR | train | inference / 1k | parameters |
+|---|---|---|---|---|---|
+| **logistic regression** | **0.564** | 12.1% | 0.1 s | 0.3 ms | 77 |
+| MLP | 0.561 | 11.4% | 2.7 s | 1.6 ms | 53,505 |
+| FT-Transformer | 0.555 | 7.6% | 362.3 s | 105.5 ms | 22,081 |
+| LightGBM (incumbent) | 0.537 | 7.4% | 12.9 s | 7.8 ms | 15,372 |
+
+The transformer lands **last, for 28x the training time and 13x the inference cost** — the
+literature's conclusion reproduced here rather than inherited. The ranking's shape says why: the
+leaderboard study already found capacity is penalised on this split, and the open-set structure
+is the mechanism (the test days contain no attack class the training days showed, so capacity
+spent fitting the training families precisely is capacity spent on families that will never
+appear again). All four arms see the same 12,000 capped training rows — the cap is set by the
+transformer's cost and applied to everyone rather than quietly giving the trees more data.
+
+The caveat is kept rather than buried: the transformer's curve is the steepest in the
+sample-efficiency sweep (**+0.223 PR-AUC** from 1,800 to 12,000 rows, against the tree's +0.017),
+so part of this gap is data size, and the follow-up is the real CIC-IDS2017 rather than a 60k-row
+stand-in. Rank-averaging the incumbent with any of them buys +0.012 to +0.021.
 
 ## Provenance & supply chain
 

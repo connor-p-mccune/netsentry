@@ -189,7 +189,42 @@ given as a ratio), both causal-invariance methods reject genuine structure becau
 features point in opposite directions on different days, and the sketch study finds its own
 high-precision configuration costs more memory than exact counting.
 
-## Stop 10 — Where the bodies are buried, on purpose
+## Stop 10 — The ranking metric is not the deliverable
+
+The newest wave is about what happens *after* training, and three of its five studies produced a
+headline that looked like a win next to a deployment consequence that was not. Reading only the
+first number would have shipped all three.
+
+- **A from-scratch streaming learner beats the deployed model and still cannot be deployed.**
+  [`online.md`](reports/online.md) implements a Hoeffding tree (VFDT) and ADWIN from scratch and
+  runs them prequentially — test then train — against the frozen model and periodic retraining.
+  The tree wins on PR-AUC (0.581 against 0.529) using 0.11 MB of sufficient statistics instead of
+  28 MB of retained history. Then the operating column: **2.7% detection at the 0.1%
+  false-positive budget against the frozen model's 10.3%**, because thirty leaves emit thirty
+  distinct scores and a threshold can only sit between two of them. A SOC deploys a threshold,
+  not an average precision.
+- **Folding in a new attack family costs the old ones, and the cheap way of doing it costs more
+  than it saves.** [`continual.md`](reports/continual.md) measures the full retention matrix
+  across four update policies. Warm-start fine-tuning loses **61%** of the first family's
+  detection three days later; full retraining still loses some, which is interference rather than
+  forgetting; and the compute argument for incremental training does not survive measurement —
+  a third of the rows for 19% less time, and a 4x larger ensemble that costs 6.3x more per
+  thousand flows at inference.
+- **Closing the loop on alert volume hands the attacker a lever.**
+  [`control.md`](reports/control.md) turns the threshold into a PI control loop that holds the
+  queue at the analyst budget the open-loop threshold misses by 100%. Then it floods the loop
+  with ten batches of cheap decoys: the operating point moves from 2.01% of flows to 0.143% and
+  detection of the genuine attacks arriving behind them falls from 6.0% to 1.6%. **The attacker
+  buys 4.4 points of invisibility by generating alerts.** The static threshold is immune because
+  it is not listening — adaptivity is the attack surface, and the mitigation is measured too.
+
+The same wave adds the joint drift test the deployed per-feature monitors are blind to *by
+construction* ([`mmd.md`](reports/mmd.md) — the KS statistics under a dependence-only fault come
+back bit-identical to the unfaulted run), and checks the reason this project uses boosted trees
+at all against an FT-Transformer under one shared protocol
+([`deep_tabular.md`](reports/deep_tabular.md)).
+
+## Stop 11 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the
