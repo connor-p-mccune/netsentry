@@ -112,6 +112,13 @@ jobs:
           python -m netsentry.cli monotonic -o configs/ci.yaml
           python -m netsentry.cli opttree -o configs/ci.yaml
           python -m netsentry.cli sketches -o configs/ci.yaml
+      - name: Adaptation, control & architecture studies
+        run: |
+          python -m netsentry.cli mmd -o configs/ci.yaml
+          python -m netsentry.cli continual -o configs/ci.yaml
+          python -m netsentry.cli online -o configs/ci.yaml
+          python -m netsentry.cli control -o configs/ci.yaml
+          python -m netsentry.cli deeptabular -o configs/ci.yaml
       - name: Model-integrity gate (SBOM + manifest, verify bytes, replay canaries)
         run: |
           python -m netsentry.cli provenance -o configs/ci.yaml

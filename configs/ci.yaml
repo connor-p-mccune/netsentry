@@ -62,5 +62,42 @@ sketches:
   scanner_targets: 120
   hll_precisions: [6, 8]
   countmin_epsilons: [0.01, 0.001]
+mmd:
+  window_rows: 150                # the kernel is quadratic; 150 exercises every branch
+  permutations: 39
+  power_permutations: 19
+  repeats: 3
+  power_repeats: 3
+  window_sweep: [100, 150]
+  cost_sweep: [100, 150]
+  dependence_rhos: [0.0, 0.9]     # the two ends of the dependence dial
+  stream_features: 8
+continual:
+  max_rows_per_task: 700          # four tasks still form, each with both classes
+  buffer_rows: 200
+  buffer_sweep: [0, 400]          # naive fine-tune plus one buffered arm
+  bench_rows: 200
+online:
+  warmup_rows: 1500
+  max_stream_rows: 1200
+  batch_rows: 400
+  retrain_every: 800
+  grace_period: 100               # the tree must be able to split inside a 1.2k-flow stream
+  label_delays: [0, 1]
+control:
+  batch_rows: 150
+  gain_sweep: [0.25, 1.0]
+  delay_sweep: [0, 2]
+  attack_start_batch: 2
+  attack_batches: 3
+  decoys_per_batch: 50
+deep_tabular:
+  epochs: 4                       # CI installs no torch: only the tree/linear arms run
+  max_train_rows: 1500
+  data_fractions: [0.25, 1.0]
+  hidden_sizes: [32]
+  token_dim: 8
+  n_heads: 2
+  n_blocks: 1
 mlflow:
   enabled: false         # use the local file logger in CI
