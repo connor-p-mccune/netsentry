@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from netsentry.data.dp_synth import run_dp_synth_report
 from netsentry.evaluation.ablation import run_ablation_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.adaptive_conformal import run_adaptive_conformal_report
@@ -313,6 +314,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection when traffic cannot be pooled: FedAvg vs pooled vs alone (McMahan 2017)",
         "federated.md",
         run_federated_report,
+    ),
+    (
+        "DP synthetic release",
+        "share the traffic instead of the model: train-synthetic/test-real under a budget "
+        "(PrivBayes family, Zhang et al. 2017)",
+        "dp_synth.md",
+        run_dp_synth_report,
     ),
     (
         "Secure aggregation",

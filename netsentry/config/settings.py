@@ -1696,6 +1696,42 @@ class SecAggConfig(BaseModel):
     cost_sites: list[int] = Field(default_factory=lambda: [4, 8, 16, 32])
 
 
+class DPSynthConfig(BaseModel):
+    """Differentially-private synthetic flow release (PrivBayes family, Zhang et al. 2017).
+
+    The federated and secure-aggregation studies keep the data still and move the
+    computation; this asks whether the *data* can move instead, as a synthetic release with a
+    formal guarantee. Features are binned on a **public** signed-log grid spanning
+    ``domain_min``..``domain_max`` — derived from the schema, never from the data, because
+    taking min/max from the capture is already a query about one record. ``n_bins`` sets the
+    grid resolution (finer grids model the data better and split the budget further per
+    cell). ``epsilons`` is the swept budget; ``prior_budget_fraction`` is the slice spent on
+    the class prior, with the rest divided across one conditional marginal per feature
+    (sequential composition within a class, parallel across classes under add/remove
+    neighbouring). ``structures`` chooses which parent sets to release; the non-private
+    ``oracle Chow-Liu`` arm (``include_oracle_structure``) bounds what a private structure
+    search could ever buy before anybody spends budget building one. The audit arms run a
+    nearest-neighbour membership attack against the release itself."""
+
+    n_bins: int = 24  # bins per feature on the public signed-log grid
+    domain_min: float = -1.0  # the CICFlowMeter "not set" sentinel is the low end
+    domain_max: float = 1e9  # declared public upper bound, not measured from the data
+    epsilons: list[float] = Field(default_factory=lambda: [0.5, 1.0, 4.0, 16.0])
+    prior_budget_fraction: float = 0.05  # share of epsilon spent on the class prior
+    structures: list[str] = Field(default_factory=lambda: ["independent", "public families"])
+    include_oracle_structure: bool = True
+    oracle_epsilons: list[float] = Field(default_factory=lambda: [4.0])
+    max_released_rows: int = 30000
+    repeats: int = (
+        3  # synthesis draws per arm (the mechanism is randomised; one draw is not a result)
+    )
+    n_estimators: int = 250  # downstream model size (kept small: this grid trains many)
+    audited_structure: str = "public families"
+    audited_epsilons: list[float] = Field(default_factory=lambda: [0.5, 4.0])
+    audit_rows: int = 800  # members / non-members put to the membership attack
+    audit_release_rows: int = 3000  # released rows the attacker searches over
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2447,6 +2483,7 @@ class Settings(BaseSettings):
     sequential: SequentialConfig = Field(default_factory=SequentialConfig)
     federated: FederatedConfig = Field(default_factory=FederatedConfig)
     secagg: SecAggConfig = Field(default_factory=SecAggConfig)
+    dp_synth: DPSynthConfig = Field(default_factory=DPSynthConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

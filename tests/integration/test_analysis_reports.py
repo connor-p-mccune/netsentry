@@ -1018,3 +1018,24 @@ def test_secagg_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "secure aggregation" in text
     assert "dropout" in text and "anonymity set" in text
+
+
+@pytest.mark.slow
+def test_dp_synth_report_is_written(prepared: Settings) -> None:
+    from netsentry.data.dp_synth import run_dp_synth_report
+
+    prepared.dp_synth.n_bins = 8
+    prepared.dp_synth.epsilons = [1.0]
+    prepared.dp_synth.structures = ["independent"]
+    prepared.dp_synth.include_oracle_structure = False
+    prepared.dp_synth.repeats = 1
+    prepared.dp_synth.max_released_rows = 1500
+    prepared.dp_synth.n_estimators = 40
+    prepared.dp_synth.audited_epsilons = [1.0]
+    prepared.dp_synth.audited_structure = "independent"
+    prepared.dp_synth.audit_rows = 100
+    prepared.dp_synth.audit_release_rows = 300
+    out = run_dp_synth_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "epsilon" in text
+    assert "public" in text and "membership" in text

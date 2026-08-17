@@ -1360,6 +1360,19 @@ def secagg(
 
 
 @app.command()
+def dpsynth(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Release synthetic flows under a privacy budget, then train on them and test on real."""
+    from netsentry.data.dp_synth import run_dp_synth_report
+
+    settings = _load(config, override)
+    out = run_dp_synth_report(settings)
+    logger.info("DP synthetic-release report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
