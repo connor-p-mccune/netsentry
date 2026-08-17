@@ -108,6 +108,7 @@ from netsentry.training.federated import run_federated_report
 from netsentry.training.invariance import run_invariance_report
 from netsentry.training.online import run_online_report
 from netsentry.training.operating_point import run_operating_point_report
+from netsentry.training.pretrain import run_pretrain_report
 from netsentry.training.pu_learning import run_pu_learning_report
 from netsentry.training.secagg import run_secagg_report
 from netsentry.training.selftrain import run_selftrain_report
@@ -314,6 +315,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "detection when traffic cannot be pooled: FedAvg vs pooled vs alone (McMahan 2017)",
         "federated.md",
         run_federated_report,
+    ),
+    (
+        "Self-supervised pretraining",
+        "learn the representation from unlabelled flows, with PCA and an untrained encoder as "
+        "the controls (VIME 2020, SCARF 2022)",
+        "pretrain.md",
+        run_pretrain_report,
     ),
     (
         "DP synthetic release",

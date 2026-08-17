@@ -1039,3 +1039,21 @@ def test_dp_synth_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "epsilon" in text
     assert "public" in text and "membership" in text
+
+
+@pytest.mark.slow
+def test_pretrain_report_is_written(prepared: Settings) -> None:
+    pytest.importorskip("torch")
+    from netsentry.training.pretrain import run_pretrain_report
+
+    prepared.pretrain.epochs = 2
+    prepared.pretrain.embedding_dim = 8
+    prepared.pretrain.hidden_sizes = [16]
+    prepared.pretrain.max_pool_rows = 600
+    prepared.pretrain.label_budgets = [100, 0]
+    prepared.pretrain.repeats = 1
+    prepared.pretrain.boosted_estimators = 30
+    out = run_pretrain_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "label" in text
+    assert "pca" in text and "random encoder" in text

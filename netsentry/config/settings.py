@@ -1732,6 +1732,40 @@ class DPSynthConfig(BaseModel):
     audit_release_rows: int = 3000  # released rows the attacker searches over
 
 
+class PretrainConfig(BaseModel):
+    """Self-supervised pretraining on unlabelled flows (VIME 2020, SCARF 2022).
+
+    The fifth answer to the label shortage, and the only one that changes the *inputs*: learn
+    a representation from unlabelled traffic, then fit a small head on whatever labels exist.
+    Both pretext tasks share one encoder and one corruption operator (replace
+    ``corruption_rate`` of a row's features with values drawn from the same column elsewhere
+    in the pool) so the comparison is between objectives. ``label_budgets`` sweeps the labels
+    the practitioner has (0 means "all of them"), each drawn ``repeats`` times because a
+    hundred-label draw is high variance. Two unlabelled pools are compared: the training days
+    and ``deployment_pool_day`` — inputs only, labels never touched — with the *later*
+    ``evaluation_day`` held out, because splitting the test days at random would put the same
+    attack burst on both sides. Controls (PCA, an untrained encoder, and boosted trees on raw
+    features) are not optional extras: they are what separates "the pretext task worked" from
+    "a lower-dimensional projection is easier for a linear model"."""
+
+    embedding_dim: int = 64
+    hidden_sizes: list[int] = Field(default_factory=lambda: [128])
+    epochs: int = 30
+    batch_size: int = 512  # also the contrastive difficulty: negatives come from the batch
+    learning_rate: float = 1e-3
+    corruption_rate: float = 0.3
+    reconstruction_weight: float = 2.0  # VIME's alpha on the reconstruction head
+    temperature: float = 0.5  # SCARF's InfoNCE temperature
+    max_pool_rows: int = 20000
+    label_budgets: list[int] = Field(default_factory=lambda: [100, 250, 1000, 4000, 0])
+    repeats: int = 3  # label draws per budget
+    eval_fpr: float = 0.01
+    certification_confidence: float = 0.95  # the confidence the FPR floor is quoted at
+    boosted_estimators: int = 200
+    deployment_pool_day: str = "Thursday"  # unlabelled adaptation pool (earlier test day)
+    evaluation_day: str = "Friday"  # held-out evaluation (strictly later)
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2484,6 +2518,7 @@ class Settings(BaseSettings):
     federated: FederatedConfig = Field(default_factory=FederatedConfig)
     secagg: SecAggConfig = Field(default_factory=SecAggConfig)
     dp_synth: DPSynthConfig = Field(default_factory=DPSynthConfig)
+    pretrain: PretrainConfig = Field(default_factory=PretrainConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

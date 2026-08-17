@@ -1371,6 +1371,18 @@ def dpsynth(
     out = run_dp_synth_report(settings)
     logger.info("DP synthetic-release report ready", extra={"path": str(out)})
 
+@app.command()
+def pretrain(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Learn a representation from unlabelled flows, then price it against its own controls."""
+    from netsentry.training.pretrain import run_pretrain_report
+
+    settings = _load(config, override)
+    out = run_pretrain_report(settings)
+    logger.info("Pretraining report ready", extra={"path": str(out)})
+
 
 @app.command()
 def atlas(
