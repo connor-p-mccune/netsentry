@@ -46,6 +46,7 @@ from netsentry.evaluation.openset import run_openset_report
 from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.rare_rates import run_rare_rates_report
 from netsentry.evaluation.report import run_evaluation
+from netsentry.evaluation.risk_control import run_risk_control_report
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.seed_variance import run_seed_variance_report
 from netsentry.evaluation.sequential_ab import run_sequential_ab_report
@@ -255,6 +256,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "(Bates et al. 2023)",
         "alert_fdr.md",
         run_alert_fdr_report,
+    ),
+    (
+        "Distribution-free risk control",
+        "bound the miss rate the contract names, not the false-positive rate the threshold "
+        "targets (Angelopoulos et al. 2021, 2022)",
+        "risk_control.md",
+        run_risk_control_report,
     ),
     (
         "Conformal prediction",

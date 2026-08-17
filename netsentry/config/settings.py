@@ -1766,6 +1766,33 @@ class PretrainConfig(BaseModel):
     evaluation_day: str = "Friday"  # held-out evaluation (strictly later)
 
 
+class RiskControlConfig(BaseModel):
+    """Distribution-free control of a named risk (Angelopoulos et al. 2021, 2022).
+
+    Every operating point here is chosen by fixing a false-positive budget, which implies a
+    miss rate nobody wrote down. This controls the miss rate directly, two ways.
+    **Conformal risk control** picks the extreme threshold whose inflated empirical risk
+    ``(n R + B) / (n + 1)`` clears ``alpha`` and guarantees ``E[R] <= alpha`` -- an
+    *expectation* bound, which ``n_trials`` simulated calibrate-and-deploy cycles show being
+    exceeded on individual deployments about half the time. **Learn then Test** treats each
+    grid threshold as a hypothesis with a Hoeffding-Bentkus p-value and returns the certified
+    set, buying ``P(R > alpha) <= delta``. ``multi_alphas`` x ``volume_budgets`` runs both
+    constraints at once (intersection-union p-values, Bonferroni across the grid, because the
+    two risks move in opposite directions); an empty result is a certificate of infeasibility,
+    not a failure. ``class_alpha`` re-runs the promise per attack family, where the affordable
+    ones live."""
+
+    alphas: list[float] = Field(default_factory=lambda: [0.05, 0.1, 0.25, 0.5])
+    delta: float = 0.1  # the high-probability level Learn-then-Test certifies at
+    grid_size: int = 200  # candidate thresholds, taken as quantiles of the score distribution
+    n_trials: int = 200  # simulated calibrate-and-deploy cycles behind the exceedance column
+    calibration_fraction: float = 0.5
+    multi_alphas: list[float] = Field(default_factory=lambda: [0.1, 0.25, 0.5])
+    volume_budgets: list[float] = Field(default_factory=lambda: [0.001, 0.01, 0.05])
+    class_alpha: float = 0.25  # per-class miss-rate target
+    class_min_support: int = 30  # attacks a class needs before its promise is testable
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2519,6 +2546,7 @@ class Settings(BaseSettings):
     secagg: SecAggConfig = Field(default_factory=SecAggConfig)
     dp_synth: DPSynthConfig = Field(default_factory=DPSynthConfig)
     pretrain: PretrainConfig = Field(default_factory=PretrainConfig)
+    risk_control: RiskControlConfig = Field(default_factory=RiskControlConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

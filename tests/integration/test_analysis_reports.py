@@ -1057,3 +1057,18 @@ def test_pretrain_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "label" in text
     assert "pca" in text and "random encoder" in text
+
+
+@pytest.mark.slow
+def test_risk_control_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.risk_control import run_risk_control_report
+
+    prepared.risk_control.alphas = [0.1, 0.5]
+    prepared.risk_control.n_trials = 10
+    prepared.risk_control.grid_size = 40
+    prepared.risk_control.multi_alphas = [0.25]
+    prepared.risk_control.volume_budgets = [0.01]
+    out = run_risk_control_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "miss rate" in text
+    assert "learn then test" in text and "conformal risk control" in text

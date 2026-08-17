@@ -1371,6 +1371,7 @@ def dpsynth(
     out = run_dp_synth_report(settings)
     logger.info("DP synthetic-release report ready", extra={"path": str(out)})
 
+
 @app.command()
 def pretrain(
     config: ConfigOpt = None,
@@ -1382,6 +1383,19 @@ def pretrain(
     settings = _load(config, override)
     out = run_pretrain_report(settings)
     logger.info("Pretraining report ready", extra={"path": str(out)})
+
+
+@app.command("riskcontrol")
+def risk_control_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Bound the miss rate itself: conformal risk control and Learn-then-Test, priced."""
+    from netsentry.evaluation.risk_control import run_risk_control_report
+
+    settings = _load(config, override)
+    out = run_risk_control_report(settings)
+    logger.info("Risk-control report ready", extra={"path": str(out)})
 
 
 @app.command()
