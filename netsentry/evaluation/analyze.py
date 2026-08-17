@@ -48,6 +48,7 @@ from netsentry.evaluation.rare_rates import run_rare_rates_report
 from netsentry.evaluation.report import run_evaluation
 from netsentry.evaluation.risk_control import run_risk_control_report
 from netsentry.evaluation.rules import run_rules_report
+from netsentry.evaluation.sampling import run_sampling_report
 from netsentry.evaluation.seed_variance import run_seed_variance_report
 from netsentry.evaluation.sequential_ab import run_sequential_ab_report
 from netsentry.evaluation.slices import run_slices_report
@@ -305,6 +306,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the deployed model with a broken exporter: missing / stuck / mis-assembled fields",
         "degradation.md",
         run_degradation_report,
+    ),
+    (
+        "Budgeted sampling",
+        "score a fraction of the stream and estimate the rest: Horvitz-Thompson against four "
+        "designs, including the one with no estimator at all",
+        "sampling.md",
+        run_sampling_report,
     ),
     (
         "Budgeted cascade",

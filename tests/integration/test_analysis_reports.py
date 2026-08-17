@@ -1072,3 +1072,15 @@ def test_risk_control_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "miss rate" in text
     assert "learn then test" in text and "conformal risk control" in text
+
+
+@pytest.mark.slow
+def test_sampling_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.sampling import run_sampling_report
+
+    prepared.sampling.budgets = [0.05, 0.25]
+    prepared.sampling.n_simulations = 20
+    out = run_sampling_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "horvitz-thompson" in text
+    assert "greedy top-k" in text and "coverage" in text

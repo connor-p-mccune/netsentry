@@ -1793,6 +1793,26 @@ class RiskControlConfig(BaseModel):
     class_min_support: int = 30  # attacks a class needs before its promise is testable
 
 
+class SamplingConfig(BaseModel):
+    """Scoring a fraction of the stream, and estimating what was skipped (Horvitz-Thompson 1952).
+
+    At line rate the model cannot see every flow. The cascade makes scoring cheaper at full
+    coverage and the sketches count without scoring; this asks what to do when the budget is
+    genuinely hard. ``budgets`` is the fraction of flows the model may score. Four designs
+    compete: uniform, stratified by service (proportional and Neyman allocation), priority
+    sampling with inclusion probability proportional to a cheap pre-filter's score, and greedy
+    top-k. ``floor`` is the minimum inclusion probability under the priority design -- the
+    exploration budget that keeps every flow reachable and therefore keeps the Horvitz-Thompson
+    estimator defined; greedy has no floor by construction, which is why no unbiased estimator
+    of the stream's attack total exists under it. ``n_simulations`` draws each design repeatedly
+    so the reported confidence intervals can have their *coverage* measured rather than
+    asserted."""
+
+    budgets: list[float] = Field(default_factory=lambda: [0.01, 0.05, 0.1, 0.25])
+    floor: float = 0.002  # minimum inclusion probability under the priority design
+    n_simulations: int = 200  # draws per design per budget (coverage is measured, not assumed)
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2547,6 +2567,7 @@ class Settings(BaseSettings):
     dp_synth: DPSynthConfig = Field(default_factory=DPSynthConfig)
     pretrain: PretrainConfig = Field(default_factory=PretrainConfig)
     risk_control: RiskControlConfig = Field(default_factory=RiskControlConfig)
+    sampling: SamplingConfig = Field(default_factory=SamplingConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

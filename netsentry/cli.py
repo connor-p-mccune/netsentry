@@ -1399,6 +1399,19 @@ def risk_control_cmd(
 
 
 @app.command()
+def sampling(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Score a fraction of the stream on purpose, and estimate the attacks nobody looked at."""
+    from netsentry.evaluation.sampling import run_sampling_report
+
+    settings = _load(config, override)
+    out = run_sampling_report(settings)
+    logger.info("Sampling report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
