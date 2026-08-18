@@ -1084,3 +1084,17 @@ def test_sampling_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "horvitz-thompson" in text
     assert "greedy top-k" in text and "coverage" in text
+
+
+@pytest.mark.slow
+def test_slice_discovery_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.slice_discovery import run_slice_discovery_report
+
+    prepared.slice_discovery.n_bins = 5
+    prepared.slice_discovery.beam = 8
+    prepared.slice_discovery.min_support = 40
+    prepared.slice_discovery.top_n = 5
+    out = run_slice_discovery_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "winner's curse" in text
+    assert "permuted" in text and "confirmation" in text

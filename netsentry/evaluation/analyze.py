@@ -51,6 +51,7 @@ from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.sampling import run_sampling_report
 from netsentry.evaluation.seed_variance import run_seed_variance_report
 from netsentry.evaluation.sequential_ab import run_sequential_ab_report
+from netsentry.evaluation.slice_discovery import run_slice_discovery_report
 from netsentry.evaluation.slices import run_slices_report
 from netsentry.evaluation.socsim import run_socsim_report
 from netsentry.evaluation.subgroups import run_subgroups_report
@@ -306,6 +307,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the deployed model with a broken exporter: missing / stuck / mis-assembled fields",
         "degradation.md",
         run_degradation_report,
+    ),
+    (
+        "Automatic slice discovery",
+        "search for the underperforming regions nobody predefined, with a permuted null and a "
+        "confirmation half (Chung et al. 2019)",
+        "slice_discovery.md",
+        run_slice_discovery_report,
     ),
     (
         "Budgeted sampling",

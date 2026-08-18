@@ -1813,6 +1813,28 @@ class SamplingConfig(BaseModel):
     n_simulations: int = 200  # draws per design per budget (coverage is measured, not assumed)
 
 
+class SliceDiscoveryConfig(BaseModel):
+    """Automatic discovery of underperforming feature regions (SliceFinder, Chung et al. 2019).
+
+    The per-class and per-service studies slice on a partition somebody chose in advance;
+    this searches for the regions nobody had a hypothesis about. Every feature is quantile-
+    binned into ``n_bins`` literals and a beam of width ``beam`` searches conjunctions to
+    ``depth``, keeping slices with at least ``min_support`` flows. Because a search over
+    hundreds of thousands of candidate regions finds terrible-looking slices in a model with
+    no weaknesses at all, three defences run with it: Benjamini-Hochberg control of the
+    false-discovery rate at ``q``, a *permuted-loss* null calibration reported before any real
+    finding, and a discovery/confirmation split so the winner's curse is measured rather than
+    inherited. ``top_n`` bounds how many surviving slices get re-measured and rendered."""
+
+    n_bins: int = 10  # quantile bins per feature (each bin becomes one literal)
+    depth: int = 2  # conjunction depth of the search
+    beam: int = 25  # slices carried from one depth to the next
+    min_support: int = 100  # flows a slice needs before it is scored
+    q: float = 0.05  # Benjamini-Hochberg false-discovery rate across candidates
+    alpha: float = 0.05  # the uncorrected level, reported alongside for contrast
+    top_n: int = 12  # significant slices carried into confirmation and the report
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2568,6 +2590,7 @@ class Settings(BaseSettings):
     pretrain: PretrainConfig = Field(default_factory=PretrainConfig)
     risk_control: RiskControlConfig = Field(default_factory=RiskControlConfig)
     sampling: SamplingConfig = Field(default_factory=SamplingConfig)
+    slice_discovery: SliceDiscoveryConfig = Field(default_factory=SliceDiscoveryConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

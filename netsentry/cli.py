@@ -1411,6 +1411,19 @@ def sampling(
     logger.info("Sampling report ready", extra={"path": str(out)})
 
 
+@app.command("slicefinder")
+def slice_discovery_cmd(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Search for the underperforming regions nobody had a hypothesis about, and confirm them."""
+    from netsentry.evaluation.slice_discovery import run_slice_discovery_report
+
+    settings = _load(config, override)
+    out = run_slice_discovery_report(settings)
+    logger.info("Slice-discovery report ready", extra={"path": str(out)})
+
+
 @app.command()
 def atlas(
     config: ConfigOpt = None,
