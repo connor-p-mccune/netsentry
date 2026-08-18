@@ -102,6 +102,7 @@ from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.robustness.strategic import run_strategic_report
 from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
+from netsentry.serving.batching import run_batching_report
 from netsentry.serving.cascade import run_cascade_report
 from netsentry.training.byzantine import run_byzantine_report
 from netsentry.training.continual import run_continual_report
@@ -321,6 +322,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "designs, including the one with no estimator at all",
         "sampling.md",
         run_sampling_report,
+    ),
+    (
+        "Server-side batching",
+        "amortise the fixed cost of a scoring call across the requests already queued, and "
+        "find the load below which waiting is a loss",
+        "batching.md",
+        run_batching_report,
     ),
     (
         "Budgeted cascade",

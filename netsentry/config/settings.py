@@ -1835,6 +1835,34 @@ class SliceDiscoveryConfig(BaseModel):
     top_n: int = 12  # significant slices carried into confirmation and the report
 
 
+class BatchingConfig(BaseModel):
+    """Server-side micro-batching of single-flow requests.
+
+    The API scores one flow per request and `/predict/batch` asks the caller to batch, which
+    a collector shipping records as flows close cannot do. Almost all the cost of scoring one
+    flow is *fixed* (frame construction, transformer dispatch, ensemble setup), so a server
+    that holds arriving requests for a few milliseconds amortises a constant rather than
+    trading accuracy for speed. ``batch_sizes`` and ``timing_repeats`` measure the real
+    service curve through the deployed scoring path (median of repeats, because a GC pause is
+    not a property of the batch size); the fit splits it into a fixed and a marginal term.
+    ``arrival_rates`` then drives a discrete-event simulation of three policies -- no
+    batching, batch-on-arrival, and adaptive waiting up to ``max_wait_ms`` for ``max_batch``
+    to fill -- reported at p50/p95/p99 because a mean latency on a queue describes nobody.
+    ``wait_sweep_ms`` sweeps the one knob at ``headline_rate``."""
+
+    batch_sizes: list[int] = Field(default_factory=lambda: [1, 2, 4, 8, 16, 32, 64, 128, 256, 512])
+    timing_repeats: int = 7  # median over repeats at each batch size
+    n_estimators: int = 300  # the served model's size (timing depends on it, so it is pinned)
+    max_batch: int = 64
+    max_wait_ms: float = 5.0
+    arrival_rates: list[float] = Field(
+        default_factory=lambda: [5.0, 20.0, 50.0, 200.0, 800.0, 2000.0, 5000.0]
+    )
+    wait_sweep_ms: list[float] = Field(default_factory=lambda: [0.5, 1.0, 2.0, 5.0, 20.0])
+    headline_rate: float = 2000.0  # the load the max-wait sweep is run at
+    n_requests: int = 20000  # simulated arrivals per policy per rate
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2591,6 +2619,7 @@ class Settings(BaseSettings):
     risk_control: RiskControlConfig = Field(default_factory=RiskControlConfig)
     sampling: SamplingConfig = Field(default_factory=SamplingConfig)
     slice_discovery: SliceDiscoveryConfig = Field(default_factory=SliceDiscoveryConfig)
+    batching: BatchingConfig = Field(default_factory=BatchingConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

@@ -1425,6 +1425,19 @@ def slice_discovery_cmd(
 
 
 @app.command()
+def batching(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Measure what server-side micro-batching buys, and the load below which it costs."""
+    from netsentry.serving.batching import run_batching_report
+
+    settings = _load(config, override)
+    out = run_batching_report(settings)
+    logger.info("Batching report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

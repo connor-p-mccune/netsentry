@@ -1098,3 +1098,20 @@ def test_slice_discovery_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "winner's curse" in text
     assert "permuted" in text and "confirmation" in text
+
+
+@pytest.mark.slow
+def test_batching_report_is_written(prepared: Settings) -> None:
+    from netsentry.serving.batching import run_batching_report
+
+    prepared.batching.batch_sizes = [1, 8, 64]
+    prepared.batching.timing_repeats = 2
+    prepared.batching.n_estimators = 40
+    prepared.batching.arrival_rates = [50.0, 2000.0]
+    prepared.batching.wait_sweep_ms = [1.0, 5.0]
+    prepared.batching.headline_rate = 2000.0
+    prepared.batching.n_requests = 2000
+    out = run_batching_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "fixed cost" in text
+    assert "p99" in text and "equilibrium" not in text.split("scope")[0][:200]
