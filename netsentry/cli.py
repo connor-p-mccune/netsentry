@@ -1490,6 +1490,19 @@ def quantiles(
 
 
 @app.command()
+def compliance(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Map the repo onto NIST AI RMF and the EU AI Act, verifying every claim against disk."""
+    from netsentry.governance.compliance import run_compliance_report
+
+    settings = _load(config, override)
+    out = run_compliance_report(settings)
+    logger.info("Compliance report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
