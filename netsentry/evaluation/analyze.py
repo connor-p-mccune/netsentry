@@ -790,8 +790,9 @@ def write_index(reports_dir: Path, entries: list[AnalysisEntry]) -> Path:
     lines = [
         "# NetSentry — Analysis Index",
         "",
-        f"_Regenerated {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')} via "
-        "`netsentry analyze`. Synthetic stand-in unless run on the real dataset._",
+        f"_Refreshed {datetime.now(UTC).strftime('%Y-%m-%d %H:%M UTC')}. `netsentry analyze` "
+        "regenerates every report listed here and rewrites this index; a row without a link "
+        "did not produce its report. Synthetic stand-in unless run on the real dataset._",
         "",
         "| report | what it covers | status |",
         "|---|---|---|",

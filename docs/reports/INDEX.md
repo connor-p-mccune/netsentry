@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Regenerated 2026-08-15 01:14 UTC via `netsentry analyze`. Synthetic stand-in unless run on the real dataset._
+_Refreshed 2026-08-19 02:24 UTC. `netsentry analyze` regenerates every report listed here and rewrites this index; a row without a link did not produce its report. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -24,6 +24,7 @@ _Regenerated 2026-08-15 01:14 UTC via `netsentry analyze`. Synthetic stand-in un
 | Off-policy evaluation | value a triage policy you never deployed: IPS/SNIPS/doubly-robust (Dudik, Langford & Li 2011) | [open](ope.md) |
 | Extreme-value thresholds | peaks-over-threshold GPD fit: operating points past the edge of the data (Siffer et al. 2017) | [open](evt.md) |
 | Conformal alert FDR | a false-discovery-rate guarantee on the alert batch: conformal p-values + BH (Bates et al. 2023) | [open](alert_fdr.md) |
+| Distribution-free risk control | bound the miss rate the contract names, not the false-positive rate the threshold targets (Angelopoulos et al. 2021, 2022) | [open](risk_control.md) |
 | Conformal prediction | coverage guarantee + selective alerting | [open](conformal.md) |
 | Adaptive conformal | coverage restored online under drift (ACI) | [open](adaptive_conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
@@ -31,9 +32,16 @@ _Regenerated 2026-08-15 01:14 UTC via `netsentry analyze`. Synthetic stand-in un
 | Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |
 | Certified robustness | randomized smoothing: a provable L2 radius per flow (Cohen et al. 2019) | [open](certify.md) |
 | Sensor failure | the deployed model with a broken exporter: missing / stuck / mis-assembled fields | [open](degradation.md) |
+| Automatic slice discovery | search for the underperforming regions nobody predefined, with a permuted null and a confirmation half (Chung et al. 2019) | [open](slice_discovery.md) |
+| Budgeted sampling | score a fraction of the stream and estimate the rest: Horvitz-Thompson against four designs, including the one with no estimator at all | [open](sampling.md) |
+| Multi-objective selection | a Pareto front over detection, cost and evasion-resistance, and the front members no weighted sum can reach (Deb et al. 2002) | [open](pareto.md) |
+| Server-side batching | amortise the fixed cost of a scoring call across the requests already queued, and find the load below which waiting is a loss | [open](batching.md) |
 | Budgeted cascade | two-stage inference: the compute handed back and the detection it costs | [open](cascade.md) |
 | Sequential host decisions | how many flows before a host can be called compromised (Wald's SPRT, 1945) | [open](sequential.md) |
 | Federated training | detection when traffic cannot be pooled: FedAvg vs pooled vs alone (McMahan 2017) | [open](federated.md) |
+| Self-supervised pretraining | learn the representation from unlabelled flows, with PCA and an untrained encoder as the controls (VIME 2020, SCARF 2022) | [open](pretrain.md) |
+| DP synthetic release | share the traffic instead of the model: train-synthetic/test-real under a budget (PrivBayes family, Zhang et al. 2017) | [open](dp_synth.md) |
+| Secure aggregation | federate without the coordinator seeing any site's update -- and what hiding it costs in robustness (Bonawitz et al. 2017) | [open](secagg.md) |
 | Poisoning defense | audit-and-drop sanitization vs label flips, re-measured | [open](poisoning_defense.md) |
 | Detection SLOs | error budgets and multiwindow burn-rate alerting, with the rules generated | [open](slo.md) |
 | Point-in-time feature store | host context joined correctly vs over the whole capture: the temporal leak, priced | [open](feature_store.md) |
