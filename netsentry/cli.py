@@ -1490,6 +1490,19 @@ def quantiles(
 
 
 @app.command()
+def density(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Ask whether the anomaly score is a density estimate or a complexity measure."""
+    from netsentry.models.density import run_density_report
+
+    settings = _load(config, override)
+    out = run_density_report(settings)
+    logger.info("Density report ready", extra={"path": str(out)})
+
+
+@app.command()
 def mlint(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

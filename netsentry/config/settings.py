@@ -1977,6 +1977,37 @@ class QuantileConfig(BaseModel):
     # half is test-day benign traffic, so the regime change is the one the model already has.
 
 
+class DensityConfig(BaseModel):
+    """Is the anomaly score a density estimate or a complexity measure?
+
+    The autoencoder has shipped since phase 5 on the premise that reconstruction error ranks
+    novelty, which is false in general: an autoencoder reconstructs *simple* inputs well
+    whether or not they are anomalous. Six benign-only detectors go through the deployed
+    leave-one-attack-out protocol -- the two incumbents, two genuine densities (Mahalanobis
+    and a diagonal mixture), the autoencoder's linear shadow (PCA reconstruction error), and a
+    control that never sees the training data (the squared norm of the standardised vector).
+    Every score is then correlated against that norm and rank-residualised against it, which
+    is what separates *unlikely under benign traffic* from *large*."""
+
+    methods: list[str] = Field(
+        default_factory=lambda: [
+            "isolation forest (deployed)",
+            "autoencoder (deployed)",
+            "PCA reconstruction (linear autoencoder)",
+            "Mahalanobis distance (Gaussian density)",
+            "Gaussian mixture (diagonal)",
+            "kernel density estimate",
+            "vector norm (learns nothing)",
+        ]
+    )
+    gmm_components: int = 8
+    pca_components: int = 16
+    kde_samples: int = 2000  # KDE scoring is O(train x test); the subsample bounds the study
+    ridge: float = 1e-3  # flow features are rank-deficient, so the covariance needs it
+    max_train_rows: int = 20000
+    max_attacks: int = 9
+
+
 class MlintConfig(BaseModel):
     """Static analysis of this project's own ML invariants.
 
@@ -2773,6 +2804,7 @@ class Settings(BaseSettings):
     acquisition: AcquisitionConfig = Field(default_factory=AcquisitionConfig)
     quantiles: QuantileConfig = Field(default_factory=QuantileConfig)
     mlint: MlintConfig = Field(default_factory=MlintConfig)
+    density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

@@ -1185,3 +1185,21 @@ def test_mlint_report_is_written(prepared: Settings, repo_root: Path) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "ns001" in text
     assert "injected violations caught" in text and "textbook pipeline" in text
+
+
+@pytest.mark.slow
+def test_density_report_is_written(prepared: Settings, clean_synth: pd.DataFrame) -> None:
+    from netsentry.models.density import run_density_report
+
+    prepared.density.methods = [
+        "isolation forest (deployed)",
+        "Mahalanobis distance (Gaussian density)",
+        "vector norm (learns nothing)",
+    ]
+    prepared.density.max_attacks = 2
+    prepared.density.max_train_rows = 1500
+    prepared.density.kde_samples = 200
+    out = run_density_report(prepared, clean_synth)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "complexity" in text
+    assert "learns nothing" in text and "held-out attack" in text

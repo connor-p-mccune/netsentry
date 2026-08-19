@@ -82,6 +82,7 @@ from netsentry.intel.sequential import run_sequential_report
 from netsentry.intel.sigma import run_sigma_export
 from netsentry.intel.sketches import run_sketches_report
 from netsentry.log import get_logger
+from netsentry.models.density import run_density_report
 from netsentry.models.monotonic import run_monotonic_report
 from netsentry.monitoring.control import run_control_report
 from netsentry.monitoring.covariate_shift import run_covariate_shift_report
@@ -796,6 +797,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "against the repository",
         "compliance.md",
         run_compliance_report,
+    ),
+    (
+        "Anomaly-score semantics",
+        "is the anomaly score a density estimate or a complexity measure: six benign-only "
+        "detectors, a control that learns nothing, and the size component regressed out",
+        "density.md",
+        run_density_report,
     ),
     (
         "ML-invariant static analysis",
