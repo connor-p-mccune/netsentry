@@ -105,5 +105,61 @@ deep_tabular:
   token_dim: 8
   n_heads: 2
   n_blocks: 1
+secagg:
+  shards_per_day: 2               # 6 sites: enough for a threshold and a dropout
+  rounds: 2
+  scale_bits_sweep: [8, 20, 48]   # both ends of the encoding window, and the cliff
+  dropout_counts: [0, 1, 5]
+  group_sizes: [1, 2]
+  range_bounds: [0.05, 1.0]
+  cost_sites: [4, 6]
+  privacy_rounds: 1
+  reference_benign_rows: 200
+dp_synth:
+  n_bins: 8
+  epsilons: [1.0]
+  structures: ["independent"]
+  include_oracle_structure: false
+  repeats: 1
+  max_released_rows: 1500
+  n_estimators: 40
+  audited_structure: independent
+  audited_epsilons: [1.0]
+  audit_rows: 100
+  audit_release_rows: 300
+pretrain:
+  epochs: 2                       # CI installs no torch: PCA + the controls still run
+  embedding_dim: 8
+  hidden_sizes: [16]
+  max_pool_rows: 600
+  label_budgets: [100, 0]
+  repeats: 1
+  boosted_estimators: 30
+risk_control:
+  alphas: [0.1, 0.5]
+  n_trials: 10
+  grid_size: 40
+  multi_alphas: [0.25]
+  volume_budgets: [0.01]
+sampling:
+  budgets: [0.05, 0.25]
+  n_simulations: 20
+slice_discovery:
+  n_bins: 5
+  beam: 8
+  min_support: 40
+  top_n: 5
+batching:
+  batch_sizes: [1, 8, 64]
+  timing_repeats: 2
+  n_estimators: 40
+  arrival_rates: [50.0, 2000.0]
+  wait_sweep_ms: [1.0, 5.0]
+  n_requests: 2000
+pareto:
+  population_size: 4              # 4 x 2 evolves a front without a fifteen-minute CI job
+  generations: 2
+  n_weights: 2000
+  max_train_rows: 800
 mlflow:
   enabled: false         # use the local file logger in CI

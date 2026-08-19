@@ -125,6 +125,17 @@ jobs:
           python -m netsentry.cli provenance -o configs/ci.yaml
           python -m netsentry.cli verify -o configs/ci.yaml
           python -m netsentry.cli canary -o configs/ci.yaml --bundle models/champion.joblib
+      - name: Distribution, representation & scale studies
+        run: |
+          python -m netsentry.cli secagg -o configs/ci.yaml
+          python -m netsentry.cli dpsynth -o configs/ci.yaml
+          python -m netsentry.cli riskcontrol -o configs/ci.yaml
+          python -m netsentry.cli sampling -o configs/ci.yaml
+      - name: Discovery, serving & selection studies
+        run: |
+          python -m netsentry.cli slicefinder -o configs/ci.yaml
+          python -m netsentry.cli batching -o configs/ci.yaml
+          python -m netsentry.cli pareto -o configs/ci.yaml
       - name: Slow integration tests
         run: python -m pytest -m slow
 
