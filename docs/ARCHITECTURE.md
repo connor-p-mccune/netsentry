@@ -45,7 +45,10 @@ API, and reproducible MLOps.
 
 **Data (`netsentry/data`)** — ingestion, a single-source-of-truth schema (columns,
 leaky columns, labels), cleaning (whitespace/Inf/dupes/sentinels/label
-consolidation → binary + multiclass targets), and the three split strategies.
+consolidation → binary + multiclass targets), and the three split strategies. Also
+the release path the other direction: a differentially-private synthetic generator
+that turns a capture into a shareable dataset with an (epsilon) attached, binned on
+a domain declared in the schema rather than measured from the data.
 
 **Capture (`netsentry/capture`)** — packet-to-verdict ingestion: a pure-stdlib
 classic-libpcap reader (both byte orders, µs/ns timestamps, Ethernet/VLAN/raw-IP)
@@ -67,7 +70,12 @@ risk score.
 
 **Training (`netsentry/training`)** — entrypoints that wire data → features →
 model, handle imbalance, seed determinism, and log everything to MLflow; save the
-**pipeline+model bundle** as the deployable artifact.
+**pipeline+model bundle** as the deployable artifact. Training also spans
+organisations and label budgets: federated averaging, Byzantine-robust aggregation
+and a from-scratch secure-aggregation protocol (pairwise Diffie-Hellman masks,
+Shamir dropout recovery) for sites that cannot pool traffic; and self-supervised
+pretraining on unlabelled flows for the case where labels, not data, are the
+scarce resource.
 
 **Evaluation (`netsentry/evaluation`)** — operational metrics (PR-AUC, per-class
 P/R/F1, TPR@fixed-FPR, alerts/day) with bootstrap CIs, plots, and a report
@@ -76,6 +84,11 @@ one-command analysis suite (`netsentry analyze`): cost-optimal thresholds, confo
 selective alerting, per-class and per-service detection slices, the novelty-distance
 gap decomposition, rules-vs-model at matched FPR, feature-group ablation, active
 learning, learning curves, cross-dataset transfer, and an auto-generated model card.
+It also holds the studies that judge the *protocol* rather than the model:
+distribution-free control of a named risk, budgeted sampling with unbiased estimation
+of what went unscored, automatic discovery of underperforming feature regions with a
+permuted null, and multi-objective selection returning a Pareto front instead of a
+winner.
 
 **Robustness (`netsentry/robustness`)** — the adversarial studies: evasion (mimicry
 + adaptive query search) at inference time and label-flip / benign-pool-contamination
@@ -104,7 +117,10 @@ the minimal feature change that would clear a flagged flow.
 
 **Serving (`netsentry/serving`)** — FastAPI app loading the bundle once; predict /
 batch / health / metrics; pydantic contract; Prometheus latency; selectable
-threshold profile; benchmarked.
+threshold profile; benchmarked. The scoring path's cost is dominated by a per-call
+constant rather than per-flow work, which is what makes server-side micro-batching a
+capacity decision rather than a micro-optimisation; the batching study measures both
+terms and the load below which waiting is a loss.
 
 ## Key design decisions (and why)
 
