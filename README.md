@@ -19,7 +19,7 @@ with explainable predictions.**
 
 **Released `v0.17.1`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and sixteen post-release waves build on top — the
+tested, and committed, and seventeen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -81,8 +81,23 @@ deployed ensemble, gated on reproducing LightGBM's own scores; group DRO whose a
 declined to reweight and whose emphasis made the worst group monotonically worse;
 Byzantine-robust aggregation where one lying site in twelve costs a third of FedAvg; and
 Kaplan-Meier time-to-detection showing the naive latency understates by 8x because it deletes
-the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses), and the **operations, oracles & honest-uncertainty wave** (open-set recognition, which reframes the temporal split as what its class table says it is — train and test share *zero* attack classes, so every attack the model meets is an unknown one — and finds the deployed novelty rule's lead carried entirely by `DDoS` while it is blind to `PortScan` at 0.2%, below the false-alarm rate itself; metamorphic testing, a correctness oracle that needs **no labels** and can therefore run against production traffic, whose structural relations hold bit-exactly and whose semantic ones show the model is not invariant to its own exporter's clock — one alert in 154 is decided by the capture's timing resolution; a three-oracle mutation study where none of labelled accuracy, label-free invariants, or the canary dominates the others; SLO error budgets with multiwindow burn-rate alerting whose first finding is that the objective it was handed is already violated by the *healthy* system; a hash-chained alert ledger with every tamper attack executed against it, the tail-truncation gap demonstrated and then closed with a published anchor, and O(log n) Merkle inclusion proofs; and Beta-Binomial partial pooling so a two-flow class stops reading like a seven-hundred-flow one, with the credible intervals' coverage validated by simulation before anyone is asked to read them; and the evasion arms race solved as a game, which returns a kept negative — against a detector this weak, disguising is irrational at every operating point, because an attacker who does nothing already gets 91% of their traffic through with the attack intact), and the **adaptation, control & architecture wave** (what happens *after* training, where three of five studies produced a headline that looked like a win next to a deployment consequence that was not: a from-scratch Hoeffding tree + ADWIN that beats the frozen model prequentially on a tenth of a megabyte of state and still cannot be deployed, because thirty leaves cannot resolve a one-in-a-thousand false-alarm budget; continual learning showing warm-start fine-tuning forgets **61%** of the first attack family's detection while saving only 19% of the training time and quadrupling inference cost; a closed-loop threshold controller that delivers the analyst budget the open-loop threshold misses by 100% and then hands an attacker **4.4 points of invisibility bought by generating alerts**, with the mitigation measured too; kernel two-sample drift testing that catches the joint change the deployed per-feature monitors are blind to *by construction* — their KS statistics under the fault come back bit-identical to the unfaulted run — and reports that the same fault is a no-op on this stand-in because its features are nearly independent; and an FT-Transformer put against the boosted incumbent under one shared protocol, because the reason this project uses trees was a citation rather than a measurement).
-`make check` is green (lint + type-check + **1,264 passing tests**, property-based invariants and a
+the attacks nobody caught), and the **decision-time, structure & proof wave** (feature-availability tiers showing the deployed detector is structurally a *post-mortem* one and that an in-flight model beats it outright on a dominated frontier; hierarchical scoring over the ATT&CK tree, which comes out *harsher* than flat accuracy because path length makes a miss cost twice a false alarm with nobody choosing a weight; learning to defer, which loses against its own control and says why in a ratio; ICP and IRM over capture days, where 42% of features point in opposite directions and the premise fails; monotone constraints making inflation evasion **impossible by construction** — 100% provably robust, proved and attacked and probed, at +3.6% detection; branch-and-bound optimal sparse trees with an exhaustion certificate showing greedy CART up to 69% off; and Count-Min / HyperLogLog / Misra-Gries / reservoir sketches whose every bound is graded against exact truth, including where the sketch loses), and the **operations, oracles & honest-uncertainty wave** (open-set recognition, which reframes the temporal split as what its class table says it is — train and test share *zero* attack classes, so every attack the model meets is an unknown one — and finds the deployed novelty rule's lead carried entirely by `DDoS` while it is blind to `PortScan` at 0.2%, below the false-alarm rate itself; metamorphic testing, a correctness oracle that needs **no labels** and can therefore run against production traffic, whose structural relations hold bit-exactly and whose semantic ones show the model is not invariant to its own exporter's clock — one alert in 154 is decided by the capture's timing resolution; a three-oracle mutation study where none of labelled accuracy, label-free invariants, or the canary dominates the others; SLO error budgets with multiwindow burn-rate alerting whose first finding is that the objective it was handed is already violated by the *healthy* system; a hash-chained alert ledger with every tamper attack executed against it, the tail-truncation gap demonstrated and then closed with a published anchor, and O(log n) Merkle inclusion proofs; and Beta-Binomial partial pooling so a two-flow class stops reading like a seven-hundred-flow one, with the credible intervals' coverage validated by simulation before anyone is asked to read them; and the evasion arms race solved as a game, which returns a kept negative — against a detector this weak, disguising is irrational at every operating point, because an attacker who does nothing already gets 91% of their traffic through with the attack intact), and the **adaptation, control & architecture wave** (what happens *after* training, where three of five studies produced a headline that looked like a win next to a deployment consequence that was not: a from-scratch Hoeffding tree + ADWIN that beats the frozen model prequentially on a tenth of a megabyte of state and still cannot be deployed, because thirty leaves cannot resolve a one-in-a-thousand false-alarm budget; continual learning showing warm-start fine-tuning forgets **61%** of the first attack family's detection while saving only 19% of the training time and quadrupling inference cost; a closed-loop threshold controller that delivers the analyst budget the open-loop threshold misses by 100% and then hands an attacker **4.4 points of invisibility bought by generating alerts**, with the mitigation measured too; kernel two-sample drift testing that catches the joint change the deployed per-feature monitors are blind to *by construction* — their KS statistics under the fault come back bit-identical to the unfaulted run — and reports that the same fault is a no-op on this stand-in because its features are nearly independent; and an FT-Transformer put against the boosted incumbent under one shared protocol, because the reason this project uses trees was a citation rather than a measurement)), and the **distribution, representation & scale wave** (eight studies about the parts of a
+detection system that are not the model: secure aggregation implemented from scratch, which
+first shows a coordinator naming each site's attack family from its update 81% of the time and
+then removes the channel — at the cost, measured rather than mentioned, of every Byzantine
+defence the project already owns; a differentially-private synthetic release whose privacy cost
+is **invisible to PR-AUC and plainly visible at the operating point**; self-supervised
+pretraining that beats its own controls by 0.043 at a hundred labels and 0.001 at twenty-eight
+thousand — label efficiency, not a better ceiling; distribution-free control of the **miss
+rate** the contract actually names, where an expectation bound is exceeded by 39-46% of
+individual deployments and the two-clause contract comes back provably infeasible; budgeted
+sampling where the design that catches the most attacks is the one under which **no unbiased
+estimator of what you missed exists**; automatic slice discovery with a permuted null that
+returns zero findings and a winner's curse that costs the marginal slices half their effect;
+server-side batching that moves the capacity ceiling 629x and needed its queueing model
+replaced, because a batching server is self-regulating rather than M/D/1; and a Pareto front
+whose concave members **no weighted sum can ever select**).
+`make check` is green (lint + type-check + **1,383 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -224,6 +239,14 @@ what actually ships.
 | Tamper-evident ledger | hash-chained alert history: six attacks executed, the truncation gap closed with an anchor, O(log n) Merkle inclusion proofs | ✅ Done |
 | Rare-class estimation | Beta-Binomial partial pooling with empirical-Bayes hyperparameters; coverage validated by simulation, 1.4x narrower than Wilson | ✅ Done |
 | Strategic equilibrium | the arms race as a game: a kept negative result — evasion is irrational against a detector this weak, with the flip point quantified | ✅ Done |
+| Secure aggregation | federate without the coordinator seeing any site's update: DH masks, Shamir dropout recovery, and the measured tension with Byzantine defence (Bonawitz 2017) | ✅ Done |
+| DP synthetic release | share the traffic instead of the model: PrivBayes-family release, train-synthetic/test-real, and the operating point as the only metric that sees epsilon | ✅ Done |
+| Self-supervised pretraining | VIME + SCARF on unlabelled flows against PCA and an untrained encoder: label efficiency, not a better ceiling | ✅ Done |
+| Distribution-free risk control | bound the **miss rate** the contract names: conformal risk control vs Learn-then-Test, and an infeasibility certificate for two clauses at once (Angelopoulos 2021, 2022) | ✅ Done |
+| Budgeted sampling | score 1% of the stream and still estimate the rest: Horvitz-Thompson with measured interval coverage, and the design with no estimator at all | ✅ Done |
+| Automatic slice discovery | find the underperforming regions nobody predefined, with a permuted null and the winner's curse measured at the margin (Chung 2019) | ✅ Done |
+| Server-side batching | 10.03 ms fixed vs 0.0149 ms marginal: the capacity ceiling moves 629x, and the self-regulating queue model that predicts it to 0.9% | ✅ Done |
+| Multi-objective selection | a Pareto front over detection, cost and evasion-resistance (NSGA-II from scratch) and the members **no** weighted sum can reach | ✅ Done |
 | Point-in-time feature store | as-of joins for host context, and the temporal leak the one-line `groupby` creates: 1.000 offline, 0.583 in production | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
@@ -2018,6 +2041,246 @@ surrogate ranks against the top negatives *in each minibatch*, and at that budge
 batch supplies **four** of them. Wanting ten would need a batch of ~12,500 — most of the training
 set, at which point it stops being a minibatch objective. The constraint is the budget's, not the
 model's, and the report states it next to the result rather than in a footnote.
+
+## Secure aggregation (federating without a trusted coordinator)
+
+The [federated study](docs/reports/federated.md) rests on a claim that is true and is not
+privacy: raw flows never leave the site, only weights do. But an update is a function of the
+data, and the coordinator collects one per site per round.
+
+```bash
+python -m netsentry.cli secagg   # -> docs/reports/secagg.md
+```
+
+| what the coordinator holds | the attack recovers | chance |
+|---|---|---|
+| plaintext update (what FedAvg sends today) | **81%** | 33% |
+| masked vector (what this protocol sends) | 25% | 33% |
+| the aggregate (released by design) | resolves to a family a site really holds | — |
+
+Cosine similarity against a per-family reference update names **which attack family a site is
+holding, 81% of the time** — no model inversion, no auxiliary data. Secure aggregation
+(Bonawitz et al. 2017) removes the channel, implemented here from scratch on the standard
+library: Diffie-Hellman over RFC 3526 group 14, an HMAC-SHA256 PRG expanded into field elements
+by *rejection* sampling (reducing 64 bits mod `2^61-1` biases eight residues; the loop costs 8
+draws in `2^64`), Shamir sharing over `2^521-1` for dropout recovery, and fixed-point encoding
+into `Z_p`. The group parameters are verified by Miller-Rabin **in the test suite** rather than
+trusted — a mistyped modulus would still work and would silently void the argument.
+
+The recovered sum is bit-identical to the plaintext sum every round. Two findings past that:
+
+- **The self-mask is not redundancy.** A coordinator that declares a *live* site dropped
+  collects the shares that rebuild its pairwise masks and recovers that site's update exactly.
+  The attack is executed here in both configurations; the self-mask is what turns its output
+  into uniform noise.
+- **The cost nobody advertises is robustness.** Every Byzantine defence in the
+  [byzantine study](docs/reports/byzantine.md) is a function of the individual updates this
+  protocol exists to hide, so the mean is the only rule that exists and one liar takes PR-AUC
+  from 0.598 to 0.361 with the median unavailable. Both escapes are priced: an ideal range
+  proof helps only if its bound is calibrated against measured honest updates (a
+  "conservative" per-coordinate limit of 1.0 — 2.8x the honest maximum — admits an in-bound
+  attack *worse* than the unbounded sign flip), and grouped aggregation buys robustness back
+  on an explicit anonymity-set frontier.
+
+## Releasing the data instead of the model
+
+Every model here trains on a 2017 capture, and the reason is not that intrusion detection
+stopped being interesting in 2017 — flow records carry who talked to whom, so they do not
+leave the organisation that collected them.
+
+```bash
+python -m netsentry.cli dpsynth   # -> docs/reports/dp_synth.md
+```
+
+A differentially-private synthetic release (PrivBayes family) on a **public** signed-log bin
+grid — no data consulted, because taking min/max from the capture is a query about one record
+— with the accounting spelled out: add/remove neighbouring (which is what makes the per-class
+split *parallel* composition), sequential composition across the 76 per-feature marginals, one
+Laplace query for the class prior.
+
+| release | PR-AUC | TPR @ 0.1% budget, threshold chosen on the release |
+|---|---|---|
+| real training data (the ceiling) | 0.542 | 11.8% |
+| epsilon = 0.5 | 0.506 | 0.1% |
+| epsilon = 1 | 0.553 | 0.3% |
+| epsilon = 4 | 0.523 | 4.1% |
+| epsilon = 16 | 0.533 | 8.0% |
+| no privacy (control) | 0.527 | 13.0% |
+
+**The ranking metric cannot see the privacy cost and the operating point can.** Every private
+arm lands within 0.129 PR-AUC of every other, against a 0.121 run-to-run range on repeated
+draws of the *same* configuration — noise. Detection at the budget climbs monotonically with
+epsilon instead, because noise destroys the *tails* of each marginal long before it disturbs
+the ordering, and a threshold at one alert in a thousand lives entirely in the tail. Structure
+does not pay for the cells it costs (a conditional table is 25x more cells for the same noise),
+and the non-private *oracle* Chow-Liu arm proves a private structure search could not rescue it.
+
+## Self-supervised pretraining, with the controls attached
+
+Four studies here attack the label shortage and all four take the representation as given.
+
+```bash
+python -m netsentry.cli pretrain   # -> docs/reports/pretrain.md
+```
+
+| representation | 100 labels | 1,000 labels | 28,034 labels |
+|---|---|---|---|
+| raw features (linear probe) | 0.541 | 0.651 | 0.694 |
+| raw features + gradient boosting (the incumbent) | 0.386 | 0.599 | 0.658 |
+| PCA (training days) | 0.550 | 0.682 | 0.713 |
+| random encoder (never trained) | 0.487 | 0.585 | 0.633 |
+| **masked modelling (VIME, training days)** | **0.592** | 0.668 | **0.715** |
+| contrastive (SCARF, training days) | 0.561 | 0.628 | 0.677 |
+| masked modelling (deployment traffic) | 0.531 | 0.604 | 0.673 |
+
+The controls are the study. A **randomly initialised encoder** lands *below* the raw features,
+so the gains are not an artifact of projecting 76 columns into 64. But **PCA** — linear, free,
+ninety years old — is +0.043 behind at 100 labels and +0.001 behind at 28,034. Pretraining
+bought **label efficiency (1.9x), not a better ceiling**. And the deployed model family is the
+*worst* arm at small budgets: gradient boosting detects 0.0% at the 1% budget where a linear
+probe on the same features detects 8.6%.
+
+Pretraining on **deployment-era** traffic should have won here and lost instead, because the
+premise fails rather than the method: Thursday carries Web Attack and Infiltration, Friday
+carries Bot, DDoS and PortScan, and they share no attack class. Unlabelled *recency* is not
+unlabelled *representativeness*.
+
+## Controlling the risk the contract names
+
+Every operating point in this project is chosen by fixing a **false-positive** budget, which
+silently implies a miss rate nobody wrote down. Conformal prediction guarantees coverage,
+alert-FDR the false-discovery rate, Neyman-Pearson the false-positive rate — none of them
+bounds the miss rate.
+
+```bash
+python -m netsentry.cli riskcontrol   # -> docs/reports/risk_control.md
+```
+
+| target miss rate | selector | realised | exceeded target | alerts/day | analysts |
+|---|---|---|---|---|---|
+| 5% | conformal risk control | 4.8% | **39%** | 686,982 | — |
+| 5% | Learn then Test | 4.2% | **4%** | 695,276 | 16,554 |
+| 25% | conformal risk control | 24.9% | **46%** | 445,526 | — |
+| 25% | Learn then Test | 23.5% | **10%** | 466,643 | 11,111 |
+
+**An expectation bound is not a promise about your deployment.** Conformal risk control keeps
+its theorem — the mean realised miss rate lands under target — while individual deployments
+exceed it on 39–46% of draws. Learn-then-Test buys `P(miss > alpha) <= delta` and the
+exceedance column confirms it. Both p-values come from a Hoeffding-Bentkus bound whose binomial
+tail is summed in log space from `lgamma`, and whose validity under the null is checked by
+2,000-draw simulation in the test suite.
+
+Two further results: running miss rate **and** alert volume together (intersection-union
+p-values, Bonferroni across the grid) returns an **empty set for all nine pairs** — a
+certificate of infeasibility delivered before the contract is signed; and per class, every
+family can be certified at prices differing 11x (DDoS at 8.5% FPR against Infiltration's
+93.8%), which is the argument for writing the SLA per attack family.
+
+## Scoring a fraction of the stream, and estimating the rest
+
+The [cascade](docs/reports/cascade.md) makes scoring cheaper at full coverage and the
+[sketches](docs/reports/sketches.md) count without scoring; neither answers what to do when one
+flow in a hundred can be scored — or what can still be said about the ninety-nine.
+
+```bash
+python -m netsentry.cli sampling   # -> docs/reports/sampling.md
+```
+
+| design | detected @ 1% budget | HT estimate of the total | 95% CI width | naive estimate error |
+|---|---|---|---|---|
+| uniform | 1.0% | 6,226 (-0.2%) | 3,071 | -0.2% |
+| stratified (Neyman) | 1.4% | 6,289 (+0.8%) | **2,725** | +37.2% |
+| priority (PPS, floored) | 2.0% | 6,149 (-1.4%) | 3,805 | +102.7% |
+| greedy top-k | **3.9%** | **none exists** | — | +293.7% |
+
+Greedy wins the detection column at small budgets and admits **no unbiased estimator of the
+total at any budget** — every flow below its cut has inclusion probability exactly zero, so
+nothing observed can speak for it. And its lead is not permanent: by a 25% budget the
+randomised design overtakes it (59.6% against 50.6%), because greedy spends everything inside
+the region its pre-filter is already confident about. The best detector is also not the best
+estimator: Neyman allocation gives the narrowest interval while priority sampling gives the
+widest, because attacks the pre-filter scores low arrive carrying enormous `1/pi` weights.
+
+## Letting the failures find themselves
+
+The [per-class](docs/reports/slices.md) and [per-service](docs/reports/subgroups.md) studies
+slice on partitions somebody chose in advance, so both can only find weaknesses somebody had a
+hypothesis about.
+
+```bash
+python -m netsentry.cli slicefinder   # -> docs/reports/slice_discovery.md
+```
+
+| search | candidates tested | significant at p <= 0.05 | after Benjamini-Hochberg |
+|---|---|---|---|
+| **permuted losses (nothing is real)** | 19,418 | 2,249 | **0** |
+| the deployed model | 19,338 | 6,443 | **4,335** |
+
+A SliceFinder-style beam over 760 binned literals, with the null calibration reported *before*
+any finding. Then the winner's curse, measured where theory says it bites: the twelve strongest
+slices retain **95%** of their discovered effect on rows the search never saw, and the twelve
+weakest that still cleared the correction retain **48%**. The strongest confirmed region —
+short flows, few forward packets, SYN flags — carries 90.8% attacks with **100% of them
+undetected** against a 91.3% baseline. That is PortScan, found by a search that was never told
+the class exists.
+
+## Server-side micro-batching (the fixed cost, measured)
+
+```bash
+python -m netsentry.cli batching   # -> docs/reports/batching.md
+```
+
+Scoring **one** flow through the deployed path costs 10.2 ms; scoring 512 costs 17.9 ms. The
+affine fit splits that into **10.03 ms of fixed cost per call and 0.0149 ms per flow** — a
+ratio of 673 to one, all of it frame construction, transformer dispatch and ensemble setup.
+
+| arrival rate | policy | throughput | p50 | p99 |
+|---|---|---|---|---|
+| 5/s | one at a time | 5/s | 9.88 ms | 18.16 ms |
+| 5/s | adaptive (5 ms wait) | 5/s | 14.88 ms | 17.66 ms |
+| 50/s | one at a time | 50/s | 9.88 ms | 42.26 ms |
+| 50/s | adaptive | 51/s | 14.88 ms | **19.52 ms** |
+| 5,000/s | one at a time | **101/s** | 97 s | 192 s |
+| 5,000/s | adaptive | **5,052/s** | 16.24 ms | **21.65 ms** |
+
+The capacity ceiling moves from `1/(a+c)` = **101 req/s** to `1/c` = **63,479 req/s**. And the
+first queueing model was wrong in an instructive way: treating this as batches arriving into an
+M/D/1 queue over-predicted latency 25x, because a batching server is **self-regulating** — its
+service capacity grows with its own backlog. The fixed point `b* = lambda a / (1 - lambda c)`,
+with mean latency `1.5 (a + c b*)`, matches the simulation to within **0.9%** on both.
+
+## Choosing on the front, not on a weighted sum
+
+```bash
+python -m netsentry.cli pareto   # -> docs/reports/pareto.md
+```
+
+NSGA-II implemented from scratch — fast non-dominated sorting, crowding distance, tournament
+selection, simulated-binary crossover, polynomial mutation — over three objectives that
+genuinely conflict: detection at the budget, inference cost, and detection surviving a padding
+attack. Judged against a **random-search control on an identical budget** by exact hypervolume,
+because an evolutionary algorithm that cannot beat random sampling is one nobody should run
+(it wins here by 1.05x, and the report says plainly that the front is the deliverable rather
+than the algorithm that found it).
+
+| detection @ budget | inference (ms/1k) | detection under evasion | reachable by a weighted sum |
+|---|---|---|---|
+| 8.5% | 5.02 | 5.4% | yes |
+| 7.4% | 4.10 | 5.7% | **no** |
+| 7.2% | 3.50 | 5.4% | **no** |
+| 6.7% | 2.74 | 5.0% | yes |
+| 4.2% | 1.64 | 4.5% | yes |
+
+The sharp result is geometric rather than empirical. A weighted sum is a linear functional, so
+its minimiser over a set is always a vertex of that set's convex hull — and **5 of the 12 front
+members are optimal for no weighting whatsoever**. Twenty thousand weight vectors drawn from the
+simplex select only 7 distinct models between them, and no amount of further sampling would
+change that. Every tuning procedure in this repository (the leaderboard's single metric, the
+gate's floors, a cost-weighted objective) is structurally incapable of returning the other five.
+That is the argument for computing a front instead of a score, and it is a proof rather than a
+preference. The deployed configuration, incidentally, is **dominated by 9 of the 12** — better
+or equal on all three objectives at once — which says its hyperparameters were never chosen
+against these axes rather than that it should be swapped today.
 
 ## Provenance & supply chain
 

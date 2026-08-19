@@ -2283,3 +2283,195 @@ operational metric next to the ranking one.
   chance and perfect bounds. Worth noting because the wrong version would have looked plausible in
   a table: small numbers that shrink with the budget, exactly as a reader would expect a hard
   metric to behave.
+
+## Wave 18 — distribution, representation & scale (v0.18.0)
+
+The theme this wave kept running into was **the prediction I wrote down before the measurement
+was wrong about half the time**, and in every one of those cases the wrong prediction was more
+useful than a right one would have been, because it forced the mechanism into the open. Notes
+in the order the studies were built.
+
+### Secure aggregation: three bugs, and one of them was a security property
+
+- **The dropout sign was backwards and only the exactness test caught it.** Pairwise masks are
+  antisymmetric: site `i` adds the pad for every `j > i` and subtracts it for every `j < i`.
+  When a site drops, the coordinator must remove the residual term that each *survivor*
+  contributed for that pair — so the sign is the survivor's, not the dropped site's. I wrote
+  the dropped site's. Everything still ran: the protocol produced a plausible vector, the model
+  trained, and the aggregate was silently wrong. The test that caught it asserts the recovered
+  sum is `np.array_equal` to the plaintext sum, and nothing weaker would have: an approximate
+  assertion would have passed on the un-dropped case and failed unreadably on the dropped one.
+- **My generator test asserted the wrong property and the failure taught me the right one.** I
+  asserted that 2 has full order in the RFC 3526 group. It does not — 2 is a quadratic residue
+  there, so it generates the subgroup of prime order `(p-1)/2`. That is the *better* property
+  (every shared secret lands in a prime-order subgroup, so there is no small-subgroup bit to
+  leak), and the test now asserts it. Worth keeping because the failed version looked more
+  impressive.
+- **The quantization floor never bites, and the reason is the payload.** I expected a two-sided
+  window: too coarse a scale loses the weights, too fine a scale wraps the field. Detection is
+  unchanged down to a scale of `2^0`, one step per unit, because what gets encoded is FedAvg's
+  *size-weighted numerator* — each coordinate arrives pre-multiplied by a site's few thousand
+  rows, which is eleven bits of scale for free. The only live failure mode is the ceiling, and
+  it is silent: at `2^46` the decoded model is well-formed floats of the wrong sign at 0.222
+  PR-AUC with nothing raising an error.
+- **The range proof was supposed to be the easy mitigation and it inverted.** A "conservative"
+  per-coordinate bound of 1.0 is 2.8x the largest honest coordinate, and the strongest in-bound
+  attack it permits is *worse* than the unbounded sign flip it was meant to stop. A range proof
+  is a defence plus a calibration problem, and the calibration has to be done against measured
+  honest updates rather than a round number.
+
+### DP synthetic release: the metric that could not see the mechanism
+
+- **PR-AUC is noise here, and it took repeats to say so.** The first run produced an ordering
+  across epsilon and I nearly wrote it up. Adding three synthesis draws per arm showed the
+  run-to-run range (0.121) is as large as the whole spread across arms (0.129). The reportable
+  finding is that the ranking metric cannot see the privacy cost — and the *operating point*
+  can, climbing 0.1% -> 8.0% detection as epsilon goes 0.5 -> 16. This is the third wave in a
+  row where the operational metric carried the result and the ranking metric hid it.
+- **Missing values had to become a level of the distribution.** The splits carry `NaN` (the
+  exporter's `Infinity` on instantaneous flows, imputed later by the pipeline), and the first
+  version binned them into the top bucket, which is both wrong and invisible. Level 0 is now
+  "missing" and the sampler emits `NaN` back, so a recipient gets the missingness pattern the
+  real data has instead of a quietly denser one.
+- **Degree-1 loses for an arithmetic reason, not a modelling one.** A root marginal is 25 cells
+  and a conditional is 625, both one sensitivity-1 query, so the same noise spreads 25x
+  thinner. The *oracle* Chow-Liu arm — structure fitted on real data, not private, clearly
+  labelled — settles whether a private structure search could rescue it. It cannot, so no
+  budget need be spent finding out. Building the oracle arm was the cheapest way to close a
+  question that would otherwise have needed a whole exponential-mechanism implementation.
+- **Process note: a background regeneration overwrote a hand-edited paragraph.** I patched
+  prose directly into a generated report while the generator was still running in another
+  shell, and the run put the old text back. Reports are build artifacts; the fix goes in the
+  generator, always, and the artifact is regenerated afterwards.
+
+### Pretraining: the premise failed, the controls held
+
+- **The deployment-pool arm lost, and the class table says why.** The argument for pretraining
+  on fresher unlabelled traffic assumes "later in time" approximates "the distribution you will
+  be scored on". Thursday carries Web Attack and Infiltration; Friday carries Bot, DDoS and
+  PortScan; they share no attack class. Unlabelled *recency* is not unlabelled
+  *representativeness*, and on a capture whose attack mix turns over daily only the second is
+  worth anything.
+- **PCA is the control that decides the study.** Masked-feature modelling beats it by 0.043 at
+  100 labels and by 0.001 at 28,034. Reporting only the full-label column would have concluded
+  self-supervision does nothing; reporting only the small-budget column without PCA would have
+  concluded it does far more than it does. Both would have been defensible-looking papers.
+- **The random encoder came out below the raw features**, which is the useful direction: it
+  rules out "a 64-dimensional projection is just easier for a linear model" as the explanation
+  for the gains.
+- **The split had to be day-ordered, and the tempting version was invalid.** Splitting the test
+  days at random would have put flows from one attack burst into both the pretraining pool and
+  the evaluation set. It would also have produced a much better number, which is exactly why
+  the rule exists.
+
+### Risk control: the guarantee everybody hears is not the one most methods give
+
+- **Conformal risk control exceeds its own target on 39-46% of deployments**, and that is the
+  theorem working as written: `E[R] <= alpha` says the average deployment is fine. Simulating
+  200 calibrate-and-deploy cycles is what turns that from a caveat into a column. Learn-then-
+  Test's `P(R > alpha) <= delta` is the statement operators think they are buying, and its
+  measured exceedance is 4-12% against a 10% promise.
+- **Two clauses came back infeasible for all nine pairs, and that is the deliverable.** An
+  empty valid set is a certificate that no threshold can keep both promises at this confidence
+  — delivered before the contract is signed rather than during the first incident review.
+- **The per-class feasibility column turned out useless and the price column replaced it.**
+  Every family can be certified at a 25% miss rate; the prices differ 11x. The first draft of
+  that section was written around "which promises are affordable" and had to be rewritten
+  around "what each one costs", because the data said feasibility was not the binding
+  constraint.
+- **mypy caught a variable shadowing that would have produced a silent wrong table**: `front`
+  was a `list[int]` inside the NSGA-II loop and a `list[Candidate]` at the end of the same
+  function. Same class of bug as the `feasible` bool/array collision in the risk-control study.
+  Both were free catches from `disallow_untyped_defs` plus honest annotations.
+
+### Sampling: two predictions, both wrong, both instructive
+
+- **The pre-filter had to be fitted *without* class rebalancing** — the opposite of every other
+  model in this repository. Probability-proportional-to-size sampling wants a size measure
+  proportional to `P(attack | x)`, and a class-weighted score is deliberately not that: it
+  inflates every benign flow's share of the budget and flattens the design towards uniform.
+  Rebalancing helps a classifier and hurts a sampler. Fixing it doubled the priority design's
+  detection and sharpened the naive estimator's bias from +55% to +103%.
+- **I predicted PPS would win both detection and variance. It won detection and lost
+  variance.** The optimum for estimating a 0/1 total is to take every attack with certainty,
+  and a noisy pre-filter is a poor stand-in: an attack it scores low arrives carrying an
+  enormous `1/pi` weight, so the variance is dominated by exactly the attacks the sampler is
+  worst at. Neyman-allocated stratification — the boring textbook answer — gives the narrowest
+  interval.
+- **Greedy's detection lead is not permanent**, which only appeared after extending the budget
+  sweep. By 25% the randomised design overtakes it, because greedy spends everything inside the
+  region the pre-filter is already confident about and the attacks it cannot recognise are
+  unreachable *by construction* at any budget.
+
+### Slice discovery: the confirmation half was silently empty
+
+- **Matching slices between halves by bin index produced zero confirmations.** Quantile edges
+  recomputed on different rows do not coincide, so every literal lookup missed and the whole
+  confirmation table came back empty — with no error, because "no slice was resolvable" and "no
+  slice survived" look identical from the outside. The fix is that a slice is defined by its
+  *bounds*, not by a bin index, and the bounds are re-applied directly to the held-out rows.
+- **The winner's curse did not appear until the marginal arm was added.** The twelve strongest
+  slices retain 95% of their effect, which reads like the curse is a myth. The twelve weakest
+  that still cleared Benjamini-Hochberg retain 48%. Selection bias scales with how much of the
+  apparent effect was noise, so confirming only the top of the list answers the easy half of
+  the question and gets the interesting half backwards.
+- **The permuted-loss null is the part of this study I would keep if I could keep only one.**
+  2,249 regions clear an uncorrected 5% on shuffled losses; zero survive the correction. Any
+  slice finder that does not run that has no way to tell a finding from a coincidence.
+- **A search over conjunctions must never conjoin two bins of the same feature** (they are
+  disjoint, so the result is empty) and must deduplicate `A AND B` against `B AND A`. Both were
+  present in the first version and both showed up as duplicate rows in the output table rather
+  than as errors.
+
+### Batching: the model was wrong by a factor of 25
+
+- **A batching server is not an M/D/1 queue.** The first closed form treated batches as
+  arriving at `lambda / b` into a deterministic-service queue and predicted 375 ms where the
+  simulator said 15 ms. The model has a fixed batch size; the system does not. Its service
+  capacity *grows with its own backlog* — busier means more waiting when the server frees up,
+  which means a larger batch and a lower per-request cost.
+- **The right model is a fixed point and it lands within 0.9%.** `b = lambda (a + c b)` gives
+  `b* = lambda a / (1 - lambda c)` and a mean latency of `1.5 (a + c b*)` — half a service
+  period for the batch in flight, one for your own. Its vanishing denominator is also where the
+  capacity ceiling comes from, `1 / c`, which is why batching moves throughput by a factor
+  (629x) rather than a percentage.
+- **My low-load prose said batching was a straight loss and the table disagreed.** At 50
+  requests a second the adaptive policy already halves p99. A 10 ms service time puts one
+  server at 50% utilisation by 50 req/s, and a queue at 50% utilisation already has a bad tail.
+  Extending the sweep down to 5 req/s found the regime I had assumed and showed the cost there
+  is exactly `max_wait` on the *median* — the timer taxes the typical request and protects the
+  unlucky one.
+- **Utilisation was the wrong saturation flag.** Batched arms sit at 100% utilisation while
+  clearing the full arrival rate; the unbatched arm sits at 4,952% and clears 2% of it.
+  "Saturated" now means throughput below the arrival rate, which is the thing an operator
+  actually cares about.
+
+### Pareto: the geometry was the point, the algorithm was the control
+
+- **Evaluation cost was 3x my estimate and the study had to be cut before it was worth
+  having.** 145 fits at ~10s each is 24 minutes, and this project's own lesson (from the
+  transformer study) is that a study nobody can afford to re-run is a study nobody will check.
+  Tightening the genome to 300 trees and 64 leaves and capping training at 8,000 rows brought
+  it back under five minutes, with the cap applied to every candidate including the incumbent.
+- **A hypervolume test failed and the code was right.** My hand-computed inclusion-exclusion
+  was wrong (I wrote one box's area as 4 instead of 6). Worth recording because the instinct on
+  a red test is to change the code, and the arithmetic in the comment is the thing that should
+  be checked first when the code is a twenty-line sweep with a known answer.
+- **The unreachable-by-any-weighted-sum result is a theorem, so it can be asserted exactly.**
+  The test builds a three-point front whose middle member sits above the chord, checks it is
+  Pareto-optimal, and asserts that twenty thousand weight vectors never select it. That is a
+  much stronger test than any statistical one, and it is the claim the whole report rests on.
+
+### Mechanics worth remembering
+
+- **A quoted heredoc through the shell is not a safe way to write Python string literals**:
+  `"\\n\\n"` arrived in the file as two real newlines and produced an unterminated string. Use
+  the file-writing tools for code, and keep the shell for running things.
+- **Building two studies in parallel costs more than it saves.** Writing the pretraining module
+  while the DP-synthesis report regenerated left both features' edits intermixed in four shared
+  hub files (settings, CLI, the analysis registry, the integration tests), and separating them
+  for two clean commits took a scripted lift-and-restore. Strictly one feature at a time.
+- **Every study in this wave got a CI-scale config and a scratch-path overlay before it was
+  committed.** Running a CI-scale command against the committed data would overwrite the
+  real splits with a 5,000-row stand-in; the overlay redirects every path into a temp
+  directory, which makes validating the CI job safe and repeatable.

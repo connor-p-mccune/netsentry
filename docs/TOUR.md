@@ -224,7 +224,57 @@ back bit-identical to the unfaulted run), and checks the reason this project use
 at all against an FT-Transformer under one shared protocol
 ([`deep_tabular.md`](reports/deep_tabular.md)).
 
-## Stop 11 — Where the bodies are buried, on purpose
+## Stop 11 — The second metric was the report
+
+The newest wave is about the parts of a detection system that are not the model, and it kept
+finding the same shape: the metric a study leads with decides what it can see, and the
+interesting number was always the second one.
+
+- **A private data release is indistinguishable from real data on PR-AUC and detects a twentieth
+  as much where it matters.** [`dp_synth.md`](reports/dp_synth.md) publishes a
+  differentially-private synthetic capture and trains on it. Every privacy budget lands within
+  0.129 PR-AUC of every other, against a 0.121 range across repeated draws of the *same*
+  configuration — noise. Detection at the 0.1% false-positive budget, with the threshold chosen
+  the way a recipient must choose it, moves 0.1% → 0.3% → 4.1% → 8.0% as epsilon goes 0.5 → 16.
+  Noise destroys the tails of each marginal long before it disturbs the ordering, and an
+  operating point lives entirely in the tail.
+- **The sampling design that catches the most attacks is the one that cannot tell you what it
+  missed.** [`sampling.md`](reports/sampling.md) scores 1% of the stream four different ways.
+  Greedy top-k wins detection (3.9% against 2.0%) and admits **no unbiased estimator of the
+  total at any budget**, because a flow below its cut has inclusion probability exactly zero and
+  nothing observed can speak for it. Its lead is not even permanent — by a 25% budget the
+  randomised design overtakes it, since greedy spends everything inside the region its
+  pre-filter already believes.
+- **A guarantee that holds in expectation is violated by half the deployments that hold it.**
+  [`risk_control.md`](reports/risk_control.md) bounds the *miss rate* rather than the
+  false-positive rate. Conformal risk control keeps its theorem and is exceeded on **39–46%** of
+  200 simulated calibrate-and-deploy cycles; Learn-then-Test buys `P(miss > alpha) <= delta` and
+  measures 4–12% against its 10% promise. Asking for a miss-rate *and* an alert-volume clause
+  together returns an empty valid set — a certificate of infeasibility, produced before the
+  contract is signed.
+- **Federating hides the flows and not the incident.** [`secagg.md`](reports/secagg.md) shows a
+  coordinator naming which attack family each site is holding **81% of the time** from the
+  update alone, implements Bonawitz et al.'s masking protocol from scratch to remove that
+  channel, and then measures what it costs: every Byzantine defence in this repository is a
+  function of the individual updates the protocol exists to hide.
+
+Two of the wave's studies are about the search rather than the model, and both are built around
+their own controls. [`slice_discovery.md`](reports/slice_discovery.md) hunts ~19,000 feature
+regions for the failures nobody predicted — and reports first that the identical search on
+*permuted* losses finds 2,249 significant regions and zero after correction, then that the
+weakest surviving slices lose half their effect on held-out rows while the strongest lose 5%.
+[`pareto.md`](reports/pareto.md) evolves a Pareto front with NSGA-II, makes it beat random
+search on exact hypervolume before believing it, and ends on a proof rather than a measurement:
+**5 of the 12 front members are optimal under no weighting of the objectives whatsoever**, so
+every scalar tuning procedure in this repository is structurally unable to return them.
+
+And one is pure systems work: [`batching.md`](reports/batching.md) measures **10.03 ms of fixed
+cost per scoring call against 0.0149 ms per flow**, moves the capacity ceiling from 101 to
+63,479 requests a second by batching what the queue already holds, and replaces its own queueing
+model after the first one missed by 25x — a batching server is self-regulating, because its
+service capacity grows with its own backlog.
+
+## Stop 12 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the
@@ -238,7 +288,7 @@ file is probably the fastest signal in the repo.
 make install
 netsentry download && netsentry prep   # synthetic stand-in, out of the box
 make lifecycle                         # seeds → gate → promote → retrainpolicy → canary
-netsentry analyze                      # regenerate all 76 reports + the index
+netsentry analyze                      # regenerate all 115 reports + the index
 netsentry pcap --demo                  # raw packets → CIC flows → verdicts
 ```
 
