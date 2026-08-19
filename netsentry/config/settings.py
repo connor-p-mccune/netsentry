@@ -1916,6 +1916,45 @@ class PSIConfig(BaseModel):
     cost_sizes: list[int] = Field(default_factory=lambda: [50, 100, 200, 400])
 
 
+class AcquisitionConfig(BaseModel):
+    """Cost-aware feature acquisition: buy expensive features only where they change the answer.
+
+    Every other study hands the model all 76 statistics; an exporter cannot, because a TCP flag
+    count falls out of a header it already parsed while an inter-arrival distribution needs
+    per-packet state for the whole conversation. ``prices`` assigns a per-flow computation cost
+    to each behavioural family (an assumption, stated here rather than buried, with
+    ``alternate_prices`` re-running the whole frontier flat as the sensitivity check).
+    Four policies compete: cheapest-first fixed tiers, a greedy static subset, adaptive
+    acquisition that escalates only flows whose score sits within ``bands`` of the decision
+    threshold in rank space, and a random-gating control that spends the same budget without
+    the uncertainty signal -- without which "adaptive wins" is unfalsifiable."""
+
+    prices: dict[str, float] = Field(
+        default_factory=lambda: {
+            "TCP flags": 1.0,
+            "header/window/bulk": 1.5,
+            "volume/counts": 2.0,
+            "packet size": 4.0,
+            "flow rates": 6.0,
+            "timing/IAT": 10.0,
+        }
+    )
+    alternate_prices: dict[str, float] = Field(
+        default_factory=lambda: {
+            "TCP flags": 1.0,
+            "header/window/bulk": 1.0,
+            "volume/counts": 1.0,
+            "packet size": 1.0,
+            "flow rates": 1.0,
+            "timing/IAT": 1.0,
+        }
+    )
+    bands: list[float] = Field(default_factory=lambda: [0.01, 0.05, 0.2])
+    keep_fractions: list[float] = Field(default_factory=lambda: [0.02, 0.1, 0.3])
+    n_estimators: int = 120  # the greedy search fits many subsets, so this stays modest
+    max_train_rows: int = 12000  # applied to every policy, so the comparison stays fair
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2675,6 +2714,7 @@ class Settings(BaseSettings):
     batching: BatchingConfig = Field(default_factory=BatchingConfig)
     pareto: ParetoConfig = Field(default_factory=ParetoConfig)
     psi: PSIConfig = Field(default_factory=PSIConfig)
+    acquisition: AcquisitionConfig = Field(default_factory=AcquisitionConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 
 from netsentry.data.dp_synth import run_dp_synth_report
 from netsentry.evaluation.ablation import run_ablation_report
+from netsentry.evaluation.acquisition import run_acquisition_report
 from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.adaptive_conformal import run_adaptive_conformal_report
 from netsentry.evaluation.alert_fdr import run_alert_fdr_report
@@ -317,6 +318,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "confirmation half (Chung et al. 2019)",
         "slice_discovery.md",
         run_slice_discovery_report,
+    ),
+    (
+        "Cost-aware feature acquisition",
+        "buy the expensive features only for the flows whose verdict is in doubt, against a "
+        "random-gating control on the same budget",
+        "acquisition.md",
+        run_acquisition_report,
     ),
     (
         "Budgeted sampling",

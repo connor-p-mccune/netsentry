@@ -1147,3 +1147,17 @@ def test_psi_report_is_written(prepared: Settings, repo_root: Path) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "set intersection" in text
     assert "salt" in text and "inflation" not in text.split("scope")[0][:100]
+
+
+@pytest.mark.slow
+def test_acquisition_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.acquisition import run_acquisition_report
+
+    prepared.acquisition.n_estimators = 40
+    prepared.acquisition.max_train_rows = 1500
+    prepared.acquisition.bands = [0.05]
+    prepared.acquisition.keep_fractions = [0.1]
+    out = run_acquisition_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "mean cost per flow" in text
+    assert "random gating" in text and "price list" in text

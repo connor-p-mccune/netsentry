@@ -1464,6 +1464,19 @@ def psi(
 
 
 @app.command()
+def acquisition(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Price the features themselves: what a compute budget buys, spent uniformly or per flow."""
+    from netsentry.evaluation.acquisition import run_acquisition_report
+
+    settings = _load(config, override)
+    out = run_acquisition_report(settings)
+    logger.info("Acquisition report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
