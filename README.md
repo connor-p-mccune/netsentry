@@ -17,7 +17,7 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.18.0`.** The build plan in
+**Released `v0.19.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
 tested, and committed, and seventeen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
@@ -96,8 +96,8 @@ estimator of what you missed exists**; automatic slice discovery with a permuted
 returns zero findings and a winner's curse that costs the marginal slices half their effect;
 server-side batching that moves the capacity ceiling 629x and needed its queueing model
 replaced, because a batching server is self-regulating rather than M/D/1; and a Pareto front
-whose concave members **no weighted sum can ever select**).
-`make check` is green (lint + type-check + **1,383 passing tests**, property-based invariants and a
+whose concave members **no weighted sum can ever select**), and the **sharing, budgets & accountability wave** (private set intersection so one organisation can ask another about an indicator without naming it, alongside the complete dictionary attack that breaks the hash exchange it replaces — the entire IPv4 space in 7.9 hours, and salting the list buys 0.28 seconds — and the inflation attack the protocol has no defence against at all; cost-aware feature acquisition at the exporter, where **four features beat all seventy-six** and the adaptive policy loses to its own random-gating placebo because the cheap tier ranks attacks no better than chance; streaming quantile estimation that holds the 0.1% operating point in **160 bytes** and is graded in alert volume rather than threshold error, where 9 of 10 approximations are operationally identical and every one of them fails the same way when the stream moves; and a conformance mapping onto NIST AI RMF 1.0 and the EU AI Act's high-risk articles in which **every control's evidence is verified against the tree, so a deleted study downgrades its own claim**, and the two unmeetable obligations are named rather than finessed).
+`make check` is green (lint + type-check + **1,449 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -247,6 +247,10 @@ what actually ships.
 | Automatic slice discovery | find the underperforming regions nobody predefined, with a permuted null and the winner's curse measured at the margin (Chung 2019) | ✅ Done |
 | Server-side batching | 10.03 ms fixed vs 0.0149 ms marginal: the capacity ceiling moves 629x, and the self-regulating queue model that predicts it to 0.9% | ✅ Done |
 | Multi-objective selection | a Pareto front over detection, cost and evasion-resistance (NSGA-II from scratch) and the members **no** weighted sum can reach | ✅ Done |
+| Private set intersection | ask a peer about an indicator without naming it: DH-PSI over RFC 3526 group 14, the dictionary attack on hashed sharing executed, and the inflation attack the protocol has no answer for | ✅ Done |
+| Cost-aware feature acquisition | what a compute budget buys at the exporter: four features beat all 76, and the adaptive policy loses to its own random-gating placebo | ✅ Done |
+| Streaming quantiles | hold the operating point at line rate in 160 bytes (P-squared, t-digest, histogram, reservoir), graded in alert volume rather than in threshold error | ✅ Done |
+| Conformance mapping | NIST AI RMF 1.0 and EU AI Act Articles 9-15 mapped onto 26 controls, each verified against the tree: delete the evidence and the control downgrades itself | ✅ Done |
 | Point-in-time feature store | as-of joins for host context, and the temporal leak the one-line `groupby` creates: 1.000 offline, 0.583 in production | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
@@ -2281,6 +2285,120 @@ That is the argument for computing a front instead of a score, and it is a proof
 preference. The deployed configuration, incidentally, is **dominated by 9 of the 12** — better
 or equal on all three objectives at once — which says its hyperparameters were never chosen
 against these axes rather than that it should be swapped today.
+
+## Asking a peer without telling them what you are looking for
+
+```bash
+python -m netsentry.cli psi   # -> docs/reports/psi.md
+```
+
+Diffie-Hellman **private set intersection** over RFC 3526 group 14, implemented from scratch and
+run between two organisations' indicator lists. Both learn exactly the overlap — 40 of 40 shared
+indicators recovered, nothing else — and the responder learns nothing at all, because every value
+it returns is blinded by an exponent it does not hold.
+
+The finding is about the practice it replaces. Sharing **hashes** of indicators feels private and
+is not: an IPv4 address is a 32-bit number, and enumerating the space against a hashed list runs
+at 151,749 candidates a second on one laptop core, so the **entire IPv4 space falls in 7.9 hours**.
+The report does not argue that — it runs the complete attack against the 2^16 port space and
+recovers 50 of 50 preimages in 0.41 s. Salting does not help, and that is the part worth reading:
+an indicator-sharing group must use the *same* salt or no two hashes would ever match, so every
+participant can run the attack. The salted list falls in 0.28 s.
+
+The protocol then gets attacked on its own terms. It assumes honest inputs, so a party that
+submits 1,600 candidate indicators instead of the 40 it holds gets back **every one the peer also
+has — a 100% yield, with no signal to the peer that anything happened**. The cryptography is
+perfect throughout; the assumption was never in force. Privacy costs 12x the bandwidth of a hash
+exchange and 16.7 s of CPU at 400 indicators a side.
+
+## Buying expensive features only for the flows that need them
+
+```bash
+python -m netsentry.cli acquisition   # -> docs/reports/acquisition.md
+```
+
+Every other study here hands the model all 76 statistics. An exporter cannot: a TCP flag count
+falls out of a header already parsed, while an inter-arrival-time distribution needs per-packet
+state for the whole conversation. Six feature families are priced, and four acquisition policies
+compete on detection at the 0.1% budget against mean per-flow compute.
+
+| policy | features | cost/flow | detection @ 0.1% FPR |
+|---|---|---|---|
+| **greedy static subset** | **flow rates (4 columns)** | **6.0** | **17.3%** |
+| fixed tier | everything (76 columns) | 24.5 | 8.4% |
+| adaptive, best setting | escalate what is not confidently benign | 3.10 | 1.1% |
+| random gating (placebo) | same spend, no signal | 2.22 | 2.0% |
+
+**Four features beat all seventy-six: 2.1x the detection for 24% of the compute.** That is the
+[leaderboard's](docs/reports/leaderboard.md) finding arriving through the exporter — on a split
+whose test days share no attack class with training, capacity spent fitting the training families
+is capacity spent on families that will not reappear.
+
+The adaptive policy — score cheaply, escalate the uncertain — **loses to its own placebo**, and the
+report chases that rather than tuning it away. An asymmetric gate was added when the symmetric one
+failed, and it also lost, so the gate shape was not the problem. The diagnostic settles it: the
+cheap tier forwarding 30% of flows retains 27.2% of the detections, where forwarding at random
+retains 30%. There was no signal for either policy to use. A cascade can only rescue detections
+the cheap tier already ranks highly, and here it ranks them no better than chance.
+
+## Estimating the threshold's quantile at line rate
+
+```bash
+python -m netsentry.cli quantiles   # -> docs/reports/quantiles.md
+```
+
+Every operating point in this repository is a quantile — the score below which 99.9% of benign
+flows sit — and every study that derives one assumes the scores can be collected, sorted and
+indexed. That is true of a test split and false of a stream. Four estimators (reservoir sampling,
+**P-squared**, a **t-digest**, a fixed-bin histogram) are built from scratch, graded against the
+exact quantile of a 200,000-score stream, then re-graded in the unit that matters: **the alert
+volume each threshold actually delivers**.
+
+| estimator | memory | update | alert volume vs exact |
+|---|---|---|---|
+| exact (sort everything) | 1.6 MB | — | 1.00x |
+| **P-squared, 5 markers** | **160 B** | 4,465 ns | **1.00x** |
+| **fixed-bin histogram, 10k bins** | 80 KB | **1,759 ns** | **1.00x** |
+| t-digest, compression 200 | 19 KB | 7,633 ns | 1.00x |
+| reservoir, 1k samples | 8 KB | 10,483 ns | 1.09x |
+
+**9 of the 10 approximations deliver an identical alert volume** — not close, identical, because a
+threshold anywhere inside the gap between two adjacent benign scores alerts on exactly the same
+flows. P-squared holds the operating point in 160 bytes, **10,000x smaller than keeping the
+stream**. The t-digest, the most sophisticated structure in the table, is beaten on both axes at
+once by a histogram, because a model score is bounded in [0, 1] by construction and boundedness is
+exactly the assumption the cheap option needs.
+
+The failure is shared and structural: **none of them forgets**. Fed validation-day traffic followed
+by test-day traffic — the same drift the deployed model lives with — every estimator is anchored by
+history nobody asked it to keep, and all four overshoot the second regime's threshold. The fix is a
+window, not a better sketch.
+
+## Conformance, checked against the tree rather than asserted
+
+```bash
+python -m netsentry.cli compliance   # -> docs/reports/compliance.md
+```
+
+A detector that decides which traffic a human looks at attracts obligations. This maps the
+repository onto **NIST AI RMF 1.0** and the **EU AI Act's high-risk articles (Regulation (EU)
+2024/1689, Articles 9-15)** — 26 controls, each naming the module, command and report that
+satisfies it.
+
+The mechanism is the point. **Every control's evidence is verified to exist on disk at generation
+time, and a control whose artifact is deleted or renamed downgrades itself to unmet** — the
+load-bearing unit test does exactly that and asserts the downgrade. A compliance document's usual
+failure is not dishonesty; it is that the evidence moved and the wall-chart did not.
+
+**19 met, 4 partial, 2 unmet, 1 not applicable — 93% of the applicable NIST functions and 73% of
+the applicable EU articles.** The gaps are the useful half, and they share a shape: what cannot be
+evidenced here is organisational, not technical. Article 14 (human oversight) is partial because
+the system routes rather than acts — conformal sets produce auto-alert / auto-clear / review, and
+deferral prices escalation against analyst capacity — but there is no override *interface*
+recording who overrode what. Article 17 (quality management system) and Article 43 (conformity
+assessment) are **unmet and unmeetable by code**: they are an organisation's procedures, and a
+repository cannot perform a conformity assessment on itself. It ships a machine-readable
+`compliance_mapping.json` alongside the prose, and it is not legal advice.
 
 ## Provenance & supply chain
 

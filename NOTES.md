@@ -2475,3 +2475,131 @@ in the order the studies were built.
   committed.** Running a CI-scale command against the committed data would overwrite the
   real splits with a 5,000-row stand-in; the overlay redirects every path into a temp
   directory, which makes validating the CI job safe and repeatable.
+
+## Wave 19 — sharing, budgets & accountability (v0.19.0)
+
+Four studies about things the model does not do: talking to another organisation, deciding what
+to compute, holding an operating point in a stream, and answering to a regulator. Three of the
+four produced a result I did not expect, and the fourth produced a mechanism I trust more than
+its own conclusion.
+
+### PSI: the protocol was fine, the assumption was not
+
+- **The interesting attack was not on the cryptography.** I built the DH-PSI expecting the report
+  to be about correctness and cost, and the correctness took an afternoon: blind, exchange,
+  re-blind, intersect, and the two sides agree exactly. What the report is actually about is
+  that the protocol guarantees privacy of the *input* and says nothing about the *truthfulness*
+  of it, so submitting 1,600 guesses instead of the 40 indicators you hold returns every one the
+  peer also has. The yield is 100% at every list size I tried, and the peer sees nothing unusual
+  because from its side the transcript is identical. That gap is not a bug in the protocol; it is
+  the boundary of what "honest-but-curious" covers, and the report says so in those terms.
+- **The salted-hash row is the one I would show someone.** "Just salt the hashes" is what everyone
+  says when you point out that a hashed IPv4 address is a 32-bit preimage, and it is wrong for a
+  structural reason rather than a cryptographic one: an indicator-sharing group has to use the
+  *same* salt or no two members' hashes would ever match, so the salt is group knowledge and the
+  attack runs unchanged. The measured numbers are 0.41 s unsalted and 0.28 s salted over the
+  whole 2^16 port space. The salted one being *faster* is noise, and I left both timings in
+  rather than round them into agreement.
+- **I benchmarked the wrong thing first.** The initial dictionary rate was a bare `sha256` loop,
+  which reported 290,127 candidates a second and flattered the defender by leaving out the work
+  the attacker actually has to do. Formatting the address into its dotted form — which is what
+  gets hashed — halves it to 151,749/s. The 7.9-hour figure for the IPv4 space is the honest one;
+  the bare-hash version would have said four.
+- **The overlap had to be constructed and the report has to say so.** This stand-in draws each
+  flow's addresses independently, so two sites' indicator lists intersect in exactly zero
+  elements. A "measured" intersection here would be a measurement of the generator, so the
+  overlap is planted deliberately and the report states that the number being measured is the
+  protocol's behaviour, not the threat landscape's.
+
+### Acquisition: the policy lost to its own placebo, twice
+
+- **The headline is that four features beat seventy-six.** Greedy subset selection puts
+  `flow rates` alone at 17.3% detection for a cost of 6.0, against 8.4% at 24.5 for everything.
+  I did not believe it and went looking for the bug; there is no bug, and it is the leaderboard's
+  finding arriving through a different door. On a split whose test days share no attack class
+  with training, extra capacity is capacity spent fitting families that never reappear.
+- **The adaptive policy failed, and then failed again after the obvious fix.** Score cheaply,
+  escalate the uncertain, pay for expensive features only where the verdict is in doubt — that is
+  the whole premise of the study, and it lost to a random-gating control spending the same
+  budget. The first hypothesis was the gate's *shape*: a symmetric band around the threshold is
+  the textbook rule and it is incoherent at a 0.1% operating point, where "near the threshold"
+  means "in the top thousandth". So I added an asymmetric arm — forward everything the cheap tier
+  cannot confidently clear — and it improved from 0.6% to 1.1% and still lost to the placebo's
+  2.0%.
+- **The diagnostic that settled it is a two-column table.** A filter forwarding 30% of flows at
+  random retains 30% of the detections by definition. The cheap tier retains 27.2%. At 10% it
+  retains 8.4%, at 2% it retains 1.1%. It is not a weak ranker, it is *indistinguishable from
+  chance*, which is exactly why the uncertainty gate and the random gate scored alike — neither
+  had any signal to use. A cascade can only rescue what the cheap tier already ranks highly, so
+  when the cheap tier ranks at chance the architecture has nothing to work with. I kept the
+  negative result and wrote the null into the table rather than describing it in prose.
+- **One bug worth recording: the headline cost was being overwritten.** The study runs a second
+  sweep under a flat price list to check which conclusions survive the pricing assumption, and
+  the full-feature cost was recomputed inside that loop, so the report quoted the flat-list cost
+  next to the priced-list detection. Guarded to record only the headline list.
+
+### Quantiles: the estimator error was the wrong unit
+
+- **Nine of ten approximations are operationally identical, and that is the report.** I built the
+  study expecting a memory-accuracy frontier and got a flat line: every estimator except the
+  smallest reservoir picks a threshold that alerts on *exactly* the same flows as the exact
+  quantile. The reason is not that they are precise, it is that at the 99.9th percentile the
+  benign scores are sparse, so any threshold inside the gap between two adjacent scores is the
+  same decision. Grading in threshold error would have produced a tidy ranking that means
+  nothing; grading in alert volume produces a flat line that means everything.
+- **The t-digest is the most sophisticated thing in the table and it loses on both axes.** A
+  fixed-bin histogram is 1.9x cheaper per update and P-squared is 50x smaller in memory, and both
+  deliver the identical alert volume. That is an argument about *this* quantity rather than
+  against t-digests: a model score is bounded in [0, 1] by construction, so a histogram needs no
+  range estimation and no scale function. The engineering lesson is the question to ask before
+  reaching for a sketch — is the quantity bounded, and is the error budget in the units of the
+  decision?
+- **Three measurement bugs, all in the direction of flattering the estimators.** (1) The alert
+  ratio was computed against the *target* FPR rather than the exact estimator's realised FPR,
+  which folded the val-to-test transfer gap into every row and made the approximations look
+  worse than they are. (2) The drift experiment used an additive score shift, which saturated at
+  the clip ceiling and produced a degenerate comparison; replaced with the real validation-to-test
+  benign drift, which is the same shift the deployed model already lives with. (3) The update
+  timings were measured over the fill phase, when the reservoir is still accepting everything and
+  the digest has not started merging — a warm-up pass fixed it and changed the ranking.
+- **Every estimator fails the same way and none of them says so.** They all integrate the entire
+  stream from the moment it starts, which is right for a stationary quantity and wrong for
+  traffic. Under real drift all four overshoot, and the fix is a window rather than a better
+  sketch. A monitor that silently averages over a regime change is worse than no monitor, because
+  it produces a number.
+
+### Compliance: the mechanism matters more than the score
+
+- **The load-bearing part of this study is a unit test, not the mapping.** A conformance document
+  fails by going stale — the evidence is renamed, the study is deleted, the wall-chart still says
+  "met". So every control names the module and report that satisfies it, `verify_controls` checks
+  both exist on disk at generation time, and a control whose evidence is missing downgrades
+  itself to unmet regardless of the grade it claims. The test that deletes the evidence and
+  asserts the downgrade is the one I would point at.
+- **Partial evidence is not partial credit.** If a control names two artifacts and only one
+  survives, it fails. Half a claim is not half-satisfied — it means the claim was written against
+  a repository that no longer exists.
+- **The gaps are the honest half.** Article 17 (quality management system) and Article 43
+  (conformity assessment) are unmet and *unmeetable by code*: they are an organisation's
+  documented procedures and an external assessment, and a repository cannot perform a conformity
+  assessment on itself. Listing them as permanent gaps is more useful than any framing that would
+  let them be scored. Article 14 is partial for the same species of reason — the system routes
+  rather than acts, but there is no override interface recording who overrode what.
+- **The number is deliberately not round.** 93% of applicable NIST functions and 73% of
+  applicable EU articles, counting partial as a half and excluding what does not apply. I
+  resisted the temptation to reclassify the awkward controls into applicability; a compliance
+  mapping is only worth reading if its author could have scored higher and did not.
+
+### Mechanics worth remembering
+
+- **`build_pipeline` covers every feature, so any study that trains on a subset needs its own
+  transformer.** The acquisition study fits models on 4 of 76 columns; reusing the project
+  pipeline silently reintroduces the rest. A small `subset_pipeline` helper that mirrors the
+  imputer and scaler choices from config — and only those — is the safe way to do it, and it
+  keeps the config as the single source of truth for preprocessing.
+- **The scratch-path overlay is now standard practice.** Every study in this wave was validated
+  at CI scale through an overlay that redirects `paths.*` into a temp directory, so a 5,000-row
+  smoke run can never overwrite the committed splits or the reports generated from full data.
+- **Reports are build artifacts.** A generated report that gets hand-edited is a report that will
+  be silently reverted the next time its command runs. Every correction in this wave went into
+  the generator.

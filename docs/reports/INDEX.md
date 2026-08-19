@@ -1,6 +1,6 @@
 # NetSentry — Analysis Index
 
-_Refreshed 2026-08-19 02:24 UTC. `netsentry analyze` regenerates every report listed here and rewrites this index; a row without a link did not produce its report. Synthetic stand-in unless run on the real dataset._
+_Refreshed 2026-08-19 14:41 UTC. `netsentry analyze` regenerates every report listed here and rewrites this index; a row without a link did not produce its report. Synthetic stand-in unless run on the real dataset._
 
 | report | what it covers | status |
 |---|---|---|
@@ -33,6 +33,7 @@ _Refreshed 2026-08-19 02:24 UTC. `netsentry analyze` regenerates every report li
 | Certified robustness | randomized smoothing: a provable L2 radius per flow (Cohen et al. 2019) | [open](certify.md) |
 | Sensor failure | the deployed model with a broken exporter: missing / stuck / mis-assembled fields | [open](degradation.md) |
 | Automatic slice discovery | search for the underperforming regions nobody predefined, with a permuted null and a confirmation half (Chung et al. 2019) | [open](slice_discovery.md) |
+| Cost-aware feature acquisition | buy the expensive features only for the flows whose verdict is in doubt, against a random-gating control on the same budget | [open](acquisition.md) |
 | Budgeted sampling | score a fraction of the stream and estimate the rest: Horvitz-Thompson against four designs, including the one with no estimator at all | [open](sampling.md) |
 | Multi-objective selection | a Pareto front over detection, cost and evasion-resistance, and the front members no weighted sum can reach (Deb et al. 2002) | [open](pareto.md) |
 | Server-side batching | amortise the fixed cost of a scoring call across the requests already queued, and find the load below which waiting is a loss | [open](batching.md) |
@@ -102,9 +103,12 @@ _Refreshed 2026-08-19 02:24 UTC. `netsentry analyze` regenerates every report li
 | Release gate | honesty invariants + metric floors the candidate must clear | [open](gate.md) |
 | Anytime-valid A/B | when the shadow model can be promoted: peeking-safe confidence sequences | [open](sequential_ab.md) |
 | MITRE ATT&CK coverage | attack class -> tactic/technique | [open](mitre.md) |
+| Private indicator sharing | ask a peer whether they have seen an indicator without telling them which: DH private set intersection, and the dictionary attack on the hashing it replaces | [open](psi.md) |
 | MITRE ATLAS coverage | the detector as a target: this repo's own ML attack surface, with the gaps named | [open](atlas.md) |
 | ATT&CK Navigator layer | detection coverage as a loadable Navigator layer | [open](attack_navigator_layer.json) |
 | Sigma detection rules | the signature baseline exported as portable Sigma rules | [open](sigma/README.md) |
+| Streaming quantiles | estimate the threshold's quantile in fixed memory, graded in alert volume rather than in quantile error (Jain & Chlamtac 1985; Dunning) | [open](quantiles.md) |
 | Streaming sketches | host analytics at line rate in fixed memory, with every bound checked against exact truth (Cormode 2005, Flajolet 2007) | [open](sketches.md) |
 | Tamper-evident alert ledger | hash-chained alert history: every edit attempted, and what verification catches | [open](ledger.md) |
+| Conformance mapping | NIST AI RMF and EU AI Act obligations mapped to artifacts, with every claim verified against the repository | [open](compliance.md) |
 | Provenance & supply chain | CycloneDX SBOM + model-integrity manifest | [open](provenance.md) |

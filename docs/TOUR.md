@@ -274,7 +274,51 @@ cost per scoring call against 0.0149 ms per flow**, moves the capacity ceiling f
 model after the first one missed by 25x — a batching server is self-regulating, because its
 service capacity grows with its own backlog.
 
-## Stop 12 — Where the bodies are buried, on purpose
+## Stop 12 — The thing that was assumed, not the thing that was measured
+
+The newest wave takes four assumptions this project had been making silently and measures each
+one. Three of them turned out to be false.
+
+- **Sharing indicators as hashes is not private, and salting does not fix it.**
+  [`psi.md`](reports/psi.md) implements Diffie-Hellman private set intersection over RFC 3526
+  group 14 so one organisation can ask another about an indicator without naming it — 40 of 40
+  shared indicators recovered exactly, the responder learning nothing. Then it runs the complete
+  dictionary attack against the practice it replaces: an IPv4 address is a 32-bit preimage, so
+  the **whole space falls in 7.9 hours** on one laptop core, and the 2^16 port space is exhausted
+  in 0.41 s with every preimage recovered. Salting is the standard answer and it fails
+  structurally — a sharing group must use the *same* salt or no two hashes would match, so the
+  salt is group knowledge. Then the protocol itself gets attacked: it assumes truthful inputs, so
+  a party submitting 1,600 guesses instead of its 40 real indicators gets **100% of the reachable
+  overlap with no signal to the peer**.
+- **The expensive features were never earning their cost.**
+  [`acquisition.md`](reports/acquisition.md) prices six behavioural feature families the way an
+  exporter pays for them and finds **four features beating all seventy-six** — 17.3% detection at
+  a cost of 6.0 against 8.4% at 24.5. The adaptive policy that motivated the study, escalating
+  only the flows whose verdict is in doubt, **loses to a random-gating control spending the same
+  budget** — twice, once with a symmetric uncertainty band and again after the gate was rebuilt
+  asymmetrically. The diagnostic says why in one table: the cheap tier forwarding 30% of flows
+  retains 27.2% of the detections, where forwarding at random retains 30%. There was no signal
+  for either policy to use, and the report keeps the negative rather than tuning until it wins.
+- **The operating point does not need the stream stored.**
+  [`quantiles.md`](reports/quantiles.md) builds four streaming quantile estimators from scratch
+  and grades them not in quantile error but in **alert volume, the unit a SOC lead actually
+  notices**. Nine of ten approximations deliver an *identical* alert volume to sorting all
+  200,000 scores, because a threshold anywhere inside the gap between two adjacent benign scores
+  is the same decision. P-squared holds the 0.1% operating point in **160 bytes**. The t-digest,
+  the most sophisticated structure in the table, is beaten on both memory and update cost by a
+  fixed-bin histogram, for a stated reason: a model score is bounded by construction, so the
+  cheap option's assumption is free. All four then fail the same way under real
+  validation-to-test drift, because none of them forgets.
+- **A conformance claim is worth exactly as much as the check behind it.**
+  [`compliance.md`](reports/compliance.md) maps the repository onto NIST AI RMF 1.0 and the EU AI
+  Act's high-risk articles across 26 controls — and **verifies every control's evidence against
+  the tree at generation time, so a renamed or deleted study downgrades its own control to
+  unmet**. That mechanism, not the 93%/73% coverage, is the deliverable; the load-bearing unit
+  test deletes an artifact and asserts the downgrade. Article 17 and Article 43 are recorded as
+  permanently unmeetable by code, because a repository cannot perform a conformity assessment on
+  itself.
+
+## Stop 13 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the
