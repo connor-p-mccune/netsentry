@@ -161,5 +161,23 @@ pareto:
   generations: 2
   n_weights: 2000
   max_train_rows: 800
+psi:
+  list_size: 40                   # 2048-bit exponentiations are the cost; 40 keeps CI honest
+  overlap: 8
+  hash_samples: 2000
+  address_sample: 2000
+  port_indicators: 10
+  inflation_sizes: [20, 60]
+  cost_sizes: [10, 20]
+acquisition:
+  n_estimators: 40
+  max_train_rows: 1500
+  bands: [0.05]
+  keep_fractions: [0.1]
+quantiles:
+  stream_rows: 20000
+  reservoir_sizes: [500, 5000]
+  compressions: [50.0]
+  histogram_bins: [1000]
 mlflow:
   enabled: false         # use the local file logger in CI

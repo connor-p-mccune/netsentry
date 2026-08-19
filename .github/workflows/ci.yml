@@ -136,6 +136,12 @@ jobs:
           python -m netsentry.cli slicefinder -o configs/ci.yaml
           python -m netsentry.cli batching -o configs/ci.yaml
           python -m netsentry.cli pareto -o configs/ci.yaml
+      - name: Sharing, budgets and accountability studies
+        run: |
+          python -m netsentry.cli psi -o configs/ci.yaml
+          python -m netsentry.cli acquisition -o configs/ci.yaml
+          python -m netsentry.cli quantiles -o configs/ci.yaml
+          python -m netsentry.cli compliance -o configs/ci.yaml
       - name: Slow integration tests
         run: python -m pytest -m slow
 
