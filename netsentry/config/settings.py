@@ -1955,6 +1955,28 @@ class AcquisitionConfig(BaseModel):
     max_train_rows: int = 12000  # applied to every policy, so the comparison stays fair
 
 
+class QuantileConfig(BaseModel):
+    """Streaming quantile estimation for the deployed threshold.
+
+    Every operating point here is a quantile of the score distribution, and every study that
+    re-derives one assumes the scores can be sorted -- which requires storing them, which a
+    stream does not allow. The sketches study counts in fixed memory but estimates no
+    quantiles. This builds four estimators from scratch (reservoir sampling, P-squared,
+    a merging t-digest, and a fixed-bin histogram over the score's natural [0, 1] range) and
+    grades them against exact truth *and* against the alert volume each threshold actually
+    delivers, because a threshold error in the fourth decimal is a large multiple of the alerts
+    at a 0.1% budget. None of these estimators forgets, which is the property an operator has
+    to design around, so the stream's second half is test-day traffic: real drift from the
+    project's own data rather than an injected shift."""
+
+    stream_rows: int = 200000  # replayed benign scores: long enough for the estimators to settle
+    reservoir_sizes: list[int] = Field(default_factory=lambda: [1000, 10000, 50000])
+    compressions: list[float] = Field(default_factory=lambda: [50.0, 200.0, 1000.0])
+    histogram_bins: list[int] = Field(default_factory=lambda: [1000, 10000, 100000])
+    # Drift is taken from the project's own data rather than injected: the stream's second
+    # half is test-day benign traffic, so the regime change is the one the model already has.
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2715,6 +2737,7 @@ class Settings(BaseSettings):
     pareto: ParetoConfig = Field(default_factory=ParetoConfig)
     psi: PSIConfig = Field(default_factory=PSIConfig)
     acquisition: AcquisitionConfig = Field(default_factory=AcquisitionConfig)
+    quantiles: QuantileConfig = Field(default_factory=QuantileConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

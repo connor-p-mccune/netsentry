@@ -1161,3 +1161,17 @@ def test_acquisition_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "mean cost per flow" in text
     assert "random gating" in text and "price list" in text
+
+
+@pytest.mark.slow
+def test_quantiles_report_is_written(prepared: Settings) -> None:
+    from netsentry.monitoring.quantiles import run_quantile_report
+
+    prepared.quantiles.stream_rows = 20000
+    prepared.quantiles.reservoir_sizes = [500, 5000]
+    prepared.quantiles.compressions = [50.0]
+    prepared.quantiles.histogram_bins = [1000]
+    out = run_quantile_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "p-squared" in text
+    assert "t-digest" in text and "alert volume" in text

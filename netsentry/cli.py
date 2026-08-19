@@ -1477,6 +1477,19 @@ def acquisition(
 
 
 @app.command()
+def quantiles(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Estimate the threshold's quantile in fixed memory, priced in alert volume."""
+    from netsentry.monitoring.quantiles import run_quantile_report
+
+    settings = _load(config, override)
+    out = run_quantile_report(settings)
+    logger.info("Quantile report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

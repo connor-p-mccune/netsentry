@@ -86,6 +86,7 @@ from netsentry.monitoring.covariate_shift import run_covariate_shift_report
 from netsentry.monitoring.exchangeability import run_exchangeability_report
 from netsentry.monitoring.experts import run_experts_report
 from netsentry.monitoring.mmd import run_mmd_report
+from netsentry.monitoring.quantiles import run_quantile_report
 from netsentry.monitoring.refresh import run_refresh_report
 from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
@@ -766,6 +767,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the signature baseline exported as portable Sigma rules",
         "sigma/README.md",
         run_sigma_export,
+    ),
+    (
+        "Streaming quantiles",
+        "estimate the threshold's quantile in fixed memory, graded in alert volume rather than "
+        "in quantile error (Jain & Chlamtac 1985; Dunning)",
+        "quantiles.md",
+        run_quantile_report,
     ),
     (
         "Streaming sketches",
