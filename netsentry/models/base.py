@@ -18,6 +18,16 @@ if TYPE_CHECKING:
 
     EvalSet = tuple[np.ndarray, np.ndarray]
 
+#: The probability at which a score becomes a hard label under sklearn's convention.
+#:
+#: This is **not** an operating point and must never be used as one: every deployed decision
+#: in this project comes from a threshold calibrated at a false-positive budget
+#: (``settings.thresholds``). The constant exists so that the places genuinely reproducing
+#: `predict()`'s convention -- a label-only query oracle, a correctness mask for influence
+#: attribution -- say so by name rather than by an anonymous `0.5` that reads identically to
+#: a threshold somebody chose. Named after the static-analysis pass found the bare literals.
+HARD_LABEL_CUT: float = 0.5
+
 
 class BaseModel(ABC):
     """Abstract estimator with a uniform fit/predict/persist contract."""

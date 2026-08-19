@@ -67,6 +67,12 @@ COVERAGE_FIGURE = "uncertainty_coverage.png"
 
 _EPS = 1e-12
 
+#: Novelty AUC above which the plain attack score is already finding the deleted class,
+#: so the epistemic-vs-aleatoric comparison has nothing to add on that arm. A narrative
+#: cut for the report's prose rather than a decision the system makes -- named because a
+#: bare literal in a render function is a decision nobody can find.
+_NOVELTY_ALREADY_FOUND_AUC = 0.7
+
 
 # --------------------------------------------------------------------------------------
 # The decomposition (pure; unit-tested directly)
@@ -670,7 +676,7 @@ def _novelty_read(study: UncertaintyStudy) -> str:
     score_auc = _auc_of(blindest, "attack score")
     epi_auc = _auc_of(blindest, "epistemic")
     iso_auc = _auc_of(blindest, "isolation forest")
-    if score_auc > 0.7:
+    if score_auc > _NOVELTY_ALREADY_FOUND_AUC:
         return lead
     sighted = [a for a in study.arms if a is not blindest]
     sighted_note = (

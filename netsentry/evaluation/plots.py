@@ -107,6 +107,37 @@ def plot_barh(
     return _save(fig, out_path)
 
 
+def plot_grouped_barh(
+    labels: list[str],
+    series: dict[str, list[float]],
+    *,
+    xlabel: str,
+    title: str,
+    out_path: Path,
+) -> Path:
+    """Grouped horizontal bars: one bar per series within each label.
+
+    For side-by-side counts where the *comparison* is the finding rather than the magnitude
+    (violations per rule in this package against the same rules run over a textbook one).
+    Category order is preserved as given, since these are usually ordered codes.
+    """
+    plt = _plt()
+    n_series = max(1, len(series))
+    positions = np.arange(len(labels), dtype=float)
+    height = 0.8 / n_series
+    fig, ax = plt.subplots(figsize=(7, max(3.0, len(labels) * 0.55)))
+    for index, (name, values) in enumerate(series.items()):
+        offset = (index - (n_series - 1) / 2) * height
+        ax.barh(positions + offset, values, height=height, label=name)
+    ax.set_yticks(positions)
+    ax.set_yticklabels(labels)
+    ax.invert_yaxis()
+    ax.set(xlabel=xlabel, title=title)
+    ax.legend()
+    ax.grid(alpha=0.3, axis="x")
+    return _save(fig, out_path)
+
+
 def plot_hist_overlay(
     series: dict[str, np.ndarray],
     *,

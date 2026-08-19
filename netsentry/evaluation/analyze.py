@@ -72,6 +72,7 @@ from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.features.store_report import run_store_report
 from netsentry.governance.compliance import run_compliance_report
 from netsentry.governance.ledger_report import run_ledger_report
+from netsentry.governance.mlint import run_mlint_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.atlas import run_atlas_report
 from netsentry.intel.navigator import run_navigator_export
@@ -795,6 +796,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "against the repository",
         "compliance.md",
         run_compliance_report,
+    ),
+    (
+        "ML-invariant static analysis",
+        "the leakage rules enforced by a parser, with the rule set graded by injecting the "
+        "violations it claims to catch",
+        "mlint.md",
+        run_mlint_report,
     ),
     (
         "Provenance & supply chain",

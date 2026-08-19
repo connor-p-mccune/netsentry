@@ -1977,6 +1977,40 @@ class QuantileConfig(BaseModel):
     # half is test-day benign traffic, so the regime change is the one the model already has.
 
 
+class MlintConfig(BaseModel):
+    """Static analysis of this project's own ML invariants.
+
+    The rules in `.claude/rules/ml.md` are enforced today by discipline, review and tests --
+    all three of which act on code that has already been written. A linter acts on the diff.
+    Each rule is a syntactic translation of a prose invariant (fit on train only, no global
+    statistics, no identifier columns, seed everything, no hardcoded operating point, never
+    lead with accuracy), so each is deliberately incomplete and states its own blind spot.
+    ``probe_host`` names the real module the mutation harness injects violations into, because
+    a rule that has only ever fired on a two-line fixture has not been shown to survive a
+    module that does real work. ``max_violations`` is the CI budget: above it, the command
+    exits non-zero."""
+
+    roots: list[str] = Field(default_factory=lambda: ["netsentry"])
+    # Tests deliberately construct leaky fixtures to assert the pipeline refuses them, so
+    # linting them would report the test suite's own negative controls as violations.
+    exclude: list[str] = Field(default_factory=lambda: ["__pycache__", "/tests/"])
+    # NS003 only means something where a column could become a feature. Addresses are routing
+    # metadata in `intel/`, `capture/` and `serving/watch.py` by design.
+    identifier_scope: list[str] = Field(
+        default_factory=lambda: [
+            "netsentry/features",
+            "netsentry/models",
+            "netsentry/training",
+            "netsentry/explain",
+        ]
+    )
+    rules: list[str] = Field(default_factory=list)  # empty enables every rule
+    probe_host: str = "netsentry/features/pipeline.py"
+    # A ratchet, not a target: the three standing violations are the feature store's
+    # as-of join keys, audited in docs/reports/mlint.md. A fourth fails the build.
+    max_violations: int = 3
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2738,6 +2772,7 @@ class Settings(BaseSettings):
     psi: PSIConfig = Field(default_factory=PSIConfig)
     acquisition: AcquisitionConfig = Field(default_factory=AcquisitionConfig)
     quantiles: QuantileConfig = Field(default_factory=QuantileConfig)
+    mlint: MlintConfig = Field(default_factory=MlintConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)

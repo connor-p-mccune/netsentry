@@ -1175,3 +1175,13 @@ def test_quantiles_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "p-squared" in text
     assert "t-digest" in text and "alert volume" in text
+
+
+@pytest.mark.slow
+def test_mlint_report_is_written(prepared: Settings, repo_root: Path) -> None:
+    from netsentry.governance.mlint import run_mlint_report
+
+    out = run_mlint_report(prepared, repo_root)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "ns001" in text
+    assert "injected violations caught" in text and "textbook pipeline" in text

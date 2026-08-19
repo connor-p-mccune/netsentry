@@ -78,6 +78,10 @@ GREEDY = "greedy top-k"
 
 _EPS = 1e-12
 
+#: Deterministic Poisson sampling keeps a flow when its inclusion probability rounds up.
+#: A rounding rule, not an operating point -- named so it cannot be mistaken for one.
+_DETERMINISTIC_INCLUSION_CUT = 0.5
+
 
 # --------------------------------------------------------------------------------------
 # Designs: each returns the inclusion probability of every flow.
@@ -274,7 +278,7 @@ def _simulate(
     z = 1.96
     for _ in range(n_simulations):
         if deterministic:
-            taken = probabilities >= 0.5
+            taken = probabilities >= _DETERMINISTIC_INCLUSION_CUT
         else:
             taken = rng.random(len(probabilities)) < probabilities
         observed = labels * taken

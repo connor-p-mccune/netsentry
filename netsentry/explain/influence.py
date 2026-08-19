@@ -54,6 +54,7 @@ from netsentry.data.clean import BINARY_TARGET, MULTICLASS_TARGET
 from netsentry.evaluation import plots
 from netsentry.features.pipeline import build_pipeline
 from netsentry.log import get_logger
+from netsentry.models.base import HARD_LABEL_CUT
 from netsentry.seed import seed_everything
 from netsentry.training.tracking import track_run
 
@@ -271,7 +272,7 @@ def _explain_flows(
 
     margins = x_test @ theta
     probs = _sigmoid(margins)
-    preds = (probs >= 0.5).astype(int)
+    preds = (probs >= HARD_LABEL_CUT).astype(int)
     correct = preds == y_test
     losses = np.log1p(np.exp(-ypm_test * margins))  # per-flow true-label loss
     labels = train[MULTICLASS_TARGET].to_numpy()

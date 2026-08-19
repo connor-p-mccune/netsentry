@@ -53,6 +53,7 @@ from netsentry.data.split import load_split
 from netsentry.evaluation import plots
 from netsentry.evaluation.metrics import attack_probability, threshold_at_fpr
 from netsentry.log import get_logger
+from netsentry.models.base import HARD_LABEL_CUT
 from netsentry.robustness.evasion import attack_scores_transformed, controllable_indices
 from netsentry.training.tracking import track_run
 from netsentry.training.train_supervised import fit_supervised
@@ -91,7 +92,7 @@ def answered_query(scores: np.ndarray, mode: str, round_decimals: int) -> np.nda
     if mode == ROUNDED:
         return np.round(np.asarray(scores, dtype=float), round_decimals)
     if mode == LABEL_ONLY:
-        return (np.asarray(scores, dtype=float) >= 0.5).astype(float)
+        return (np.asarray(scores, dtype=float) >= HARD_LABEL_CUT).astype(float)
     raise ValueError(f"unknown query mode: {mode}")
 
 

@@ -67,6 +67,12 @@ logger = get_logger(__name__)
 REPORT_NAME = "pu_learning.md"
 FIGURE_NAME = "pu_learning.png"
 
+#: How far the naive cut must over-tighten, and how much detection the correction must
+#: recover, before the report leads with the waste rather than with the bookkeeping.
+#: Narrative cuts for the prose, named rather than typed into the render function.
+_WASTEFUL_INFLATION = 1.5
+_MATERIAL_TPR_GAIN = 0.01
+
 
 def scar_labels(y: np.ndarray, label_frac: float, rng: np.random.Generator) -> np.ndarray:
     """SCAR labeling: mark a random ``label_frac`` of the true positives as confirmed.
@@ -472,7 +478,7 @@ def _budget_read(study: PUStudy) -> str:
         f"{b.naive_fpr:.4f}"
     )
     overshoots = b.pu_fpr > b.budget * 1.3
-    if inflation > 1.5 and tpr_gain > 0.01:
+    if inflation > _WASTEFUL_INFLATION and tpr_gain > _MATERIAL_TPR_GAIN:
         core = (
             f" — over-tightened {inflation:.1f}x, silently spending detection: it alerts on "
             f"just {b.naive_tpr:.1%} of attacks where the oracle cut, at the same true budget, "

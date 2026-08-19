@@ -1490,6 +1490,39 @@ def quantiles(
 
 
 @app.command()
+def mlint(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Enforce this project's ML invariants as static analysis, and prove the rules fire."""
+    from netsentry.governance.mlint import REPORT_NAME, lint_paths, run_mlint_report
+
+    settings = _load(config, override)
+    out = run_mlint_report(settings)
+    root = Path(settings.paths.reports_dir).resolve().parent.parent
+    violations = lint_paths(
+        [root / part for part in settings.mlint.roots],
+        exclude=tuple(settings.mlint.exclude),
+        identifier_scope=tuple(settings.mlint.identifier_scope),
+    )
+    logger.info(
+        "Static-analysis report ready",
+        extra={"path": str(out), "violations": len(violations), "report": REPORT_NAME},
+    )
+    if len(violations) > settings.mlint.max_violations:
+        for violation in violations:
+            logger.error(
+                "ML invariant violated",
+                extra={
+                    "code": violation.code,
+                    "location": f"{violation.path}:{violation.line}",
+                    "finding": violation.message,
+                },
+            )
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def compliance(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
