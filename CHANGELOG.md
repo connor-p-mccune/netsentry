@@ -6,6 +6,90 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.19.0] — 2026-08-19
+
+The **sharing, budgets & accountability wave**: four studies about assumptions this project had
+been making without measuring — that indicators can be shared safely as hashes, that computing
+every feature is the right default, that an operating point needs the score stream stored, and
+that a conformance claim means something once it is written down.
+
+Three of the four came back false, and the fourth replaced a claim with a mechanism. The wave's
+recurring shape is that **the thing worth measuring was the assumption underneath the study, not
+the artifact the study built** — a private set intersection whose cryptography was never the
+weak part, an acquisition policy that lost to its own placebo, a quantile sketch whose error was
+being graded in the wrong unit, and a compliance mapping whose value is the check that can
+downgrade it.
+
+### Added
+- **Private indicator sharing** (`netsentry psi`, `netsentry/intel/psi.py`): Diffie-Hellman
+  private set intersection over RFC 3526 group 14, implemented on the standard library, so two
+  organisations can compute the overlap of their indicator lists without either learning a
+  non-shared element. The intersection is recovered **exactly** (40 of 40) and the responder
+  learns nothing, because every value it returns is blinded by an exponent it does not hold.
+  Three findings past correctness. (1) The practice this replaces — exchanging hashed indicators
+  — is not private at all: the complete dictionary attack is *executed* against the 2^16 port
+  space (50 of 50 preimages in 0.41 s) and timed against the address space, where 151,749
+  candidates a second puts **the entire IPv4 space at 7.9 hours** on one laptop core. The rate is
+  measured with address formatting included, because a bare `sha256` benchmark (290,127/s)
+  overstates what the attacker gets. (2) **Salting does not help**, for a structural rather than
+  cryptographic reason: a sharing group must use the same salt or no two members' hashes would
+  match, so the salt is group knowledge and the salted list falls in 0.28 s. (3) The protocol
+  guarantees privacy of the input and says nothing about its truthfulness, so a party submitting
+  1,600 candidates instead of its 40 real indicators harvests **100% of the reachable overlap
+  with no signal to the peer** — the honest-but-curious boundary, executed rather than cited.
+  Privacy costs 12x the bandwidth of a hash exchange and 16.7 s of CPU at 400 indicators a side.
+- **Cost-aware feature acquisition** (`netsentry acquisition`,
+  `netsentry/evaluation/acquisition.py`): every other study here hands the model all 76
+  statistics; an exporter cannot. Six feature families are priced by what they cost to compute
+  per flow, and four policies compete on detection at the 0.1% budget against mean compute.
+  **Four features beat all seventy-six** — greedy selection puts `flow rates` at 17.3% detection
+  for a cost of 6.0 against 8.4% at 24.5, which is 2.1x the detection for 24% of the compute, and
+  it is the leaderboard's finding arriving through the exporter: on a split whose test days share
+  no attack class with training, extra capacity fits families that never reappear. The adaptive
+  policy that motivated the study **loses to a random-gating control on the same budget**, twice
+  — once with the textbook symmetric uncertainty band (incoherent at a 0.1% operating point,
+  where "near the threshold" means "in the top thousandth") and again after an asymmetric gate
+  was built to fix exactly that. The diagnostic settles it: the cheap tier forwarding 30% of
+  flows retains 27.2% of detections where random forwarding retains 30%, so the ranker is
+  indistinguishable from chance and neither policy had a signal to use. Kept as a negative
+  result, with a flat-price-list re-run showing which conclusions survive the pricing assumption.
+- **Streaming quantile estimation** (`netsentry quantiles`,
+  `netsentry/monitoring/quantiles.py`): every operating point in this repository is a quantile,
+  and every study that derives one assumes the scores can be collected, sorted and indexed —
+  true of a test split, false of a stream. Reservoir sampling, **P-squared** (Jain & Chlamtac
+  1985), a **t-digest** (Dunning) and a fixed-bin histogram are implemented from scratch, graded
+  against the exact 0.999 quantile of a 200,000-score stream, then re-graded in **alert volume**,
+  the unit a SOC lead notices. **Nine of the ten approximations deliver an identical alert
+  volume** — not close, identical, because a threshold anywhere inside the gap between two
+  adjacent benign scores is the same decision. P-squared holds the operating point in **160
+  bytes**, 10,000x smaller than keeping the stream; the fixed-bin histogram has the cheapest
+  update at 1,759 ns; the t-digest is beaten on both axes at once, because a model score is
+  bounded in [0, 1] by construction and boundedness is exactly the assumption the cheap option
+  needs. All four then fail the same way under the real validation-to-test benign drift: none of
+  them forgets, so every one is anchored by history nobody asked it to keep, and the fix is a
+  window rather than a better sketch.
+- **Conformance mapping** (`netsentry compliance`, `netsentry/governance/compliance.py`): NIST AI
+  RMF 1.0 and the EU AI Act's high-risk obligations (Regulation (EU) 2024/1689, Articles 9-15,
+  plus 17, 27 and 43) mapped onto 26 controls, each naming the module, command and report that
+  satisfies it. The mechanism is the deliverable: **every control's evidence is verified to exist
+  on disk at generation time, and a control whose artifact is deleted or renamed downgrades
+  itself to unmet** regardless of the grade it claims — the load-bearing unit test does exactly
+  that. Partial evidence earns no partial credit. **19 met, 4 partial, 2 unmet, 1 not
+  applicable** — 93% of applicable NIST functions and 73% of applicable EU articles — with the
+  gaps named as organisational rather than technical: Article 17 (quality management system) and
+  Article 43 (conformity assessment) are unmet and unmeetable by code, since a repository cannot
+  perform a conformity assessment on itself. Ships a machine-readable `compliance_mapping.json`
+  beside the prose, and states plainly that it is not legal advice.
+
+### Changed
+- README gains four sections and four capability rows; `docs/TOUR.md` gains a thirteenth stop;
+  `NOTES.md` records the wave's self-audit, including the three measurement bugs in the quantile
+  study that all flattered the estimators, the acquisition study's overwritten cost column, and
+  the dictionary-rate benchmark that left out the work the attacker actually does.
+- CI runs all four studies at reduced scale on every push, sized by what each is bounded by:
+  modular exponentiation for PSI, model refits for acquisition, stream length for quantiles.
+- The test suite grows to **1,449 tests**.
+
 ## [0.18.0] — 2026-08-18
 
 The **distribution, representation & scale wave**: eight studies about the parts of a detection
