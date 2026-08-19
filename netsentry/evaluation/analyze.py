@@ -43,6 +43,7 @@ from netsentry.evaluation.neyman_pearson import run_neyman_pearson_report
 from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.ope import run_ope_report
 from netsentry.evaluation.openset import run_openset_report
+from netsentry.evaluation.pareto import run_pareto_report
 from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.rare_rates import run_rare_rates_report
 from netsentry.evaluation.report import run_evaluation
@@ -322,6 +323,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "designs, including the one with no estimator at all",
         "sampling.md",
         run_sampling_report,
+    ),
+    (
+        "Multi-objective selection",
+        "a Pareto front over detection, cost and evasion-resistance, and the front members no "
+        "weighted sum can reach (Deb et al. 2002)",
+        "pareto.md",
+        run_pareto_report,
     ),
     (
         "Server-side batching",

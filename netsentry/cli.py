@@ -1438,6 +1438,19 @@ def batching(
 
 
 @app.command()
+def pareto(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Evolve a Pareto front over detection, cost and evasion-resistance (NSGA-II)."""
+    from netsentry.evaluation.pareto import run_pareto_report
+
+    settings = _load(config, override)
+    out = run_pareto_report(settings)
+    logger.info("Pareto report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

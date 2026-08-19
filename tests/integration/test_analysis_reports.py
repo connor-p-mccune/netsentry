@@ -1115,3 +1115,17 @@ def test_batching_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "fixed cost" in text
     assert "p99" in text and "equilibrium" not in text.split("scope")[0][:200]
+
+
+@pytest.mark.slow
+def test_pareto_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.pareto import run_pareto_report
+
+    prepared.pareto.population_size = 4
+    prepared.pareto.generations = 1
+    prepared.pareto.n_weights = 500
+    prepared.pareto.max_train_rows = 500
+    out = run_pareto_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "hypervolume" in text
+    assert "weighted sum" in text and "random search" in text

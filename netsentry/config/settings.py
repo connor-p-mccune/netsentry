@@ -1863,6 +1863,31 @@ class BatchingConfig(BaseModel):
     n_requests: int = 20000  # simulated arrivals per policy per rate
 
 
+class ParetoConfig(BaseModel):
+    """Multi-objective model selection by NSGA-II (Deb et al. 2002).
+
+    Every model choice in this project collapses several things into one number and sorts on
+    it, which either hides the other axes or hard-codes an exchange rate somebody invented.
+    This evolves a Pareto front over the boosted model's hyperparameters against three
+    objectives that genuinely conflict -- detection at the false-positive budget, inference
+    cost, and detection surviving a padding attack of ``evasion_factor``. ``population_size``
+    x ``generations`` sets the evaluation budget, matched exactly by a random-search control
+    so the algorithm has to earn its complexity on hypervolume rather than on reputation.
+    ``n_weights`` weight vectors are then drawn from the simplex to find which front members
+    *no* weighted-sum objective can select -- a fact about the front's convexity, and the
+    argument for reporting a front instead of a score. ``max_train_rows`` caps training so a
+    few hundred fits stay affordable, and the cap applies to every candidate."""
+
+    population_size: int = 10
+    generations: int = 4
+    crossover_eta: float = 15.0  # simulated-binary crossover distribution index
+    mutation_eta: float = 20.0  # polynomial mutation distribution index
+    mutation_rate: float = 0.25  # per-coordinate mutation probability
+    evasion_factor: float = 1.5  # multiplier applied to volume-like features by the attacker
+    n_weights: int = 20000  # weight vectors sampled when testing reachability
+    max_train_rows: int = 8000
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2620,6 +2645,7 @@ class Settings(BaseSettings):
     sampling: SamplingConfig = Field(default_factory=SamplingConfig)
     slice_discovery: SliceDiscoveryConfig = Field(default_factory=SliceDiscoveryConfig)
     batching: BatchingConfig = Field(default_factory=BatchingConfig)
+    pareto: ParetoConfig = Field(default_factory=ParetoConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
