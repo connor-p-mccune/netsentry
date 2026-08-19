@@ -73,6 +73,7 @@ from netsentry.governance.ledger_report import run_ledger_report
 from netsentry.governance.provenance import run_provenance_report
 from netsentry.intel.atlas import run_atlas_report
 from netsentry.intel.navigator import run_navigator_export
+from netsentry.intel.psi import run_psi_report
 from netsentry.intel.report import run_mitre_report
 from netsentry.intel.sequential import run_sequential_report
 from netsentry.intel.sigma import run_sigma_export
@@ -733,6 +734,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_sequential_ab_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
+    (
+        "Private indicator sharing",
+        "ask a peer whether they have seen an indicator without telling them which: DH private "
+        "set intersection, and the dictionary attack on the hashing it replaces",
+        "psi.md",
+        run_psi_report,
+    ),
     (
         "MITRE ATLAS coverage",
         "the detector as a target: this repo's own ML attack surface, with the gaps named",

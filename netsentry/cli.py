@@ -1451,6 +1451,19 @@ def pareto(
 
 
 @app.command()
+def psi(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Share indicators without revealing them, and price what hashing them actually leaks."""
+    from netsentry.intel.psi import run_psi_report
+
+    settings = _load(config, override)
+    out = run_psi_report(settings)
+    logger.info("PSI report ready", extra={"path": str(out)})
+
+
+@app.command()
 def atlas(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

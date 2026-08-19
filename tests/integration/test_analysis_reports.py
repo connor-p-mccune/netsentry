@@ -1129,3 +1129,21 @@ def test_pareto_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "hypervolume" in text
     assert "weighted sum" in text and "random search" in text
+
+
+@pytest.mark.slow
+def test_psi_report_is_written(prepared: Settings, repo_root: Path) -> None:
+    from netsentry.intel.psi import run_psi_report
+
+    prepared.paths.data_raw = repo_root / "data" / "raw"
+    prepared.psi.list_size = 40
+    prepared.psi.overlap = 8
+    prepared.psi.hash_samples = 2000
+    prepared.psi.address_sample = 2000
+    prepared.psi.port_indicators = 10
+    prepared.psi.inflation_sizes = [20, 60]
+    prepared.psi.cost_sizes = [10, 20]
+    out = run_psi_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "set intersection" in text
+    assert "salt" in text and "inflation" not in text.split("scope")[0][:100]

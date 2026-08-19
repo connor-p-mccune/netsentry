@@ -1888,6 +1888,34 @@ class ParetoConfig(BaseModel):
     max_train_rows: int = 8000
 
 
+class PSIConfig(BaseModel):
+    """Private set intersection for indicator sharing (Meadows 1986; Huberman et al. 1999).
+
+    Sigma and STIX export what a detector found; both assume the sharing decision is already
+    made. The step before it leaks: asking a peer whether they have seen an indicator tells
+    them you are interested in it. This runs the Diffie-Hellman PSI protocol between two
+    organisations' indicator lists, built from attack destinations on ``org_a_day`` and
+    ``org_b_day`` with a constructed ``overlap`` -- constructed because this stand-in draws
+    addresses independently per row, so a measured intersection would measure the generator
+    rather than the protocol. ``hash_samples`` sizes the SHA-256 rate measurement behind the
+    dictionary attack on hash-based sharing (the practice PSI replaces), ``port_indicators``
+    the fully-executed recovery against a 16-bit space, ``inflation_sizes`` the attack on PSI
+    itself (a party that submits a padded candidate set learns the peer's membership for all of
+    it), and ``cost_sizes`` the cost sweep."""
+
+    org_a_day: str = "Friday"
+    org_b_day: str = "Thursday"
+    list_size: int = 400  # indicators per organisation (each is one 2048-bit exponentiation)
+    overlap: int = 40  # shared infrastructure planted in both lists
+    hash_samples: int = 200000  # bare hashes timed, for the raw-primitive rate
+    address_sample: int = 400000  # addresses actually enumerated, formatting included
+    port_indicators: int = 50  # hashed ports recovered by exhausting the 16-bit space
+    honest_size: int = 40  # indicators the dishonest party actually holds
+    universe_hit_rate: float = 0.25  # share of a submitted universe that reaches the peer
+    inflation_sizes: list[int] = Field(default_factory=lambda: [100, 400, 1600])
+    cost_sizes: list[int] = Field(default_factory=lambda: [50, 100, 200, 400])
+
+
 class SequentialConfig(BaseModel):
     """Sequential host-compromise decisions by Wald's SPRT (1945).
 
@@ -2646,6 +2674,7 @@ class Settings(BaseSettings):
     slice_discovery: SliceDiscoveryConfig = Field(default_factory=SliceDiscoveryConfig)
     batching: BatchingConfig = Field(default_factory=BatchingConfig)
     pareto: ParetoConfig = Field(default_factory=ParetoConfig)
+    psi: PSIConfig = Field(default_factory=PSIConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
     covariate_shift: CovariateShiftConfig = Field(default_factory=CovariateShiftConfig)
