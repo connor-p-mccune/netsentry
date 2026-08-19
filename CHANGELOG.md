@@ -6,6 +6,137 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-08-18
+
+The **distribution, representation & scale wave**: eight studies about the parts of a detection
+system that are not the model — how updates move between organisations, whether the data itself
+can move, what the inputs should look like before anyone labels them, which risk the contract
+actually names, what to score when the budget cannot cover the stream, where the failures
+nobody predicted are hiding, what the server costs per call, and how to choose when three
+objectives disagree.
+
+The thread running through them is that **the metric a study leads with decides what it can
+see**. A private synthetic release is indistinguishable from real data on PR-AUC and detects a
+twentieth as much at the operating point. A sampling design that catches four times as many
+attacks is the one under which nothing can be said about what it missed. A guarantee that holds
+in expectation is violated by half of the deployments that hold it. In each case the second
+metric was the report.
+
+### Added
+- **Secure aggregation** (`netsentry secagg`, `netsentry/training/secagg.py`): the federated
+  study's claim is that raw flows never leave the site, and this measures what the *updates*
+  leak — cosine similarity against a per-family reference names which attack family a site is
+  holding **81% of the time**, against a 33% chance rate, with no model inversion and no
+  auxiliary data. The Bonawitz et al. (CCS 2017) protocol is then implemented from scratch on
+  the standard library: Diffie-Hellman over RFC 3526 group 14, an HMAC-SHA256 PRG expanded into
+  field elements by rejection sampling (reducing 64 bits mod `2^61-1` biases eight residues;
+  rejection costs 8 draws in `2^64` and removes the footnote from the security argument),
+  Shamir sharing over `2^521-1` for dropout recovery, and fixed-point encoding into `Z_p`.
+  Group parameters are checked by Miller-Rabin in the test suite rather than trusted. The
+  recovered sum is bit-identical to the plaintext sum; the masked view drops the identification
+  attack to chance. Three findings past that: the encoding's only live failure mode is the
+  *ceiling* (the quantization floor never bites because the payload is FedAvg's size-weighted
+  numerator, worth eleven free bits of scale), the self-mask is what stops a coordinator
+  unmasking a live site by declaring it dropped (the attack is executed in both configurations),
+  and **secure aggregation and Byzantine robustness ask opposite things of the same channel** —
+  every defence in the byzantine study is a function of the individual updates this protocol
+  hides, so one liar takes PR-AUC from 0.598 to 0.361 with the median unavailable. Both escapes
+  are priced, including a range proof whose "conservative" bound admits an in-bound attack
+  worse than the unbounded one it was meant to stop.
+- **Differentially-private synthetic release** (`netsentry dpsynth`,
+  `netsentry/data/dp_synth.py`): every model here trains on a 2017 capture because flow records
+  do not leave the organisation that collected them, so this asks whether the *data* can move
+  instead. A PrivBayes-family Bayesian network on a **public** signed-log bin grid — no data
+  consulted, because taking min/max from the capture is already a query about one record — with
+  the accounting spelled out rather than implied (add/remove neighbouring, which is what makes
+  the per-class split parallel composition; sequential composition across 76 per-feature
+  marginals; one Laplace query for the class prior). **PR-AUC cannot see the privacy cost**:
+  every private arm lands within 0.129 of every other against a 0.121 run-to-run range on
+  repeated draws of the same configuration. Detection at the 0.1% budget, with the threshold
+  chosen the way a recipient must choose it, climbs 0.1% -> 0.3% -> 4.1% -> 8.0% across epsilon
+  0.5 -> 16 against 11.8% for real data, because noise destroys the tails of each marginal long
+  before it disturbs the ordering. Degree-1 structure loses for an arithmetic reason (25 cells
+  against 625 for the same budget) and the non-private *oracle* arm proves a private structure
+  search could not rescue it.
+- **Self-supervised pretraining** (`netsentry pretrain`, `netsentry/training/pretrain.py`):
+  masked-feature modelling (VIME) and contrastive learning (SCARF) on unlabelled flows, sharing
+  one encoder and one corruption operator so the comparison is between objectives. Built around
+  three controls the literature is criticised for omitting: an untrained encoder (which lands
+  *below* the raw features, ruling out "a narrower projection is just easier"), PCA on the same
+  pool, and the deployed boosted trees. Masked modelling leads at every budget — 0.592 against
+  0.541 for a linear probe on raw features at 100 labels — but PCA is 0.043 behind there and
+  **0.001 behind at 28,034 labels**: pretraining bought label efficiency (1.9x), not a better
+  ceiling. The deployed model family is the *worst* arm at small budgets (0.0% detection at the
+  1% budget where a linear probe gets 8.6%). The deployment-pool arm lost and its premise is
+  what failed: Thursday and Friday share no attack class, so unlabelled *recency* is not
+  unlabelled *representativeness*.
+- **Distribution-free risk control** (`netsentry riskcontrol`,
+  `netsentry/evaluation/risk_control.py`): every operating point here is chosen by fixing a
+  false-positive budget, which silently implies a miss rate nobody wrote down. Conformal risk
+  control (Angelopoulos et al. 2022) and Learn-then-Test (Angelopoulos et al. 2021) bound the
+  miss rate directly, and the difference between them is the report: across 200 simulated
+  calibrate-and-deploy cycles the expectation bound holds on average and is **exceeded by
+  39-46% of individual deployments**, while the high-probability bound delivers 4-12% against
+  its 10% promise. The Hoeffding-Bentkus p-value's binomial tail is summed in log space from
+  `lgamma` so the certificate never degrades to a normal approximation, and its validity under
+  the null is checked by 2,000-draw simulation. Certifying a 5% miss rate costs 695,276 alerts
+  a day (~16,554 analysts); running miss rate *and* alert volume together returns an **empty
+  set for all nine pairs** — a certificate of infeasibility rather than a failure to search;
+  and per class every family is certifiable at prices differing 11x, which is the argument for
+  a per-family SLA.
+- **Budgeted sampling** (`netsentry sampling`, `netsentry/evaluation/sampling.py`): at line rate
+  the model cannot see every flow, and the half of that problem nobody reports is what can be
+  said about the flows nobody scored. Horvitz-Thompson estimation over four designs — uniform,
+  stratified (proportional and Neyman), priority sampling with an exploration floor, and greedy
+  top-k — with interval coverage measured over 200 draws rather than asserted. Greedy wins
+  detection at small budgets (3.9% against 2.0% at a 1% budget) and admits **no unbiased
+  estimator of the total at any budget**, because a zero inclusion probability is an unbounded
+  weight. Its lead is not permanent either: by a 25% budget the randomised design overtakes it
+  (59.6% against 50.6%). The best detector is also not the best estimator — Neyman allocation
+  gives the narrowest interval while priority sampling gives the widest, since attacks the
+  pre-filter scores low arrive carrying enormous `1/pi` weights. The naive "found / rate"
+  estimator reads +103% under priority sampling and +294% under greedy.
+- **Automatic slice discovery** (`netsentry slicefinder`,
+  `netsentry/evaluation/slice_discovery.py`): the per-class and per-service studies slice on
+  partitions somebody chose in advance; this searches ~19,000 conjunctions of binned feature
+  literals for the regions nobody had a hypothesis about. Three defences run with the search and
+  each is a measurement: a **permuted-loss null reported first** (2,249 regions clear an
+  uncorrected 5%, zero survive Benjamini-Hochberg), FDR control across candidates, and a
+  confirmation half. The winner's curse then behaves exactly as theory predicts, which required
+  adding a marginal arm to see: the twelve strongest slices retain 95% of their discovered
+  effect on unseen rows and the twelve weakest that still cleared the correction retain 48%.
+  The strongest confirmed region — short flows, few forward packets, SYN flags — carries 90.8%
+  attacks with 100% of them undetected, which is PortScan, found by a search never told the
+  class exists.
+- **Server-side micro-batching** (`netsentry batching`, `netsentry/serving/batching.py`):
+  measured on the deployed scoring path, **10.03 ms of fixed cost per call against 0.0149 ms
+  per flow** — a 673:1 ratio that is entirely frame construction, transformer dispatch and
+  ensemble setup. A discrete-event simulation of three policies shows the capacity ceiling
+  moving from 101 requests a second to 63,479, and batching winning the *tail* long before it
+  is needed for throughput (at 50 req/s the unbatched p99 is already 42.3 ms against 19.5 ms).
+  At low load the timer — not the batching — is what costs, adding exactly `max_wait` to the
+  median. The first queueing model was wrong by 25x: a batching server is **self-regulating**,
+  its service capacity growing with its own backlog, and the fixed point
+  `b* = lambda a / (1 - lambda c)` with mean latency `1.5 (a + c b*)` matches the simulation to
+  within 0.9% on both batch size and latency.
+- **Multi-objective model selection** (`netsentry pareto`, `netsentry/evaluation/pareto.py`):
+  NSGA-II from scratch — fast non-dominated sorting, crowding distance, tournament selection,
+  simulated-binary crossover, polynomial mutation — over detection at the budget, inference cost
+  and detection surviving a padding attack, with exact hypervolume and a random-search control
+  on an identical budget so the algorithm has to earn its complexity. The sharp result is
+  geometric: a weighted sum is a linear functional whose minimiser is always a vertex of the
+  convex hull, so **front members in a concave stretch are optimal for no weighting at all** —
+  twenty thousand weight vectors cannot select them, and every tuning procedure in this
+  repository is structurally incapable of returning them.
+
+### Changed
+- CI exercises all eight studies at CI scale (`configs/ci.yaml` gains a block per study), and
+  the analysis suite (`netsentry analyze`) gains all eight reports.
+- README gains a section per study and eight capability rows; `NOTES.md` records the wave's
+  failures, including three bugs that produced plausible output rather than errors (a reversed
+  mask sign in the dropout path, a slice-confirmation lookup that silently matched nothing, and
+  a queueing model that was wrong by a factor of 25).
+
 ## [0.17.1] — 2026-08-14
 
 One addition in the same spirit as the 0.17.0 wave: take a gap between what the project measures

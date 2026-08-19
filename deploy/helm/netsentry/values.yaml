@@ -6,7 +6,7 @@ replicaCount: 2
 
 image:
   repository: netsentry-serve
-  tag: "0.17.1"
+  tag: "0.18.0"
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []

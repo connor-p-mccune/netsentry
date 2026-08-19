@@ -17,7 +17,7 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.17.1`.** The build plan in
+**Released `v0.18.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
 tested, and committed, and seventeen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
