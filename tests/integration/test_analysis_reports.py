@@ -1203,3 +1203,19 @@ def test_density_report_is_written(prepared: Settings, clean_synth: pd.DataFrame
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "complexity" in text
     assert "learns nothing" in text and "held-out attack" in text
+
+
+@pytest.mark.slow
+def test_state_machine_report_is_written(prepared: Settings) -> None:
+    """The lifecycle machine against a real app built on the fixture's own bundle."""
+    from netsentry.serving.bundle import build_serving_bundle
+    from netsentry.serving.lifecycle import run_lifecycle_report
+
+    build_serving_bundle(prepared)
+    prepared.lifecycle.steps = 40
+    prepared.lifecycle.min_heavy = 2
+    prepared.lifecycle.min_light = 2
+    out = run_lifecycle_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "state machine" in text
+    assert "caught" in text and "refused reload" in text

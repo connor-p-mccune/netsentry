@@ -2008,6 +2008,27 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class LifecycleConfig(BaseModel):
+    """Model-based (stateful) testing of the serving lifecycle.
+
+    Every part of the lifecycle has a single-request test; none of them covers the sequences,
+    which is where the two-step bugs live -- a reload that half-succeeds, a guard that stops
+    applying after a swap, a health endpoint reporting a version it no longer serves. The
+    contract is written as a state machine holding only what an observer can check, the real
+    application is driven through random operation sequences, and model and service are
+    compared after every step. ``mutant_steps`` re-runs the identical walk against deliberately
+    broken services, because a conformance machine that has never failed is indistinguishable
+    from one that cannot."""
+
+    steps: int = 200
+    # Two operations build an entire inference engine (seconds, not milliseconds); the rest are
+    # free. The schedule allocates the expensive ones explicitly and fills the rest with cheap
+    # ones, because a weighted draw once produced a headline run in which a *successful* reload
+    # was never exercised at all.
+    min_heavy: int = 4
+    min_light: int = 8
+
+
 class MlintConfig(BaseModel):
     """Static analysis of this project's own ML invariants.
 
@@ -2804,6 +2825,7 @@ class Settings(BaseSettings):
     acquisition: AcquisitionConfig = Field(default_factory=AcquisitionConfig)
     quantiles: QuantileConfig = Field(default_factory=QuantileConfig)
     mlint: MlintConfig = Field(default_factory=MlintConfig)
+    lifecycle: LifecycleConfig = Field(default_factory=LifecycleConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)

@@ -1490,6 +1490,19 @@ def quantiles(
 
 
 @app.command()
+def statemachine(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Drive the serving lifecycle through random operation sequences against a model of it."""
+    from netsentry.serving.lifecycle import run_lifecycle_report
+
+    settings = _load(config, override)
+    out = run_lifecycle_report(settings)
+    logger.info("State-machine report ready", extra={"path": str(out)})
+
+
+@app.command()
 def density(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

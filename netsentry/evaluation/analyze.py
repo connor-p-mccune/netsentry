@@ -111,6 +111,7 @@ from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.batching import run_batching_report
 from netsentry.serving.cascade import run_cascade_report
+from netsentry.serving.lifecycle import run_lifecycle_report
 from netsentry.training.byzantine import run_byzantine_report
 from netsentry.training.continual import run_continual_report
 from netsentry.training.deep_tabular import run_deep_tabular_report
@@ -797,6 +798,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "against the repository",
         "compliance.md",
         run_compliance_report,
+    ),
+    (
+        "Serving lifecycle conformance",
+        "the API contract as a state machine, driven through random operation sequences, with "
+        "deliberately broken services proving the checker fails",
+        "state_machine.md",
+        run_lifecycle_report,
     ),
     (
         "Anomaly-score semantics",
