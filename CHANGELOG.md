@@ -6,6 +6,92 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.20.0] — 2026-08-21
+
+The **self-audit wave**: four studies pointed at things this project had been taking on trust —
+its own coding rules, its own anomaly premise, its own serving contract, and its own operating
+point.
+
+The thread running through them was not planned. **Every one of these checks prints the same
+thing when it is working as when it is broken**: a linter on a clean codebase reports zero, a
+state machine against a correct service reports no violations, a conformance mapping with intact
+evidence reports full coverage. So three of the four carry injection harnesses — deliberately
+broken inputs the checker has to catch — and in each case the harness found a defect in the
+checker itself before it found anything about the subject.
+
+### Added
+- **ML-invariant static analysis** (`netsentry mlint`, `netsentry/governance/mlint.py`): six of
+  the prose rules in `.claude/rules/ml.md` translated into AST rules — fitting on non-training
+  data, statistics over the full dataset, identifier columns in the model path, unseeded
+  randomness, hardcoded operating points, accuracy without a precision-recall metric beside it.
+  Each ships with its own blind spot stated in the same table, because a rule set that claims
+  coverage it does not have converts a clean report into false assurance. Graded by **injection**:
+  twelve violations written into a real module's source in memory plus ten pieces of correct code
+  that resemble them — **12 caught, 0 false alarms** — and the same rules over a textbook
+  CIC-IDS2017 pipeline trip **11 violations across all six rules in twenty-six lines**. The rules
+  shipped with a substring bug (`val` inside `values` reads `values.mean()` as a validation-split
+  leak), a negative control failed and exposed a real gap in the identifier exemption, and
+  thirty-five hits turned out to be the rule asking the wrong question in the packages where
+  addresses are routing metadata by design. **Five hits led to code changes**: three narrative
+  thresholds buried in render functions became named constants, and two `>= 0.5` hard-label
+  conventions became a shared `HARD_LABEL_CUT` documented as sklearn's convention rather than an
+  operating point. Three violations stand — the feature store's as-of join keys, the one place in
+  the model path where an identifier legitimately enters — with the CI budget set at exactly
+  three so a fourth fails the build.
+- **Anomaly-score semantics** (`netsentry density`, `netsentry/models/density.py`): the
+  autoencoder has shipped since phase 5 on the premise that reconstruction error ranks novelty,
+  which is false in general (Nalisnick et al. 2019). Seven benign-only detectors go through the
+  identical leave-one-attack-out protocol — the two incumbents, two genuine densities
+  (Mahalanobis, a diagonal mixture), a kernel density estimate, the autoencoder's *linear* shadow
+  (PCA reconstruction error), and a control that **never sees the training data**: the squared
+  norm of the standardised feature vector. The control detects **6.0% and beats four of the six
+  trained arms**; the autoencoder's entire margin over it is 0.4 points for twelve seconds of
+  fitting and a Torch dependency. The sharp version needs the prevalence floor — PR-AUC starts at
+  the attack share (0.123), so the question is how much *lift over chance* survives regressing
+  out the size proxy, and the answer is almost none: the best arm retains **13%**, the
+  autoencoder **3%**, and Mahalanobis and PCA rank **worse than a coin** on what is left.
+  Mahalanobis at +1.00 correlation is algebra rather than evidence, and the report says so.
+- **Serving lifecycle conformance** (`netsentry statemachine`, `netsentry/serving/lifecycle.py`):
+  every part of the lifecycle has a single-request test and none of them covers the *sequences*,
+  where the two-step bugs live. The contract becomes a state machine holding only what an
+  observer can check, and the real application is driven through 200 random operations with model
+  and service compared after every step against five properties: a refused reload changes
+  nothing, only a successful reload moves the served version, a refusal is never a success,
+  health never claims `ok` while its own canary fails, and the guard applies in every state. The
+  service came back clean and **five injected regressions were all caught**. A weighted random
+  draw over operations had produced a headline run with **zero successful reloads** — the most
+  important positive transition unexercised while the report looked complete — so coverage is now
+  allocated explicitly and asserted across five seeds.
+- **Online triage learning** (`netsentry bandit`, `netsentry/evaluation/bandit.py`): the
+  off-policy study values a policy from someone else's log; this learns one while it runs, under
+  partial feedback where a skipped attack produces no alert, no signal and no lesson. LinUCB,
+  linear Thompson sampling and epsilon-greedy race the deployed threshold and a random control
+  down 18,909 flows at a 1% attack rate. **Every learner loses and none ever overtakes the
+  incumbent**, which itself lands within $1,075 of the best threshold obtainable with full
+  hindsight. The algorithms are not what failed: LinUCB's regret grows as `T^0.41` against the
+  `sqrt(T)` the analysis promises, while the random control manages `T^0.96`. **What exploration
+  costs is the alert budget, not detection** — LinUCB reviews 5.35% of benign traffic against the
+  deployed 0.88% and catches *more* attacks for it (47 against 33), and sweeping the confidence
+  width moves that trade continuously from 2.15% to 9.17% with no setting that behaves like an
+  operating point. A reward function is not a constraint, which is why every other decision here
+  is expressed as a rate.
+
+### Changed
+- **The static-analysis pass caught a leak in this wave's own bandit study**, which is the
+  clearest argument for having built it: the bandit standardised its context by the stream's own
+  mean and standard deviation, handing an online learner a statistic of flows it had not seen.
+  Fixed to use validation statistics. The same hit showed NS002 was treating validation as
+  off-limits when threshold calibration on validation is the prescribed method, so its token set
+  is now narrower than NS001's -- documented in the rule and pinned by two tests.
+- `HARD_LABEL_CUT` in `netsentry/models/base.py` names sklearn's probability-to-label convention
+  once, and three report-narrative thresholds became named constants — all five found by `mlint`.
+- README gains four sections and four capability rows; `docs/TOUR.md` gains a fourteenth stop;
+  `NOTES.md` records the wave's self-audit, including the metric framing that would have
+  flattered every anomaly detector and the two wrong regret references.
+- `plot_grouped_barh` added for side-by-side count comparisons.
+- CI runs all four studies at reduced scale on every push.
+- The test suite grows to **1,554 tests**.
+
 ## [0.19.0] — 2026-08-19
 
 The **sharing, budgets & accountability wave**: four studies about assumptions this project had

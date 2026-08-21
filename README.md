@@ -2529,7 +2529,7 @@ sweep of the confidence width prices that trade: 2.15% → 3.14% → 5.35% → 9
 as the width goes 0.1 → 2.0, and the best-tuned setting still returns only 81% of what the
 untouched threshold makes while spending twice its budget. That is the
 generalisable finding. **A reward function is not a constraint**: the economics say a review
-costs $25, so a policy reviewing eight times as much traffic is making a trade the objective
+costs $25, so a policy reviewing six times as much traffic is making a trade the objective
 permits, while a SOC's alert budget is a *rate* — and every fixed-FPR threshold, conformal risk
 bound and Neyman-Pearson certificate in this repository exists to express exactly that
 difference.
