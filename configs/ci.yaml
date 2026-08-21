@@ -179,5 +179,24 @@ quantiles:
   reservoir_sizes: [500, 5000]
   compressions: [50.0]
   histogram_bins: [1000]
+density:
+  methods:                          # CI installs no torch: the autoencoder arm is skipped
+    - "isolation forest (deployed)"
+    - "PCA reconstruction (linear autoencoder)"
+    - "Mahalanobis distance (Gaussian density)"
+    - "Gaussian mixture (diagonal)"
+    - "vector norm (learns nothing)"
+  max_attacks: 2
+  max_train_rows: 1500
+  kde_samples: 200
+  gmm_components: 4
+lifecycle:
+  steps: 40                         # each reload builds a whole inference engine
+  min_heavy: 2
+  min_light: 2
+bandit:
+  max_flows: 2000
+  n_repeats: 2
+  alpha_sweep: [0.5, 1.0]
 mlflow:
   enabled: false         # use the local file logger in CI

@@ -142,6 +142,12 @@ jobs:
           python -m netsentry.cli acquisition -o configs/ci.yaml
           python -m netsentry.cli quantiles -o configs/ci.yaml
           python -m netsentry.cli compliance -o configs/ci.yaml
+      - name: Self-audit studies (mlint - density - statemachine - bandit)
+        run: |
+          python -m netsentry.cli mlint -o configs/ci.yaml
+          python -m netsentry.cli density -o configs/ci.yaml
+          python -m netsentry.cli statemachine -o configs/ci.yaml
+          python -m netsentry.cli bandit -o configs/ci.yaml
       - name: Slow integration tests
         run: python -m pytest -m slow
 
