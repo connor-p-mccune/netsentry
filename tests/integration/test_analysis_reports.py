@@ -1219,3 +1219,16 @@ def test_state_machine_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "state machine" in text
     assert "caught" in text and "refused reload" in text
+
+
+@pytest.mark.slow
+def test_bandit_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.bandit import run_bandit_report
+
+    prepared.bandit.max_flows = 1500
+    prepared.bandit.n_repeats = 2
+    prepared.bandit.alpha_sweep = [0.5, 1.0]
+    out = run_bandit_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "linucb" in text
+    assert "alert budget" in text and "regret exponent" in text

@@ -22,6 +22,7 @@ from netsentry.evaluation.active_learning import run_active_learning_report
 from netsentry.evaluation.adaptive_conformal import run_adaptive_conformal_report
 from netsentry.evaluation.alert_fdr import run_alert_fdr_report
 from netsentry.evaluation.alert_queue import run_alert_queue_report
+from netsentry.evaluation.bandit import run_bandit_report
 from netsentry.evaluation.baserate import run_base_rate_report
 from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
@@ -798,6 +799,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "against the repository",
         "compliance.md",
         run_compliance_report,
+    ),
+    (
+        "Online triage learning",
+        "a contextual bandit learning the operating point under partial feedback, and the "
+        "alert budget its exploration spends",
+        "bandit.md",
+        run_bandit_report,
     ),
     (
         "Serving lifecycle conformance",

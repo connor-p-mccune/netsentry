@@ -2008,6 +2008,29 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class BanditConfig(BaseModel):
+    """Learning the triage policy online, under partial feedback.
+
+    The off-policy study values a policy from someone else's log; this learns one while it
+    runs, observing an outcome only for the flows it chose to review. LinUCB and linear
+    Thompson sampling share the same sufficient statistics and differ only in how they
+    explore, epsilon-greedy is the control that says whether the sophistication pays, and the
+    deployed fixed threshold is the incumbent that learns nothing and risks nothing. Regret is
+    measured against the best fixed policy in hindsight -- but the number the study exists for
+    is the exploration cost denominated in *missed attacks*, because that is the currency a
+    SOC actually pays while a learner is finding out."""
+
+    max_flows: int = 20000
+    alpha: float = 1.0  # the confidence width (LinUCB) / posterior scale (Thompson)
+    epsilon: float = 0.1
+    fixed_fpr: float = 0.01  # the incumbent's operating point, chosen on validation
+    random_review_rate: float = 0.05
+    n_repeats: int = 5  # exploration is stochastic; one run of a bandit is an anecdote
+    # The confidence width is the only knob between "never review" and "review everything";
+    # the sweep prices it in the unit a SOC uses, which is alert volume rather than dollars.
+    alpha_sweep: list[float] = Field(default_factory=lambda: [0.1, 0.5, 1.0, 2.0])
+
+
 class LifecycleConfig(BaseModel):
     """Model-based (stateful) testing of the serving lifecycle.
 
@@ -2826,6 +2849,7 @@ class Settings(BaseSettings):
     quantiles: QuantileConfig = Field(default_factory=QuantileConfig)
     mlint: MlintConfig = Field(default_factory=MlintConfig)
     lifecycle: LifecycleConfig = Field(default_factory=LifecycleConfig)
+    bandit: BanditConfig = Field(default_factory=BanditConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)

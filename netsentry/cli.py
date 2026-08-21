@@ -1490,6 +1490,19 @@ def quantiles(
 
 
 @app.command()
+def bandit(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Learn the triage policy online under partial feedback, and price the exploration."""
+    from netsentry.evaluation.bandit import run_bandit_report
+
+    settings = _load(config, override)
+    out = run_bandit_report(settings)
+    logger.info("Bandit report ready", extra={"path": str(out)})
+
+
+@app.command()
 def statemachine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
