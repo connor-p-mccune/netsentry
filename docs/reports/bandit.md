@@ -13,11 +13,11 @@ This is the other half: **learning** one while it runs, with no log to start fro
 to ask. It is the contextual bandit in its natural habitat -- a flow arrives, the system reviews
 it or skips it, and a skipped attack produces no alert, no signal and no lesson.
 
-Over 18,909 flows at a 1.00% attack rate, **every learner loses to a threshold that was chosen once, on validation, and never touched again**. The best of them (LinUCB) ends on $-1,025 against the incumbent's $11,575, and none of them ever overtakes it.
+Over 18,909 flows at a 1.00% attack rate, **every learner loses to a threshold that was chosen once, on validation, and never touched again**. The best of them (LinUCB) ends on $-2,725 against the incumbent's $11,575, and none of them ever overtakes it.
 
-The theory is not what failed. LinUCB's cumulative regret grows as `T^0.35` -- the `sqrt(T)` the analysis promises -- while epsilon-greedy manages `T^0.83` and the random control `T^0.96`, which is what not learning looks like. The algorithm behaves exactly as advertised and is still the wrong thing to deploy.
+The theory is not what failed. LinUCB's cumulative regret grows as `T^0.41` -- the `sqrt(T)` the analysis promises -- while epsilon-greedy manages `T^0.85` and the random control `T^0.96`, which is what not learning looks like. The algorithm behaves exactly as advertised and is still the wrong thing to deploy.
 
-**What exploration costs here is not detection. It is the alert budget.** LinUCB reviews 4.8% of benign traffic against the deployed threshold's 0.9% -- and catches *more* attacks for it, 45 against 33. It is buying detection with analyst time at a price the reward function says is bad and a SOC would never authorise at all.
+**What exploration costs here is not detection. It is the alert budget.** LinUCB reviews 5.4% of benign traffic against the deployed threshold's 0.9% -- and catches *more* attacks for it, 47 against 33. It is buying detection with analyst time at a price the reward function says is bad and a SOC would never authorise at all.
 
 ## The policies
 
@@ -25,9 +25,9 @@ The theory is not what failed. LinUCB's cumulative regret grows as `T^0.35` -- t
 
 | policy | total reward | spread over repeats | flows reviewed | attacks caught | benign reviewed (alert budget) | regret |
 |---|---|---|---|---|---|---|
-| LinUCB | $-1,025 | $0 | 941 | 45 | 4.79% | $13,675 |
-| Thompson sampling | $-46,085 | $8,125 | 2,855 | 51 | 14.98% | $58,735 |
-| epsilon-greedy | $-11,850 | $3,800 | 1,234 | 38 | 6.39% | $24,500 |
+| LinUCB | $-2,725 | $0 | 1,049 | 47 | 5.35% | $15,375 |
+| Thompson sampling | $-44,245 | $7,625 | 2,830 | 53 | 14.83% | $56,895 |
+| epsilon-greedy | $-13,085 | $3,900 | 1,315 | 40 | 6.82% | $25,735 |
 | uniform random | $-18,645 | $4,250 | 930 | 9 | 4.92% | $31,295 |
 | the deployed threshold | $11,575 | $0 | 197 | 33 | 0.88% | $1,075 |
 | **the best threshold in hindsight (0.8418)** | **$12,650** | -- | -- | -- | -- | $0 |
@@ -47,16 +47,16 @@ below has to be read against.
 The spread column is worth a glance: LinUCB's is exactly zero, because LinUCB is
 *deterministic* given the stream -- its upper confidence bound is a function of what it has
 seen, not of a coin -- so its repeats agree to the cent. Thompson sampling's spread of
-$8,125 is the other end of that: the same algorithm and the same data,
+$7,625 is the other end of that: the same algorithm and the same data,
 differing only in a posterior draw, landing that far apart run to run.
 
 ## Does the regret curve behave?
 
 | policy | regret exponent | overtook the incumbent |
 |---|---|---|
-| LinUCB | 0.35 | **never** |
+| LinUCB | 0.41 | **never** |
 | Thompson sampling | 0.62 | **never** |
-| epsilon-greedy | 0.83 | **never** |
+| epsilon-greedy | 0.85 | **never** |
 | uniform random | 0.96 | **never** |
 
 This is the table that separates "the algorithm is broken" from "the algorithm is fine and the
@@ -71,10 +71,10 @@ implementation is doing what it says on the tin, and it still never catches the 
 
 | confidence width | total reward | benign reviewed | attacks caught |
 |---|---|---|---|
-| 0.1 | $-225 | 0.05% | 0 |
-| 0.5 | $6,225 | 2.83% | 41 |
-| 1.0 | $-1,025 | 4.79% | 45 |
-| 2.0 | $-17,650 | 8.95% | 51 |
+| 0.1 | $9,400 | 2.15% | 41 |
+| 0.5 | $5,250 | 3.14% | 42 |
+| 1.0 | $-2,725 | 5.35% | 47 |
+| 2.0 | $-20,575 | 9.17% | 47 |
 
 LinUCB's confidence width is the only dial between "never review" and "review everything", and
 the sweep prices it in alert volume rather than in dollars. There is no setting that behaves
@@ -82,10 +82,10 @@ like an operating point: the width trades total reward against the share of beni
 to an analyst, continuously, with no mechanism that says *stay under 1%*.
 
 **The best setting in the sweep still loses.** Tuned to
-$6,225, the learner returns
-54% of what the untouched
+$9,400, the learner returns
+81% of what the untouched
 threshold makes -- and it gets there by spending
-2.8% of the benign stream, several times the deployed budget. Tuning the
+2.2% of the benign stream, several times the deployed budget. Tuning the
 exploration constant against the reward moves the policy along that trade; it never converts it
 into a constraint.
 

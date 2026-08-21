@@ -1,7 +1,7 @@
 # NetSentry — The Rules, Enforced by a Parser
 
 _6 static-analysis rules translated from `.claude/rules/ml.md`, run over
-194 modules, graded by injecting 12 violations into real source
+197 modules, graded by injecting 12 violations into real source
 and 10 pieces of correct code that resemble them. Regenerate with
 `netsentry mlint`._
 
@@ -18,7 +18,7 @@ so it fires when the mistake is *typed* rather than when the evaluation looks su
 | code | rule | what it forbids, and why | what it cannot see |
 |---|---|---|---|
 | `NS001` | fit-on-non-train-data | A transformer or estimator fitted on anything but the training split leaks test statistics into training (`.claude/rules/ml.md` section 1). | Only sees the fit target's own name. A frame assigned from the test split earlier and passed under a neutral name is invisible without type inference. |
-| `NS002` | global-statistic | A mean, std, min, max or category list computed over the full dataset is the same leak as fitting on it, and is easier to write by accident. | Cannot tell a statistic used for a feature from one used for a log line; a report that prints `full.mean()` is flagged as though it fed the model. |
+| `NS002` | global-statistic | A mean, std, min, max or category list computed over the full dataset -- or over the test split -- is the same leak as fitting on it, and is easier to write by accident. Validation is deliberately *not* forbidden here: choosing a threshold on it is the method this project prescribes. | Cannot tell a statistic used for a feature from one used for a log line; a report that prints `full.mean()` is flagged as though it fed the model. |
 | `NS003` | identifier-column-kept | Flow IDs, addresses and timestamps identify the capture session rather than the behaviour, and let a model memorise the split. | Flags the literal wherever it appears outside a drop list; it cannot follow the column into or out of a frame it never sees. |
 | `NS004` | unseeded-randomness | A run that cannot be reproduced from its config and seed cannot be audited (`.claude/rules/ml.md` section 7). | Only checks the call site. A seed threaded through a wrapper that itself defaults to `None` looks seeded here. |
 | `NS005` | hardcoded-threshold | An operating point typed into a function body is a decision nobody can find, change or record (`.claude/rules/python.md`). | Compares names against a list, so a threshold held in a differently-named variable passes, and a genuinely structural comparison can be flagged. |
@@ -130,6 +130,19 @@ The rule set did not start clean, and the first run is the reason to trust the s
 Nine hits, five changes. A linter whose precision was never measured is a linter that will
 eventually be turned off; this one's is stated, and the four hits that led to no change are in
 the table above rather than deleted from the rule set.
+
+**Then it failed the build on code written the same week**, which is a better argument for it
+than anything above. The [online-triage study](bandit.md) standardised its context by the
+*stream's own* mean and standard deviation -- handing a learner that is supposed to be online a
+statistic of flows it has not seen yet -- and NS002 caught it during the release check, after
+that study's report had already been generated and read. The context now comes from validation.
+
+The same hit showed a rule mis-specified in the other direction, and it is worth stating because
+it is the difference between a rule people keep and one they switch off. NS002 had been treating
+*validation* statistics as leaks; but a transformer must be **fitted** on training data only
+(which NS001 enforces, validation included), while a threshold is **chosen** on validation --
+that is this project's prescribed method, not a leak. NS002's token set is now the narrower one,
+and two tests pin the asymmetry in both directions.
 
 ## Scope and honest limits
 

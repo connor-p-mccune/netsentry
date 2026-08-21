@@ -22,15 +22,18 @@ Five learners run on the same stream:
   budget, which learns nothing and pays no exploration cost.
 - **Uniform random**: the floor.
 
-Regret is measured against the best fixed action policy in hindsight, and plotted against the
-`sqrt(T)` envelope the theory promises -- a bandit whose regret grows linearly is a bandit that
-never learned, and the shape is the only way to tell.
+Regret is measured against the best *threshold* policy in hindsight -- not the best fixed
+action, which at a 1% attack rate is "review nothing" and would reward a learner for doing the
+same -- and its growth exponent is fitted, because a bandit whose regret grows linearly never
+learned and the shape is the only way to tell.
 
-The number this study exists to produce is not regret, though. **It is the exploration cost in
-missed attacks**: the flows a learner skipped while it was still finding out, which a fixed
-threshold would have caught. Regret is denominated in a currency the SOC does not use, and a
-learning system that is 3% better on average while missing an extra dozen intrusions during its
-first shift is not obviously a system anyone should deploy.
+The number this study exists to produce is not regret, though. It is **what exploration is paid
+for out of**, and the answer turned out not to be the one this module was written expecting.
+With two actions and an asymmetric reward, exploring *is* reviewing: the learners catch more
+attacks than the incumbent and lose money doing it, spending several times the deployed alert
+budget while they find out. Regret is denominated in a currency a SOC does not use, and a
+budget is a rate rather than a price -- which is the distinction every fixed-FPR threshold in
+this repository exists to express, and the one a reward function cannot.
 """
 
 from __future__ import annotations
@@ -417,9 +420,13 @@ def run_bandit_study(settings: Settings) -> BanditStudy:
     s_test, y_test = s_test[order], y_test[order]
 
     # A second context dimension the score alone does not carry: how far this flow sits from
-    # the stream's own centre, standardised. It is the cheapest available stand-in for the
-    # anomaly channel and keeps the bandit's problem two-dimensional rather than one.
-    anomaly = np.clip((s_test - s_test.mean()) / (s_test.std() + 1e-9), -4.0, 4.0)
+    # the *calibration* distribution's centre, standardised. The centre and spread come from
+    # validation, not from the stream -- the first version used the stream's own mean and the
+    # static-analysis pass caught it, correctly: an online learner at flow one cannot know a
+    # statistic of flows it has not seen, and a context built from the whole future is not a
+    # context at all.
+    centre, spread = float(s_val.mean()), float(s_val.std())
+    anomaly = np.clip((s_test - centre) / (spread + 1e-9), -4.0, 4.0)
     contexts = np.vstack(
         [build_context(float(s), float(a)) for s, a in zip(s_test, anomaly, strict=True)]
     )

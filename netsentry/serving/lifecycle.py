@@ -347,6 +347,36 @@ def write_canary_failing_bundle(settings: Settings, source: Path, destination: P
     return destination
 
 
+def bundle_with_canary(settings: Settings) -> Path | None:
+    """The newest bundle under the models directory that actually carries canaries.
+
+    The lifecycle study needs one, because the artifact the reload gate is built to refuse is
+    made by perturbing a bundle's embedded expectations. A models directory accumulates
+    bundles -- the promoted champion, per-split classifiers, the serving bundle -- and only
+    some of them were built with canaries embedded, so "newest" is not a safe answer on its own.
+    """
+    import joblib
+
+    from netsentry.serving.canary import CANARY_KEY
+
+    models_dir = settings.paths.models_dir
+    if not models_dir.exists():
+        return None
+    newest_first = sorted(
+        models_dir.glob("*.joblib"), key=lambda path: path.stat().st_mtime, reverse=True
+    )
+    for path in newest_first:
+        if path.name == CANARY_FAIL_BUNDLE:
+            continue
+        try:
+            payload = joblib.load(path).metadata.get(CANARY_KEY)
+        except Exception:  # a bundle this runtime cannot even load is not a candidate
+            continue
+        if isinstance(payload, dict) and payload.get("expected_scores"):
+            return path
+    return None
+
+
 def make_executor(
     client: Any, settings: Settings, valid_bundle: str, failing_bundle: str
 ) -> Callable[[str], tuple[int, dict[str, Any] | None, str | None]]:
@@ -560,10 +590,22 @@ def run_lifecycle_study(settings: Settings, client: Any | None = None) -> Lifecy
     # otherwise the service under test is the broken bundle and every result is about that.
     # A stale copy from an interrupted run would do the same, so it is removed first.
     (models_dir / CANARY_FAIL_BUNDLE).unlink(missing_ok=True)
-    resolved = probe.serving.artifact_path or latest_bundle(probe)
+    resolved = probe.serving.artifact_path or bundle_with_canary(probe)
+    if resolved is None:
+        # Same lazy build the `serve` command does. The study needs a bundle that carries
+        # canaries, since the artifact the reload gate exists to refuse is made by perturbing
+        # them -- so falling back to just any bundle would be a study of a different thing.
+        from netsentry.serving.bundle import build_serving_bundle
+
+        logger.info("No bundle with canaries found; building a serving bundle")
+        build_serving_bundle(probe)
+        resolved = bundle_with_canary(probe) or latest_bundle(probe)
     if resolved is None:
         raise FileNotFoundError("No model bundle to drive the lifecycle against.")
     source = Path(resolved)
+    # Pin the app to the same bundle the study is about, so "the newest file in the directory"
+    # cannot silently mean two different artifacts to the service and to its checker.
+    probe.serving.artifact_path = source
 
     from fastapi.testclient import TestClient
 

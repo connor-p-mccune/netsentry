@@ -110,6 +110,26 @@ def test_the_word_values_does_not_read_as_the_validation_split() -> None:
     assert "NS002" not in _codes("pr_auc = float(values[:, 0].mean())")
 
 
+def test_a_statistic_over_the_test_split_is_a_violation() -> None:
+    """The hit that found a real leak in this repository's own bandit study.
+
+    Standardising a stream by its own mean gives an online learner a statistic of flows it has
+    not seen yet, which is not a context at all.
+    """
+    assert "NS002" in _codes("centred = (s_test - s_test.mean()) / s_test.std()")
+
+
+def test_a_statistic_over_the_validation_split_is_not() -> None:
+    """The asymmetry between NS001 and NS002, and it comes straight from the project's rules.
+
+    A transformer must be *fitted* on training data only, so NS001 counts validation as
+    off-limits. Choosing a threshold on validation is the prescribed method, so NS002 does not.
+    Getting this wrong in either direction breaks a rule people would otherwise keep.
+    """
+    assert "NS002" not in _codes("centre = s_val.mean()")
+    assert "NS001" in _codes("scaler.fit(X_val)")
+
+
 def test_a_reported_label_prevalence_is_not_a_leak() -> None:
     # `y_test.mean()` is the test split's prevalence, which goes in a table. It never reaches a
     # transformer, and a rule that cannot tell the difference fires on every report.

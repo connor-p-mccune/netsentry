@@ -53,6 +53,14 @@ NON_TRAIN_TOKENS: tuple[str, ...] = ("test", "val", "valid", "holdout", "eval", 
 #: Names that indicate the training split, which override the tokens above (``train_test``).
 TRAIN_TOKENS: tuple[str, ...] = ("train", "fit", "calib")
 
+#: The narrower set NS002 uses. The asymmetry is deliberate and comes straight from the rules:
+#: a transformer must be *fitted* on training data only, so NS001 counts validation as
+#: off-limits -- but choosing a threshold on validation is the prescribed method here, not a
+#: leak, so a statistic over `s_val` is the project doing what it says. What NS002 is after is
+#: the sentence "never compute a mean, std, min, max or category list over the full dataset",
+#: plus the test split, which is touched once and never summarised.
+STATISTIC_TOKENS: tuple[str, ...] = ("test", "holdout", "eval", "full", "combined")
+
 #: Methods that learn state from data. Calling one on anything but training data is the
 #: cardinal sin in `.claude/rules/ml.md` section 1.
 FITTING_METHODS: tuple[str, ...] = ("fit", "fit_transform", "fit_predict", "fit_resample")
@@ -159,8 +167,10 @@ RULES: tuple[Rule, ...] = (
     Rule(
         "NS002",
         "global-statistic",
-        "A mean, std, min, max or category list computed over the full dataset is the same "
-        "leak as fitting on it, and is easier to write by accident.",
+        "A mean, std, min, max or category list computed over the full dataset -- or over the "
+        "test split -- is the same leak as fitting on it, and is easier to write by accident. "
+        "Validation is deliberately *not* forbidden here: choosing a threshold on it is the "
+        "method this project prescribes.",
         "Cannot tell a statistic used for a feature from one used for a log line; a report "
         "that prints `full.mean()` is flagged as though it fed the model.",
     ),
@@ -246,7 +256,7 @@ def _words(text: str) -> set[str]:
     return words
 
 
-def _is_non_train(text: str) -> bool:
+def _is_non_train(text: str, tokens: tuple[str, ...] = NON_TRAIN_TOKENS) -> bool:
     """True when an expression's name says it is not the training split.
 
     ``train_test_split`` and ``X_train`` both contain a train token, so a train token wins:
@@ -255,7 +265,7 @@ def _is_non_train(text: str) -> bool:
     words = _words(text)
     if words & set(TRAIN_TOKENS):
         return False
-    return bool(words & set(NON_TRAIN_TOKENS))
+    return bool(words & set(tokens))
 
 
 #: Words that mean an identifier column is being named in order to get rid of it.
@@ -353,7 +363,7 @@ class _Visitor(ast.NodeVisitor):
         if attribute in GLOBAL_STATISTICS and isinstance(node.func, ast.Attribute):
             receiver = _name_of(node.func.value)
             reported = bool(_words(receiver) & set(NON_FEATURE_RECEIVERS))
-            if _is_non_train(receiver) and not reported:
+            if _is_non_train(receiver, STATISTIC_TOKENS) and not reported:
                 self._add(
                     "NS002",
                     node,
@@ -840,6 +850,19 @@ The rule set did not start clean, and the first run is the reason to trust the s
 Nine hits, five changes. A linter whose precision was never measured is a linter that will
 eventually be turned off; this one's is stated, and the four hits that led to no change are in
 the table above rather than deleted from the rule set.
+
+**Then it failed the build on code written the same week**, which is a better argument for it
+than anything above. The [online-triage study](bandit.md) standardised its context by the
+*stream's own* mean and standard deviation -- handing a learner that is supposed to be online a
+statistic of flows it has not seen yet -- and NS002 caught it during the release check, after
+that study's report had already been generated and read. The context now comes from validation.
+
+The same hit showed a rule mis-specified in the other direction, and it is worth stating because
+it is the difference between a rule people keep and one they switch off. NS002 had been treating
+*validation* statistics as leaks; but a transformer must be **fitted** on training data only
+(which NS001 enforces, validation included), while a threshold is **chosen** on validation --
+that is this project's prescribed method, not a leak. NS002's token set is now the narrower one,
+and two tests pin the asymmetry in both directions.
 
 ## Scope and honest limits
 
