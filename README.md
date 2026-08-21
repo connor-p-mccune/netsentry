@@ -17,7 +17,7 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.19.0`.** The build plan in
+**Released `v0.20.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
 tested, and committed, and seventeen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
@@ -96,8 +96,8 @@ estimator of what you missed exists**; automatic slice discovery with a permuted
 returns zero findings and a winner's curse that costs the marginal slices half their effect;
 server-side batching that moves the capacity ceiling 629x and needed its queueing model
 replaced, because a batching server is self-regulating rather than M/D/1; and a Pareto front
-whose concave members **no weighted sum can ever select**), and the **sharing, budgets & accountability wave** (private set intersection so one organisation can ask another about an indicator without naming it, alongside the complete dictionary attack that breaks the hash exchange it replaces — the entire IPv4 space in 7.9 hours, and salting the list buys 0.28 seconds — and the inflation attack the protocol has no defence against at all; cost-aware feature acquisition at the exporter, where **four features beat all seventy-six** and the adaptive policy loses to its own random-gating placebo because the cheap tier ranks attacks no better than chance; streaming quantile estimation that holds the 0.1% operating point in **160 bytes** and is graded in alert volume rather than threshold error, where 9 of 10 approximations are operationally identical and every one of them fails the same way when the stream moves; and a conformance mapping onto NIST AI RMF 1.0 and the EU AI Act's high-risk articles in which **every control's evidence is verified against the tree, so a deleted study downgrades its own claim**, and the two unmeetable obligations are named rather than finessed).
-`make check` is green (lint + type-check + **1,449 passing tests**, property-based invariants and a
+whose concave members **no weighted sum can ever select**), and the **sharing, budgets & accountability wave** (private set intersection so one organisation can ask another about an indicator without naming it, alongside the complete dictionary attack that breaks the hash exchange it replaces — the entire IPv4 space in 7.9 hours, and salting the list buys 0.28 seconds — and the inflation attack the protocol has no defence against at all; cost-aware feature acquisition at the exporter, where **four features beat all seventy-six** and the adaptive policy loses to its own random-gating placebo because the cheap tier ranks attacks no better than chance; streaming quantile estimation that holds the 0.1% operating point in **160 bytes** and is graded in alert volume rather than threshold error, where 9 of 10 approximations are operationally identical and every one of them fails the same way when the stream moves; and a conformance mapping onto NIST AI RMF 1.0 and the EU AI Act's high-risk articles in which **every control's evidence is verified against the tree, so a deleted study downgrades its own claim**, and the two unmeetable obligations are named rather than finessed), and the **self-audit wave** (four studies that check what this project had been taking on trust: its own coding rules, turned into six static-analysis rules that are graded by injecting the violations they claim to catch and that produced **five real fixes** in the codebase; its own anomaly premise, where a detector that **never sees the training data** beats four of the six trained ones and almost no skill survives removing a size proxy; its own serving contract, driven as a state machine through 200-operation sequences with **five injected regressions** proving the checker can fail; and its own operating point, against a contextual bandit that achieves the textbook `sqrt(T)` regret and still loses to a threshold chosen once on validation, because **what its exploration spends is the alert budget**).
+`make check` is green (lint + type-check + **1,554 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -251,6 +251,10 @@ what actually ships.
 | Cost-aware feature acquisition | what a compute budget buys at the exporter: four features beat all 76, and the adaptive policy loses to its own random-gating placebo | ✅ Done |
 | Streaming quantiles | hold the operating point at line rate in 160 bytes (P-squared, t-digest, histogram, reservoir), graded in alert volume rather than in threshold error | ✅ Done |
 | Conformance mapping | NIST AI RMF 1.0 and EU AI Act Articles 9-15 mapped onto 26 controls, each verified against the tree: delete the evidence and the control downgrades itself | ✅ Done |
+| ML-invariant static analysis | the leakage rules enforced by a parser, graded by injecting the violations it claims to catch: 12 of 12 caught, 0 false alarms, 5 real fixes | ✅ Done |
+| Anomaly-score semantics | is the score a density or a size: an untrained control beats four of six detectors, and almost no skill survives removing the size proxy | ✅ Done |
+| Serving lifecycle conformance | the API contract as a state machine driven through random operation sequences, with five injected regressions proving the checker fails | ✅ Done |
+| Online triage learning | a contextual bandit at the textbook `sqrt(T)` regret that still loses to a fixed threshold, and spends the alert budget finding out | ✅ Done |
 | Point-in-time feature store | as-of joins for host context, and the temporal leak the one-line `groupby` creates: 1.000 offline, 0.583 in production | ✅ Done |
 
 Per-phase engineering notes and self-audits live in [`NOTES.md`](NOTES.md);
@@ -2399,6 +2403,136 @@ recording who overrode what. Article 17 (quality management system) and Article 
 assessment) are **unmet and unmeetable by code**: they are an organisation's procedures, and a
 repository cannot perform a conformity assessment on itself. It ships a machine-readable
 `compliance_mapping.json` alongside the prose, and it is not legal advice.
+
+## The leakage rules, enforced by a parser
+
+```bash
+python -m netsentry.cli mlint   # -> docs/reports/mlint.md
+```
+
+The invariants in `.claude/rules/ml.md` are enforced three ways — by discipline, by review, and
+by tests that check the behaviour of code that already exists. All three act after the fact, and
+none of them reads the diff somebody writes next month. So six of them became **static-analysis
+rules over the syntax tree**: fitting on non-training data, statistics over the full dataset,
+identifier columns in the model path, unseeded randomness, hardcoded operating points, and
+accuracy without a precision-recall metric beside it.
+
+A clean codebase makes a working linter and a broken one produce identical output, so the rules
+are graded by **injection**: twelve violations written into a real module's source in memory,
+plus ten pieces of correct code that resemble them. **Twelve caught, zero false alarms** — and
+the same rule set run over a CIC-IDS2017 pipeline written the way the public repositories write
+it trips **11 violations across all six rules in twenty-six lines**.
+
+The build history is the interesting part. The rules shipped with a substring bug — matching
+`val` inside an identifier flags `values.mean()` as a validation-split statistic — which is the
+archetype of what gets linters disabled, and it is recorded rather than quietly patched. A
+negative control then failed and exposed a real gap in NS003's exemption. Nine hits on this
+codebase led to **five code changes**: three narrative thresholds buried inside render functions
+became named constants, and two `>= 0.5` hard-label conventions became a shared `HARD_LABEL_CUT`
+whose docstring says the thing worth saying — this is sklearn's convention and it is *not* an
+operating point. Three violations stand, all of them the feature store's as-of join keys: the
+one place in the model path where an identifier legitimately enters, and the module whose own
+study measured 1.000 offline against 0.583 in production. They are left visible with the CI
+budget set at exactly three, so a fourth fails the build.
+
+It then caught a leak in a study written the same week. The bandit below standardised its context
+by the *stream's own* mean and standard deviation, handing an online learner a statistic of flows
+it had not seen yet — the budget test went red, the context now comes from validation, and the
+same hit showed one rule was mis-specified in the other direction (validation statistics are the
+prescribed method for choosing a threshold, not a leak).
+
+## Is the anomaly score a density, or a size?
+
+```bash
+python -m netsentry.cli density   # -> docs/reports/density.md
+```
+
+The autoencoder has shipped since phase 5 on a premise this repository never checked: that
+**reconstruction error ranks novelty**. In general it does not — an autoencoder reconstructs
+simple inputs well whether or not they are anomalous (Nalisnick et al. 2019). Seven benign-only
+detectors go through the identical leave-one-attack-out protocol, including a **control that
+never sees the training data at all**: the squared norm of the standardised feature vector.
+
+| detector | detection @ 1% budget | correlation with size | skill retained without it |
+|---|---|---|---|
+| Gaussian mixture (diagonal) | 7.0% | +0.93 | **+10%** |
+| autoencoder (deployed) | 6.4% | +0.94 | **+3%** |
+| **vector norm (learns nothing)** | **6.0%** | +1.00 | 0% |
+| Mahalanobis (Gaussian density) | 5.9% | +1.00 | **−15%** |
+| isolation forest (deployed) | 5.5% | +0.84 | **+13%** |
+| PCA reconstruction (linear autoencoder) | 4.9% | +0.98 | **−12%** |
+
+**The untrained control beats four of the six trained detectors**, and the autoencoder's entire
+margin over it is 0.4 points for twelve seconds of fitting and a Torch dependency. The sharp
+version needs the prevalence floor: PR-AUC starts at the attack share (0.123 here), so the
+honest question is how much *lift over that floor* survives regressing out the size proxy. Almost
+none — the best arm retains 13%, the autoencoder 3%, and two arms rank **worse than a coin** on
+what is left. Mahalanobis at +1.00 is algebra rather than evidence (on centred, scaled features
+with a near-diagonal covariance the quadratic form *is* the squared norm), and the report
+separates that from the empirical rows.
+
+## The serving lifecycle, as a state machine
+
+```bash
+python -m netsentry.cli statemachine   # -> docs/reports/state_machine.md
+```
+
+Every part of the lifecycle has a single-request test. None of them covers the **sequences**,
+which is where the two-step bugs live: a reload that half-succeeds, a guard that stops applying
+after a swap, a health endpoint still naming the version it used to serve. So the contract is
+written down as a state machine holding only what an observer can check, and the real
+application is driven through 200 random operations with model and service compared after every
+step — a refused reload changes nothing, only a successful reload moves the served version, a
+refusal is never a success, health never claims `ok` while its own canary fails.
+
+The service came back clean, which is worth nothing on its own: a checker that has never failed
+is indistinguishable from one that cannot. So five regressions are injected into the transcript
+and the identical walk is re-graded. **All five are caught.**
+
+Two findings from building it. A weighted random draw over the operations produced a headline run
+with **zero successful reloads** — the most important positive transition went unexercised while
+the report looked complete — so the schedule now allocates the expensive operations explicitly
+and a test asserts coverage across five seeds. And the corrupted bundle the reload gate exists to
+refuse has to be written *after* the app binds to the real one, because the engine resolves
+"newest bundle in the models directory"; otherwise the service under test is the broken bundle
+and every number is about that instead.
+
+## Learning the operating point online, and what it costs
+
+```bash
+python -m netsentry.cli bandit   # -> docs/reports/bandit.md
+```
+
+The [off-policy study](docs/reports/ope.md) values a triage policy from a log a different policy
+wrote. This **learns** one while it runs, under partial feedback — a skipped attack produces no
+alert, no signal and no lesson. LinUCB, linear Thompson sampling and epsilon-greedy race the
+deployed threshold and a random control down 18,909 flows at a 1% attack rate.
+
+| policy | total reward | benign reviewed | attacks caught | regret exponent |
+|---|---|---|---|---|
+| **the deployed threshold** | **$11,575** | **0.88%** | 33 | — |
+| LinUCB | −$2,725 | 5.35% | **47** | **0.41** |
+| epsilon-greedy | −$13,085 | 6.82% | 40 | 0.85 |
+| Thompson sampling | −$44,245 | 14.83% | 53 | 0.62 |
+| uniform random | −$18,645 | 4.92% | 9 | 0.96 |
+
+**Every learner loses to a threshold that was chosen once, on validation, and never touched
+again**, and none of them ever overtakes it. The theory is not what failed: LinUCB's regret grows
+as `T^0.41` against the `sqrt(T)` the analysis promises, while the random control manages
+`T^0.96`, which is what not learning looks like. The incumbent, meanwhile, lands within $1,075 of
+the best threshold anyone could have picked knowing the entire stream — which is the context
+every claim here has to be read against.
+
+**What exploration costs here is not detection — it is the alert budget.** LinUCB reviews 5.4% of
+benign traffic against the deployed 0.88%, and catches *more* attacks for it (47 against 33). A
+sweep of the confidence width prices that trade: 2.15% → 3.14% → 5.35% → 9.17% of benign traffic
+as the width goes 0.1 → 2.0, and the best-tuned setting still returns only 81% of what the
+untouched threshold makes while spending twice its budget. That is the
+generalisable finding. **A reward function is not a constraint**: the economics say a review
+costs $25, so a policy reviewing eight times as much traffic is making a trade the objective
+permits, while a SOC's alert budget is a *rate* — and every fixed-FPR threshold, conformal risk
+bound and Neyman-Pearson certificate in this repository exists to express exactly that
+difference.
 
 ## Provenance & supply chain
 

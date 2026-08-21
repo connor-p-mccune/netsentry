@@ -2603,3 +2603,136 @@ its own conclusion.
 - **Reports are build artifacts.** A generated report that gets hand-edited is a report that will
   be silently reverted the next time its command runs. Every correction in this wave went into
   the generator.
+
+## Wave 20 — the self-audit wave (v0.20.0)
+
+Four studies pointed at things this project had been taking on trust: its own coding rules, its
+own anomaly premise, its own serving contract, and its own operating point. Three of the four
+found something that changed the code, and the fourth found that the incumbent was already
+close to optimal — which is a result too, and one I would have been tempted not to look for.
+
+The theme that emerged, unplanned: **every one of these studies needed a mechanism for failing
+before its result meant anything.** A linter on a clean codebase, a state machine against a
+correct service, and a conformance check with intact evidence all print the same thing as a
+broken one. Three of the four carry injection harnesses for exactly that reason.
+
+### mlint: the rules had the bug they exist to catch
+
+- **A substring match turned `values.mean()` into a validation-split leak.** `val` is inside
+  `values`, and twenty-odd spurious hits followed. It is the single most predictable way for a
+  linter to lose an engineer's trust, it happened on the first run, and it is now a named
+  regression test rather than a quiet patch.
+- **A negative control failed, and that was the point of having them.**
+  `frame.drop(columns=["Flow ID"])` fired NS003 because the exemption lived in the file walker
+  rather than in the rule. Exempting a *file* would have been a hole big enough to hide a leak
+  in, so the exemption is now scoped to the enclosing construct — an assignment to
+  `IDENTIFIER_COLUMNS`, a function named `drop_identifiers`, a call to `.drop(...)`.
+- **Thirty-five hits were the rule asking the wrong question.** Addresses and ports are routing
+  metadata in `intel/`, `capture/` and `serving/watch.py` by design: the beaconing analytics key
+  on them, the incident report prints them. NS003 is now scoped to the packages where a column
+  can become a feature, which is the difference between a rule people keep and a rule people
+  disable.
+- **Five hits led to code changes, and that is the number I would quote.** Three narrative
+  thresholds sat inside render functions (`if score_auc > 0.7`), findable by nobody; two `>= 0.5`
+  hard-label conventions became a shared `HARD_LABEL_CUT` whose docstring says the thing that
+  matters — this is sklearn's convention and it is *not* an operating point.
+- **The three that remain are the interesting output.** All are the feature store's as-of join
+  keys: the one place in the model path where an identifier legitimately enters, and the module
+  whose own study measured 1.000 offline against 0.583 in production. Leaving them visible with
+  the budget set at three is better than silencing them, because the next person to add a fourth
+  should have to argue for it.
+
+- **The rule set then caught a leak in this wave's own bandit study, which is the best evidence
+  I have that it was worth building.** The budget test went red while I was wrapping the wave up:
+  the contextual bandit standardised its second context feature by the *stream's own* mean and
+  standard deviation, handing an online learner a statistic of flows it had not seen yet. A
+  context built from the whole future is not a context. It now comes from validation, where the
+  thresholds are calibrated anyway. The same hit showed a rule mis-specified in the other
+  direction -- NS002 had been treating *validation* statistics as a leak, when choosing a
+  threshold on validation is precisely the method this project prescribes -- so NS002's token set
+  is now narrower than NS001's, with the asymmetry documented in the rule and pinned by two
+  tests. The linter failed the build over a real defect in code written the same week, in a study
+  whose report had already been generated and read.
+
+### density: the control was supposed to be embarrassing, and it was
+
+- **I expected the autoencoder to beat a norm and it barely does.** 6.4% against 6.0% for a
+  "detector" that never sees the training data at all. Isolation Forest, Mahalanobis, the KDE and
+  the PCA reconstruction all lose to it outright.
+- **The framing I started with was wrong and would have flattered everything.** "Retains 49% of
+  its PR-AUC after removing the size proxy" sounded like a real result until I noticed PR-AUC
+  starts at the prevalence floor (0.123 here), so half of that 49% is the floor itself. Measured
+  as lift over chance, the autoencoder retains **3%** and two arms fall *below* a coin. The
+  metric change is the whole difference between "partly a size measure" and "almost entirely a
+  size measure", and it took noticing that a number could not go to zero.
+- **Mahalanobis at +1.00 correlation is algebra, not evidence.** On features the pipeline has
+  already centred and scaled, with a near-diagonal covariance, the quadratic form *is* the
+  squared norm — and the ridge that a rank-deficient flow covariance requires pushes it further
+  that way. Reporting it beside the empirical rows without saying so would have been a
+  coincidence presented as a finding.
+- **PCA is the control an autoencoder's architecture selects for itself**, and it is almost never
+  reported next to one. An autoencoder is a nonlinear PCA; if the nonlinearity is worth
+  something, the gap says how much. Here it is 1.5 points, for 12 seconds of fitting against
+  0.03 and a Torch dependency.
+
+### statemachine: the walk that covered everything except the thing that matters
+
+- **A weighted random draw produced a headline run with zero successful reloads.** Two of the ten
+  operations build an entire inference engine and take ~9 seconds, so they have to be drawn
+  rarely — and rarely, once, meant never. The report would have printed a coverage table, a clean
+  verdict and no successful reload anywhere in it. Coverage is now allocated explicitly and
+  shuffled, and a test checks it across five seeds.
+- **The corrupted bundle poisoned the experiment before I noticed.** The engine resolves "newest
+  bundle in the models directory", and the study writes a canary-failing copy *into* that
+  directory — so on the first run the service under test was the broken bundle, and the run
+  reported five violations that were entirely my own doing. The fix is ordering plus pinning
+  `serving.artifact_path`, and the lesson is that a fixture which lives in the system's own search
+  path is part of the system.
+- **Replaying the transcript beat re-driving the service.** The mutants are HTTP-boundary
+  rewrites, so grading a recorded transcript through a mutation is *exactly* equivalent to
+  driving a service with that regression — and it turned a ten-minute run into a two-minute one
+  while making "the identical walk" literally true.
+- **The service came back clean on every property.** I would not have believed that without the
+  five mutants, and I do not think anyone else should either.
+
+### bandit: right on the theory, wrong on the constraint
+
+- **Unscaled dollar rewards broke both linear learners silently.** LinUCB's confidence width and
+  Thompson's posterior scale live in the reward's units, so with a catch worth $500 the
+  exploration term is noise beside the first bad draw — and the first review is almost always
+  benign. Both reviewed *one* flow in eight thousand and then never explored again, which looks
+  exactly like a converged policy if you are not watching the review count.
+- **The hindsight reference was wrong twice.** First it was the best fixed *action*, which at a
+  1% attack rate is "review nothing" — a reference that rewards a learner for doing nothing and
+  scores the deployed detector as having negative regret. Then the best *threshold* on a
+  200-quantile grid, which a unit test caught missing the true optimum by $800. It is now an
+  exact prefix-sum search over realisable cuts. A reference that is not optimal understates every
+  learner's regret, which is the one direction a regret study must never be wrong in.
+- **The result is more interesting than "the bandit wins" would have been.** LinUCB achieves
+  `T^0.35` regret growth — better than the `sqrt(T)` the analysis promises — and still never
+  overtakes a threshold chosen once on validation, which itself lands within $1,075 of the best
+  threshold anyone could pick with hindsight.
+- **What exploration costs is the alert budget, not detection.** I predicted missed attacks and
+  got the opposite: the learners catch *more* attacks than the incumbent (45 against 33) and lose
+  money reviewing 4.8% of benign traffic against 0.88%. With two actions and an asymmetric
+  reward, exploring *is* reviewing.
+- **A reward function is not a constraint.** No confidence width behaves like an operating point;
+  the sweep moves the trade continuously from 0.05% to 8.95% of benign traffic. That is the
+  sentence the whole study is for, and it is the reason every other decision in this repository
+  is expressed as a rate — a fixed-FPR threshold, a conformal risk bound, a Neyman-Pearson
+  certificate — rather than as a price.
+
+### Mechanics worth remembering
+
+- **A checker needs a way to fail before its clean run means anything.** Three studies in this
+  wave carry injection harnesses (12 lint violations, 5 service regressions, plus the compliance
+  mapping's deleted-evidence test from last wave), and in each case the harness found a real
+  defect in the checker itself before it found anything about the subject.
+- **Test-fixtures that live in the system's search path are part of the system.** The
+  canary-failing bundle had to be written after the app bound to the real one, and cleaned up in
+  a `finally`; a stale copy from an interrupted run silently became the model under test.
+- **Watch for metrics with a non-zero floor.** PR-AUC starts at the prevalence; a "share
+  retained" computed against the raw value credits every arm with the floor and reports a
+  comfortable half of nothing.
+- **`np.random.Generator.choice` over a weighted list is not coverage.** If a rare draw is
+  load-bearing, allocate it and shuffle instead of sampling and hoping.

@@ -318,7 +318,48 @@ one. Three of them turned out to be false.
   permanently unmeetable by code, because a repository cannot perform a conformity assessment on
   itself.
 
-## Stop 13 — Where the bodies are buried, on purpose
+## Stop 13 — The checks that had to be able to fail
+
+The newest wave points four studies at things this project had been taking on trust. What they
+have in common is a problem worth naming: **a check that is working prints exactly what a broken
+one prints.** A linter on a clean codebase reports zero. A conformance machine against a correct
+service reports no violations. So three of the four carry deliberately broken inputs, and in
+every case those found a defect in the checker before they found anything about the subject.
+
+- **The leakage rules, enforced by a parser.** [`mlint.md`](reports/mlint.md) turns six prose
+  invariants into AST rules and grades them by **injecting twelve violations into real source
+  plus ten pieces of correct code that resemble them — 12 caught, 0 false alarms**. The same
+  rules over a textbook CIC-IDS2017 pipeline trip 11 violations across all six in twenty-six
+  lines. The rules shipped with the bug they exist to catch (`val` inside `values` reads
+  `values.mean()` as a validation-split leak), and **five hits led to real code changes**. Three
+  violations stand: the feature store's as-of join keys, the one place in the model path where an
+  identifier legitimately enters — left visible, with the CI budget set at exactly three. It
+  then failed the build over a **leak in a study written the same week**: the bandit below was
+  standardising its context by the stream's own mean, which hands an online learner a statistic of
+  flows it has not seen.
+- **A detector that never sees the training data beats four that do.**
+  [`density.md`](reports/density.md) asks whether the anomaly score is a density estimate or a
+  size measure. The squared norm of the standardised feature vector — no fitting, no parameters —
+  detects **6.0%**, beating Isolation Forest, Mahalanobis, a KDE and PCA reconstruction, and the
+  autoencoder's entire margin over it is 0.4 points. Regress the size proxy out and the lift over
+  chance almost vanishes: **the best arm keeps 13%, the autoencoder 3%, and two arms rank worse
+  than a coin.**
+- **The serving contract, driven as a state machine.**
+  [`state_machine.md`](reports/state_machine.md) states five properties an observer can check — a
+  refused reload changes nothing, only a successful reload moves the version, health never claims
+  `ok` while its canary fails — and drives the real application through 200 random operations.
+  Clean, and **all five injected regressions caught**. The first version's weighted draw had
+  produced a run with *zero* successful reloads: the most important transition unexercised while
+  the report looked complete.
+- **A bandit that hits the theory and still loses.** [`bandit.md`](reports/bandit.md) learns the
+  triage policy online under partial feedback. LinUCB's regret grows as **`T^0.41`** against the
+  `sqrt(T)` the analysis promises, and it **never overtakes a threshold chosen once on
+  validation** — which itself lands within $1,075 of the best threshold obtainable with hindsight.
+  What exploration spends is not detection but **the alert budget**: 5.35% of benign traffic
+  against the deployed 0.88%, catching more attacks and losing money doing it. A reward function
+  is not a constraint, which is why every operating point in this repository is a rate.
+
+## Stop 14 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the
