@@ -7,6 +7,26 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **SHAP estimand audit** (`netsentry shapaudit`, `netsentry/explain/shap_estimand.py`):
+  `/predict` returns `top_features` from `shap.TreeExplainer(model)` with no background data,
+  which silently selects one of three estimands that answer different questions. The library is
+  graded against the definition first -- TreeExplainer's interventional output matches a
+  brute-force sum over all 256 coalitions on an 8-feature model to **5e-09**, and efficiency
+  holds to 1e-13 on the deployed model. On the 300 alerts the API explains, the shipped and
+  interventional estimands agree at rank correlation **0.964** with the same top feature for
+  **96.3%** of alerts, so the choice moves the headline of one alert in 27 -- and the reason
+  they agree is a property of *this data* (near-independent features, mean absolute pairwise
+  correlation 0.005 per the MMD study) rather than of the methods. The decisive experiment has a
+  ground truth: a feature is duplicated before training with column subsampling off, one copy is
+  **never split on** (verified by counting splits in the dumped model), and three quantities are
+  asked what it contributed. Two answers are provable in advance and both hold -- interventional
+  must be exactly zero, conditional must credit the identical copies equally by Shapley's
+  symmetry axiom -- and **the shipped estimand returns 0.0000, siding with the interventional
+  one**, for a structural reason rather than a statistical one: a feature with no nodes has no
+  paths to walk. "Path-dependent SHAP accounts for feature correlations" is therefore not what
+  the shipped number does. The conditional magnitude is reported at two smoothing settings so
+  the estimator's contribution is separable from the estimand's. Background choice is a second
+  free parameter, moving the top feature for up to 12.7% of alerts.
 - **Budgeted hyperparameter search** (`netsentry hyperband`,
   `netsentry/training/multifidelity.py`): successive halving and Hyperband implemented from
   scratch and compared at an **equal budget counted in boosting rounds fitted**, not in trials

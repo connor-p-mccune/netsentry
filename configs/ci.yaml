@@ -198,6 +198,14 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+shap_estimand:
+  max_flows: 60
+  background_size: 40
+  exact_features: 6                 # 64 coalitions keeps the brute-force reference honest
+  exact_rounds: 20
+  exact_background: 24
+  exact_flows: 4
+  neighbours: 8
 multifidelity:
   max_train_rows: 1500
   max_rounds: 9                     # the ladder still has three rungs at CI scale

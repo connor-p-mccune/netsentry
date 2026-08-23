@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def shapaudit(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit which Shapley estimand `/predict` ships, against the definition and two rivals."""
+    from netsentry.explain.shap_estimand import run_shap_estimand_report
+
+    settings = _load(config, override)
+    out = run_shap_estimand_report(settings)
+    logger.info("SHAP estimand report ready", extra={"path": str(out)})
+
+
+@app.command()
 def hyperband(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

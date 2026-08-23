@@ -156,6 +156,7 @@ what actually ships.
 | Conformal alert FDR | a **false-discovery-rate guarantee** on the alert batch: conformal p-values + Benjamini–Hochberg, holds where a fixed FPR's precision collapses (Bates et al. 2023) | ✅ Done |
 | Label-shift correction | recover + correct for the deployment prior with **zero** labels: BBSE + MLLS/EM (Lipton 2018, Saerens 2002) | ✅ Done |
 | Explanation trust | feature-importance stability across bootstrap refits | ✅ Done |
+| Explanation estimand | *which* Shapley value `/predict` ships — graded against the coalition sum, and separated from the two quantities it is confused with by a provable duplicate experiment (Janzing et al. 2020) | ✅ Done |
 | Glass-box modelling | a from-scratch GAM/GA2M that **is** its own explanation and can be *edited*, with a capacity dial showing what the honest split punishes (Lou, Caruana & Gehrke 2012) | ✅ Done |
 | Threat intel | MITRE ATT&CK mapping in predictions + coverage report + Navigator layer | ✅ Done |
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
@@ -1196,6 +1197,54 @@ removed and measures the detection drop — the causal complement to SHAP. Remov
 it — the fingerprint of overfitting to the temporal shift (absolute volumes don't
 transfer across days, rate ratios do). Reported as a place to look, **not** a licence
 to prune on the test split. See [`docs/reports/ablation.md`](docs/reports/ablation.md).
+
+## Which Shapley value does the API ship?
+
+```bash
+python -m netsentry.cli shapaudit   # -> docs/reports/shap_estimand.md
+```
+
+`/predict` returns `top_features`, and the code that produces them calls
+`shap.TreeExplainer(model)` with no background data. That is defensible and it is also a
+*choice*, because "the SHAP value of this feature" is not one quantity — three appear in the
+literature and two of them are routinely used as if they were the same. **Path-dependent** (the
+default, and what ships) integrates missing features out using the training distribution as the
+tree recorded it; **interventional** breaks correlations and answers *what does the output owe
+to this input*; **conditional** answers *what does this feature tell you about the output*.
+
+First, the library is graded against the definition: TreeExplainer's interventional output
+matches a brute-force sum over all 256 coalitions on an 8-feature model to **5×10⁻⁹**. The fast
+algorithm is correct. On the 300 alerts the API actually explains, the shipped estimand and the
+interventional one agree closely — rank correlation **0.964**, same top feature for **96.3%** of
+alerts — so the choice changes the headline of roughly one alert in 27.
+
+Then the experiment with a ground truth. A feature is duplicated before training with column
+subsampling off, so the tie is broken deterministically and one copy is **never split on**
+(verified by counting splits in the dumped model):
+
+| feature | splits | shipped (path-dependent) | interventional | conditional (k=24) | conditional (k=6) |
+|---|---|---|---|---|---|
+| `Flow Duration` (the copy the model uses) | 120 | 0.1795 | 0.1638 | 0.0438 | 0.0699 |
+| `Flow Duration` (the copy it never splits on) | **0** | **0.0000** | **0.0000** | **0.0438** | **0.0699** |
+
+Two of those answers are provable in advance. Interventional attribution *must* give the unused
+copy exactly zero — intervening on a feature the model never reads cannot change the output.
+Conditional attribution *must* give the two copies exactly the same credit — they are identical
+columns, so no value function can distinguish them and Shapley's symmetry axiom leaves no
+choice. Both hold — and the conditional column holds at either smoothing setting, because the
+equality is a property of the *estimand* while the magnitude is a property of the *estimator*
+(which is why two k values are printed rather than one).
+
+**The shipped estimand returns 0.0000, siding with the interventional answer** — and for a
+structural reason rather than a statistical one: a feature with no nodes has no paths to walk,
+whatever the correlation structure says. So "path-dependent SHAP accounts for feature
+correlations", a sentence that appears in a great many write-ups, is not what the number does.
+`top_features` answers *what did this input do*, which is the right answer for a detection API,
+and it was never a decision anybody recorded.
+
+The estimand has a second free parameter, too: interventional attribution is defined against a
+background sample, and swapping the reference (benign-only, later-day traffic, or simply a
+smaller draw) moves the top feature for up to **12.7%** of alerts.
 
 ## Explanation stability (can you trust the SHAP the API ships?)
 

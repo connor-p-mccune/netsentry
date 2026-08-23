@@ -90,6 +90,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Rules-vs-model baseline | hand-written signatures at a matched FPR budget | [open](rules.md) |
 | Feature-group ablation | which behavioural families carry detection | [open](ablation.md) |
 | Counterfactual recourse | minimal change that clears a hit | [open](recourse.md) |
+| SHAP estimand audit | which Shapley value the API ships, graded against the coalition sum and against the two quantities it is usually confused with (Janzing et al. 2020) | [open](shap_estimand.md) |
 | Importance stability | are the shipped explanations stable across refits | [open](importance_stability.md) |
 | Predictive multiplicity | how arbitrary is the verdict across equally-good models (Marx et al. 2020) | [open](multiplicity.md) |
 | Partial dependence & ICE | the response-curve shape of the top features | [open](partial_dependence.md) |

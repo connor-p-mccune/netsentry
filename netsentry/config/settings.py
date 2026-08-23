@@ -2008,6 +2008,36 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class ShapEstimandConfig(BaseModel):
+    """Which Shapley value does `/predict` ship, and would the other one disagree?
+
+    `shap.TreeExplainer(model)` with no background data computes the **path-dependent**
+    (observational) estimand: missing features are integrated out using the training
+    distribution as the tree recorded it, so a feature the model never reads can still be
+    credited if it correlates with one it does. The **interventional** estimand breaks those
+    correlations and gives an unused feature exactly zero. Neither is wrong; they answer
+    different questions, and the API currently answers one of them without saying so. The
+    library's own output is graded against the coalition sum first, because an explanation
+    nobody has validated is an assertion with a colour scheme."""
+
+    max_flows: int = 300  # alerts to explain under both estimands
+    background_size: int = 200  # the interventional reference sample
+    top_k: int = 3  # the API returns a top-k list; this is the k that matters
+    top_features: int = 10
+    budget: float = 0.01
+    # The brute-force reference is exponential in the feature count, so it runs on its own
+    # small model. Eight features is 256 coalitions, which is seconds rather than days.
+    exact_features: int = 8
+    exact_rounds: int = 40
+    exact_background: int = 48
+    exact_flows: int = 12
+    tolerance: float = 1e-4
+    neighbours: int = 24  # the conditional value function's k, on the background sample
+    neighbours_alt: int = 6  # a second k: the symmetry must survive it, the magnitude will not
+    # The ground-truthed experiment: duplicate a feature, and ask about the copy nobody used.
+    duplicate_feature: int = 0
+
+
 class MultiFidelityConfig(BaseModel):
     """Budgeted hyperparameter search, and the two premises underneath it.
 
@@ -2972,6 +3002,7 @@ class Settings(BaseSettings):
     gam: GamConfig = Field(default_factory=GamConfig)
     attestation: AttestationConfig = Field(default_factory=AttestationConfig)
     multifidelity: MultiFidelityConfig = Field(default_factory=MultiFidelityConfig)
+    shap_estimand: ShapEstimandConfig = Field(default_factory=ShapEstimandConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)

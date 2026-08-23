@@ -70,6 +70,7 @@ from netsentry.explain.influence import run_influence_report
 from netsentry.explain.interactions import run_interactions_report
 from netsentry.explain.optimal_tree import run_optimal_tree_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
+from netsentry.explain.shap_estimand import run_shap_estimand_report
 from netsentry.features.store_report import run_store_report
 from netsentry.governance.attestation import run_attestation_report
 from netsentry.governance.compliance import run_compliance_report
@@ -679,6 +680,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "minimal change that clears a hit",
         "recourse.md",
         run_recourse_report,
+    ),
+    (
+        "SHAP estimand audit",
+        "which Shapley value the API ships, graded against the coalition sum and against the "
+        "two quantities it is usually confused with (Janzing et al. 2020)",
+        "shap_estimand.md",
+        run_shap_estimand_report,
     ),
     (
         "Importance stability",
