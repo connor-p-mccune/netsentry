@@ -49,6 +49,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Closed-loop control | alert volume held at the analyst budget by feedback, and the attack on the loop | [open](control.md) |
 | Operating-point training | a partial-AUC surrogate against cross-entropy, scored at every false-positive budget | [open](operating_point.md) |
 | Deep tabular models | MLP and FT-Transformer against the boosted incumbent under one shared protocol | [open](deep_tabular.md) |
+| Budgeted hyperparameter search | successive halving and Hyperband at an equal budget, after measuring the two premises they rest on (Li et al. 2018) | [open](multifidelity.md) |
 | Online learning | one-pass Hoeffding tree + ADWIN, prequentially, against static and periodic retraining | [open](online.md) |
 | Continual learning | class-incremental updates: forgetting, replay and the compute argument, measured | [open](continual.md) |
 | Multivariate drift (MMD) | kernel two-sample testing: the joint change the per-feature monitors cannot see | [open](mmd.md) |

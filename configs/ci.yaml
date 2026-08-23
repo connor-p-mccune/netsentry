@@ -198,6 +198,15 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+multifidelity:
+  max_train_rows: 1500
+  max_rounds: 9                     # the ladder still has three rungs at CI scale
+  fidelity_ladder: [1, 3, 9]
+  budget_units: 90
+  search_min_fidelity: 1
+  repeats: 1
+  rank_configs: 6
+  curse_resamples: 50
 attestation:
   max_flows: 120                    # every certificate walks the whole ensemble in Python
   timing_repeats: 5

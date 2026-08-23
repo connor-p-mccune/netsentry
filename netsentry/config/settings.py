@@ -2008,6 +2008,34 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class MultiFidelityConfig(BaseModel):
+    """Budgeted hyperparameter search, and the two premises underneath it.
+
+    `train tune` runs TPE on validation and keeps the winner. That rests on two assumptions
+    nobody measures first: that a validation ranking predicts the later days (HPO's own
+    premise, which a temporal split puts at risk), and that a cheap evaluation ranks
+    configurations the way an expensive one does (multi-fidelity's premise, which decides
+    whether successive halving and Hyperband apply at all). Both are measured on one grid
+    before any method is run, and the methods are then compared at an equal budget counted in
+    **boosting rounds fitted** rather than in trials -- counting trials flatters multi-fidelity
+    by construction, because most of its trials are the cheap ones."""
+
+    max_train_rows: int = 12000  # this study is about search, not about the shipped model
+    max_rounds: int = 81  # full fidelity, a power of eta so the ladder is exact
+    eta: int = 3  # the halving factor
+    # Starting at one round is deliberate: it is where the fixed per-fit cost dominates, which
+    # is the assumption multi-fidelity search makes and does not check.
+    fidelity_ladder: list[int] = Field(default_factory=lambda: [1, 3, 9, 27, 81])
+    budget_units: int = 810  # rounds fitted per method per repeat (10 full-fidelity fits)
+    # The cheapest rung is not cheap: a fit has a fixed cost that a one-round run pays in full,
+    # so scheduling hundreds of one-round fits spends the budget on overhead. The ladder still
+    # measures down to a single round; the *searches* are not allowed below this floor.
+    search_min_fidelity: int = 3
+    repeats: int = 2  # one run of a stochastic search is an anecdote
+    rank_configs: int = 25  # the shared pool both premises are read off
+    curse_resamples: int = 400
+
+
 class AttestationConfig(BaseModel):
     """Proof-carrying verdicts: verifying the computation, not the artefact it ran from.
 
@@ -2943,6 +2971,7 @@ class Settings(BaseSettings):
     transport: TransportConfig = Field(default_factory=TransportConfig)
     gam: GamConfig = Field(default_factory=GamConfig)
     attestation: AttestationConfig = Field(default_factory=AttestationConfig)
+    multifidelity: MultiFidelityConfig = Field(default_factory=MultiFidelityConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)

@@ -143,6 +143,7 @@ what actually ships.
 | Conformal prediction | distribution-free coverage + selective alerting | ✅ Done |
 | Adaptive conformal | coverage restored online under drift (ACI); the review-load price | ✅ Done |
 | Hyperparameter search | leakage-safe Optuna HPO (`train tune`) | ✅ Done |
+| Budgeted search, audited | successive halving + Hyperband from scratch at an **equal round budget**, after measuring the two premises they rest on — both of which fail (Li et al. 2018) | ✅ Done |
 | Observability | Prometheus + Grafana dashboard + alert rules | ✅ Done |
 | Statistical drift | per-feature KS + Benjamini–Hochberg FDR, online Page–Hinkley / DDM | ✅ Done |
 | Anytime-valid drift | conformal test martingale: a Ville-bounded false-alarm rate at any stopping time (Vovk 2003) | ✅ Done |
@@ -1946,6 +1947,57 @@ but saves only 19% of the time, because boosting cost tracks trees rather than r
 starting *adds* trees: a 4x larger ensemble that costs 6.3x more per thousand flows at inference.
 The crossover exists; it is further out than four days, and quoting the saving without quoting
 the crossover is how teams buy forgetting they did not need.
+
+## Budgeted hyperparameter search, and the premises underneath it
+
+```bash
+python -m netsentry.cli hyperband   # -> docs/reports/multifidelity.md
+```
+
+`netsentry train tune` runs Optuna's TPE and keeps whatever scores best on validation. That
+rests on two assumptions almost nobody measures before starting: that a validation ranking
+predicts deployment, and — for anything multi-fidelity — that a cheap evaluation ranks
+configurations the way an expensive one does. **Both fail here, and the consequence is
+measurable.**
+
+| rounds | share of full fidelity | rank correlation with the full run | correlation with the **learning rate** |
+|---|---|---|---|
+| 1 | 1.2% | −0.07 | +0.15 |
+| 3 | 3.7% | +0.09 | +0.40 |
+| 9 | 11.1% | −0.18 | **+0.71** |
+| 27 | 33.3% | +0.26 | +0.66 |
+| 81 | 100% | +1.00 | −0.23 |
+
+Not one cheap rung ranks configurations the way the full run does — the correlations sit around
+zero and change sign. The next column says *why*, and it is the difference between noise and a
+defect: **a short boosting run rewards whatever climbs fastest**, which is a property of the
+step size, so the cheap rungs rank by learning rate and a halving schedule built on them
+systematically discards the patient configurations that would have won.
+
+And the second premise is no better. Across 25 configurations at full fidelity, validation
+PR-AUC and later-day PR-AUC correlate **+0.23 (p = 0.277)** — indistinguishable from no
+relationship at all, on the very quantity every tuner in this repository maximises.
+
+| method | configurations tried | rounds fitted | wall clock | later-days PR-AUC |
+|---|---|---|---|---|
+| Hyperband | 49 | 552 | 22 s | 0.527 |
+| successive halving | 67 | 750 | 29 s | 0.527 |
+| TPE (the deployed tuner) | 10 | 810 | 18 s | 0.524 |
+| random search | 10 | 810 | 19 s | 0.521 |
+| **the shipped configuration (never searched)** | **1** | **81** | — | **0.530** |
+| _the best of the pool, chosen with hindsight_ | _25_ | — | — | _0.534_ |
+
+Budgets are equal in **rounds fitted** — the resource the methods actually consume — because
+comparing in *trials* flatters multi-fidelity by construction (successive halving tries 67
+configurations to random search's 10 for the same rounds). **All four searches finish below the
+configuration nobody searched for**, and the entire prize between "no search" and "perfect
+hindsight" is **+0.004 PR-AUC**, which no method choosing on validation can collect.
+
+A third assumption, underneath the accounting itself, is also wrong. Fitting time is measured at
+**0.19 s fixed + 24.2 ms per round**, so a full-fidelity fit is 9% overhead and the cheapest rung
+is **89% overhead**. Budgeting in rounds while paying in fits is how a theoretical 81× saving
+becomes a wall-clock saving of very little — which is why the searches here are floored at three
+rounds rather than one.
 
 ## Online learning at line rate (a one-pass detector)
 

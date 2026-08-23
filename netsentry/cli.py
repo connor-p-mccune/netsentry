@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def hyperband(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Race budgeted hyperparameter searches, after checking the premises they rest on."""
+    from netsentry.training.multifidelity import run_multifidelity_report
+
+    settings = _load(config, override)
+    out = run_multifidelity_report(settings)
+    logger.info("Multi-fidelity report ready", extra={"path": str(out)})
+
+
+@app.command()
 def attest(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

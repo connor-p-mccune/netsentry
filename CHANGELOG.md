@@ -7,6 +7,26 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Budgeted hyperparameter search** (`netsentry hyperband`,
+  `netsentry/training/multifidelity.py`): successive halving and Hyperband implemented from
+  scratch and compared at an **equal budget counted in boosting rounds fitted**, not in trials
+  -- counting trials flatters multi-fidelity by construction, since most of its trials are the
+  cheap ones. The point of the study is the two premises measured *before* any search runs, and
+  **both fail**. A cheap run does not rank configurations like an expensive one: no rung
+  correlates meaningfully with the full run (-0.07 to +0.26, changing sign), while the cheap
+  rungs correlate up to **+0.71 with the learning rate** -- a short boosting run rewards
+  whatever climbs fastest, which is a bias rather than noise and which makes a halving schedule
+  discard the patient configurations that would have won. And validation ranking barely predicts
+  the later days: Spearman **+0.23 (p = 0.277)** over 25 full-fidelity configurations,
+  indistinguishable from no relationship on the very quantity every tuner here maximises. The
+  consequence is measured rather than inferred: **all four searches finish below the shipped
+  configuration nobody searched for** (0.527 / 0.527 / 0.524 / 0.521 against 0.530), and the
+  entire prize between "no search" and "perfect hindsight" is **+0.004 PR-AUC**. A third
+  assumption, in the accounting itself, is also wrong -- fitting time is `0.19s + 24.2ms per
+  round`, so a full fit is 9% overhead and the cheapest rung is **89% overhead**, which is why
+  the searches are floored at three rounds and why a theoretical 81x saving is not one. The
+  winner's-curse curve resamples the arrival order to separate selection bias from the split's
+  own optimism, and finds the optimism is a level shift the search barely moves.
 - **Proof-carrying verdicts** (`netsentry attest`, `netsentry/governance/attestation.py`):
   `verify` hashes the bundle at rest and the ledger hash-chains the alert history; neither
   covers the moment a verdict is issued, so a service whose in-memory model has been swapped,

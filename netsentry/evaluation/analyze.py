@@ -122,6 +122,7 @@ from netsentry.training.deep_tabular import run_deep_tabular_report
 from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.invariance import run_invariance_report
+from netsentry.training.multifidelity import run_multifidelity_report
 from netsentry.training.online import run_online_report
 from netsentry.training.operating_point import run_operating_point_report
 from netsentry.training.pretrain import run_pretrain_report
@@ -430,6 +431,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "MLP and FT-Transformer against the boosted incumbent under one shared protocol",
         "deep_tabular.md",
         run_deep_tabular_report,
+    ),
+    (
+        "Budgeted hyperparameter search",
+        "successive halving and Hyperband at an equal budget, after measuring the two "
+        "premises they rest on (Li et al. 2018)",
+        "multifidelity.md",
+        run_multifidelity_report,
     ),
     (
         "Online learning",
