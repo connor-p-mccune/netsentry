@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def transport(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Measure drift and the attacker's distance with optimal transport, in units."""
+    from netsentry.monitoring.transport import run_transport_report
+
+    settings = _load(config, override)
+    out = run_transport_report(settings)
+    logger.info("Transport report ready", extra={"path": str(out)})
+
+
+@app.command()
 def statemachine(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

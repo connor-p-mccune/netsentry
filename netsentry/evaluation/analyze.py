@@ -96,6 +96,7 @@ from netsentry.monitoring.report import run_drift_report, run_drift_tests_report
 from netsentry.monitoring.retrain_policy import run_retrain_policy_report
 from netsentry.monitoring.slo import run_slo_report
 from netsentry.monitoring.streaming import run_streaming_report
+from netsentry.monitoring.transport import run_transport_report
 from netsentry.robustness.backdoor import run_backdoor_report
 from netsentry.robustness.certify import run_certify_report
 from netsentry.robustness.degradation import run_degradation_report
@@ -445,6 +446,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "kernel two-sample testing: the joint change the per-feature monitors cannot see",
         "mmd.md",
         run_mmd_report,
+    ),
+    (
+        "Optimal transport",
+        "a drift distance in units and the coupling that explains it, then the distance an "
+        "attacker has to travel (Cuturi 2013)",
+        "transport.md",
+        run_transport_report,
     ),
     (
         "Strategic equilibrium",

@@ -6,6 +6,32 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- **Optimal transport** (`netsentry transport`, `netsentry/monitoring/transport.py`): every drift
+  instrument this project ships returns a scalar with no unit and no statement about where the
+  mass went. Transport returns both. Exact one-dimensional Wasserstein by quantile integration
+  (validated against its closed forms), sliced-Wasserstein with a permutation null whose
+  projections are drawn once and reused so the null pays the same projection noise the statistic
+  did, and a log-domain Sinkhorn solver **graded against the exact Hungarian optimum** rather
+  than trusted — which also shows the entropic parameter is a *dial between two known mimicry
+  attacks*, sitting 0.58 sd from the benign centroid when heavily regularised and walking to the
+  exact transport partner as it falls. The headline is an attack result: a coupling between
+  attack and benign traffic is a mimicry recipe, and raced at a matched 8-sigma budget the
+  **benign-centroid mimicry this repository's own evasion study runs is the worst target on both
+  axes** — 20% more surviving detection than the transport partner (9.0% against 7.5%), and an
+  aggregate distance from benign traffic of 0.533 against the transport plan's 0.102, *further
+  than the undisguised attack was*, at a worst-feature PSI of 5.63 that the deployed drift
+  monitor catches without being told the attack exists. The four unconstrained arms form a
+  two-by-two (a coupling or not, optimal or not) so the constraint and the optimality can be
+  read off separately; only a coupling can be distributionally invisible, because being a
+  coupling *is* the requirement that the disguised traffic still has the benign distribution.
+  The realistic attacker cannot have one: restricted to the 39 of 76 features they can
+  manipulate they get a **better** per-flow result (5.8%) and their aggregate stalls at 2.7x the
+  same-population floor. Every distance is quoted against that floor, because the empirical
+  Wasserstein distance converges as `n^(-1/d)` and 8.43 sd of the attack's 10.52 is sampling
+  rather than signal. The adaptation arm makes transport the third instrument to diagnose the
+  temporal gap as concept rather than covariate shift.
+
 ## [0.20.0] — 2026-08-21
 
 The **self-audit wave**: four studies pointed at things this project had been taking on trust —

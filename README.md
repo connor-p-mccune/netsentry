@@ -148,6 +148,7 @@ what actually ships.
 | Anytime-valid drift | conformal test martingale: a Ville-bounded false-alarm rate at any stopping time (Vovk 2003) | ✅ Done |
 | Covariate shift | zero-label density-ratio diagnosis (domain classifier) + importance-weighted retraining; the temporal gap diagnosed as concept, not covariate, shift (Shimodaira 2000) | ✅ Done |
 | Multivariate drift | kernel two-sample testing (MMD): the joint change per-feature monitors are blind to *by construction*, with the null calibrated first (Gretton 2012) | ✅ Done |
+| Optimal transport | a drift distance **in units** plus the coupling that explains it — and the finding that only a *coupling* makes evasion distributionally invisible (Monge/Kantorovich; Cuturi 2013) | ✅ Done |
 | Statistical rigor | bootstrap CIs + gap significance test | ✅ Done |
 | Coherent metric | the H-measure: a shared, explicit cost prior fixes ROC-AUC's incoherence (Hand 2009) | ✅ Done |
 | Prediction-powered inference | attack prevalence from few labels + the model, tighter than classical at valid coverage (Angelopoulos 2023) | ✅ Done |
@@ -1956,6 +1957,54 @@ correlation of **0.005**, and under independence re-pairing columns samples the 
 so the fault is a no-op rather than an invisible change and a test that fired would be wrong.
 That is why the reach is measured on controlled windows whose dependence is a dial and whose
 marginals are identical at every setting.
+
+## Evasion has two costs, and every attack here paid only one
+
+```bash
+python -m netsentry.cli transport   # -> docs/reports/transport.md
+```
+
+Every drift instrument in this repository returns a scalar with no unit — PSI sums log ratios
+over arbitrary bins, KS reports a CDF gap, MMD lives in a kernel space scaled by a heuristic.
+**Optimal transport** returns a distance in the ground metric's own units *and* a plan saying
+where the mass went. At the sizes used here the exact problem is solvable — with equal samples
+and uniform weights the optimum sits at a permutation, so the Hungarian algorithm gives the true
+answer in a fraction of a second, and the entropic solver (Cuturi 2013) appears as the thing
+being **graded** rather than trusted.
+
+A coupling between attack traffic and benign traffic is a **mimicry recipe**, and three known
+attacks fall out of it as special cases. Raced at a matched 8σ perturbation budget:
+
+| target | a coupling? | detection | distance from benign | worst-feature PSI |
+|---|---|---|---|---|
+| the transport partner | **yes** | 7.5% | **0.102** (1.7× floor) | 0.17 |
+| the nearest benign flow | no | 9.3% | 0.182 (3.0×) | 0.23 |
+| **the benign centroid** (the deployed attack) | no | 9.0% | **0.533** (8.8×) | **5.63** |
+| a random benign flow | **yes** | 11.7% | 0.168 (2.8×) | 0.45 |
+| the transport partner, controllable features only | no | **5.8%** | 0.165 (2.7×) | 0.48 |
+
+The four unconstrained arms are a two-by-two — coupling or not, optimal or not — and reading
+across isolates the constraint while reading down isolates optimality. **The centroid mimicry
+this project's own [evasion study](docs/reports/robustness.md) runs is the worst target on both
+axes**: it leaves 20% more surviving detection than the transport plan at the identical budget,
+and it ends up *further* from benign traffic than the undisguised attack was, because collapsing
+every flow onto the mean builds a density spike where real traffic is diffuse. Its worst-feature
+PSI of 5.63 means **the deployed drift monitor catches that attack without being told it
+exists.**
+
+Only a coupling can be distributionally invisible, because being a coupling *is* the requirement
+that the disguised traffic still has the benign distribution. And the realistic attacker cannot
+have one: restricted to the 39 of 76 features they can actually manipulate, they get a *better*
+per-flow result (5.8%) and their aggregate stalls at 2.7× the floor. **The two costs of evasion
+come apart under a real threat model, and only the per-flow one is for sale** — an argument for
+spending defensive effort on the population rather than on the flow.
+
+Along the way the same machinery says something about the drift monitors: `Total Backward
+Packets` has moved 0.400 sd between the training and deployment days — a sentence an operator
+can act on — while PSI scores the same feature 0.033, a number whose only meaning is folklore
+banding. And the entropic regularisation turns out to be a **dial between the two mimicry
+attacks**: heavily regularised, the barycentric map sits 0.58 sd from the benign centroid (it
+*is* centroid mimicry); as it falls, the map walks to the exact partner.
 
 ## Closed-loop threshold control (and the attack on it)
 

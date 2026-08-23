@@ -52,6 +52,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Online learning | one-pass Hoeffding tree + ADWIN, prequentially, against static and periodic retraining | [open](online.md) |
 | Continual learning | class-incremental updates: forgetting, replay and the compute argument, measured | [open](continual.md) |
 | Multivariate drift (MMD) | kernel two-sample testing: the joint change the per-feature monitors cannot see | [open](mmd.md) |
+| Optimal transport | a drift distance in units and the coupling that explains it, then the distance an attacker has to travel (Cuturi 2013) | [open](transport.md) |
 | Strategic equilibrium | the arms race as a game: myopic race vs commitment, with the attacker cost priced | [open](strategic.md) |
 | Metamorphic testing | a label-free correctness oracle, validated by injected mutants (Chen 1998, Xie 2011) | [open](metamorphic.md) |
 | Backdoor poisoning | trigger trojan (BadNets) + spectral-signatures defense (Tran et al. 2018) | [open](backdoor.md) |

@@ -198,5 +198,13 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+transport:
+  max_rows: 200                     # the coupling is quadratic in memory and cubic to solve
+  projections: 32
+  permutations: 39
+  reg_scales: [0.5, 0.05]           # both ends of the centroid-to-partner dial
+  max_iter: 100
+  budgets: [1.0, 8.0]               # one budget inside the noise, one that moves detection
+  adapt_rows: 400
 mlflow:
   enabled: false         # use the local file logger in CI

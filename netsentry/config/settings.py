@@ -2008,6 +2008,36 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class TransportConfig(BaseModel):
+    """Optimal transport: a drift distance with units, and the coupling that explains it.
+
+    PSI, KS and MMD all return a scalar with no operational unit and no statement about where
+    the mass went. Transport returns both: the cost is in the ground metric's units (a
+    training standard deviation, on this feature space) and the plan says which flows
+    correspond to which. The regularisation is what makes it tractable and is also a bias, so
+    the solver is graded against the exact linear-assignment optimum before anything depends
+    on it, and every distance is quoted against a same-population floor because the empirical
+    Wasserstein distance converges as ``n^(-1/d)`` and ``d`` is 76 here."""
+
+    max_rows: int = 1000  # the coupling is O(n*m) in memory and cubic to solve exactly
+    projections: int = 200  # sliced-Wasserstein directions
+    permutations: int = 199
+    # Entropic strengths as multiples of the median pairwise cost, so the sweep means the same
+    # thing whatever the feature space's scale. The sweep doubles as the accuracy grading and
+    # as the centroid-to-partner dial.
+    reg_scales: list[float] = Field(default_factory=lambda: [0.5, 0.2, 0.1, 0.05, 0.02])
+    max_iter: int = 300
+    tol: float = 1e-6
+    psi_bins: int = 10
+    top_features: int = 8
+    # Perturbation budgets in standard deviations, matched across targeting strategies so the
+    # comparison is about which target is worth aiming at.
+    budgets: list[float] = Field(default_factory=lambda: [1.0, 2.0, 4.0, 6.0, 8.0])
+    profile: str = "fpr_1pct"
+    budget: float = 0.01
+    adapt_rows: int = 1200
+
+
 class BanditConfig(BaseModel):
     """Learning the triage policy online, under partial feedback.
 
@@ -2850,6 +2880,7 @@ class Settings(BaseSettings):
     mlint: MlintConfig = Field(default_factory=MlintConfig)
     lifecycle: LifecycleConfig = Field(default_factory=LifecycleConfig)
     bandit: BanditConfig = Field(default_factory=BanditConfig)
+    transport: TransportConfig = Field(default_factory=TransportConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
