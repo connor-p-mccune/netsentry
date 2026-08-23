@@ -7,6 +7,33 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Glass-box additive model** (`netsentry gam`, `netsentry/models/gam.py`): every explanation
+  this project ships is post hoc and carries its own approximation error. A generalized additive
+  model (Lou, Caruana & Gehrke 2012), fitted from scratch by cyclic Newton boosting over
+  single-feature histograms, *is* its own explanation — and a recovery harness points it at a
+  known additive truth first, including a feature carrying **no signal at all**, whose invented
+  curve of 0.197 log-odds is the noise floor every real curve is read against. The headline is
+  not the one the study was built expecting: **interpretability costs nothing here and capacity
+  costs everything.** Logistic regression, the most readable arm, wins the honest split outright
+  (PR-AUC 0.569 against the deployed ensemble's 0.529 and the GAM's 0.480) — and the additive
+  model is what turns that from a ranking of four architectures into a *measurement*, because its
+  capacity is a dial. Sweeping bins per shape function 2 -> 64 with everything else fixed takes
+  training PR-AUC 0.474 -> 0.859 while the later days rise, turn and fall (0.280 -> 0.493 ->
+  0.471). **Validation, carved from the training days, catches the turn but stops one rung early
+  and overstates the achievable score by 0.231** — a usable signal about the shape of the
+  capacity curve and a useless one about its level. A second dial (boosting rounds) replicates
+  it; a third — pairwise terms, the capacity an additive model structurally cannot have, ranked
+  by the FAST heuristic — locates the day-specific structure exactly: the first pair is worth
+  +0.042 on the later days and sixteen cost -0.097 while training PR-AUC climbs +0.095. Because
+  a shape function is a lookup table, the study also **edits the model**: every (feature, bin)
+  clamp is evaluated exactly on validation and measured on the later days, and the finding is
+  two-part — the failure at the deployed 1% budget is a *sample-size* failure (56 validation
+  false alarms to choose from; 10x the budget buys 10x the evidence and a 5.5x better trade),
+  while the exchange rate itself never reaches the 20:1 the cost study's economics require,
+  because the regions carrying false alarms are the regions carrying detection.
+- `plot_shape_grid` renders signed step functions on a shared, unclamped axis with the zero line
+  drawn; `Binner` drops quantile cuts at or below a column's minimum, so a zero-inflated flow
+  feature no longer opens bins no row can fall into.
 - **Optimal transport** (`netsentry transport`, `netsentry/monitoring/transport.py`): every drift
   instrument this project ships returns a scalar with no unit and no statement about where the
   mass went. Transport returns both. Exact one-dimensional Wasserstein by quantile integration

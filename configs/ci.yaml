@@ -198,6 +198,17 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+gam:
+  bin_ladder: [4, 16]               # two rungs still bracket a turn in the capacity curve
+  round_ladder: [3, 30]
+  rounds: 20
+  pair_candidates: 6
+  pair_ladder: [1, 4]
+  pair_rounds: 20
+  n_edits: 3
+  min_removed: 1                    # the 5k-row smoke has very few alarms to select from
+  recovery_rows: 800
+  recovery_rounds: 60
 transport:
   max_rows: 200                     # the coupling is quadratic in memory and cubic to solve
   projections: 32

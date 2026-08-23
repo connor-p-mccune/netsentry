@@ -289,6 +289,47 @@ def plot_pdp_grid(
     return _save(fig, out_path)
 
 
+def plot_shape_grid(
+    panels: Sequence[tuple[str, np.ndarray, np.ndarray]],
+    *,
+    out_path: Path,
+    ylabel: str,
+    ncols: int = 2,
+) -> Path:
+    """Small-multiples step functions on a shared, unclamped y-axis.
+
+    ``plot_pdp_grid`` clips its axis to [0, 1] because a partial-dependence curve is a
+    probability. An additive model's shape function is a **log-odds contribution**: it is
+    signed, and where it crosses zero is the reading an operator wants, so the zero line is
+    drawn and the axis is left alone. Panels share the axis so the curves' relative size is
+    the visible thing.
+    """
+    plt = _plt()
+    n = max(1, len(panels))
+    ncols = max(1, min(ncols, n))
+    nrows = (n + ncols - 1) // ncols
+    fig, axes = plt.subplots(nrows, ncols, figsize=(5.5 * ncols, 3.4 * nrows), squeeze=False)
+    stacked = np.concatenate([np.asarray(values, dtype=float) for _, _, values in panels])
+    pad = max(1e-3, float(stacked.max() - stacked.min()) * 0.1)
+    ylim = (float(stacked.min()) - pad, float(stacked.max()) + pad)
+    for i, (feature, grid, values) in enumerate(panels):
+        ax = axes[i // ncols][i % ncols]
+        ax.step(
+            np.asarray(grid, dtype=float),
+            np.asarray(values, dtype=float),
+            where="mid",
+            color="#d1495b",
+            linewidth=2.0,
+        )
+        ax.axhline(0.0, color="gray", linestyle=":", alpha=0.8)
+        ax.set(xlabel=feature, ylabel=ylabel, title=feature)
+        ax.set_ylim(*ylim)
+        ax.grid(alpha=0.3)
+    for j in range(len(panels), nrows * ncols):
+        axes[j // ncols][j % ncols].axis("off")
+    return _save(fig, out_path)
+
+
 def plot_pr_curves(curves: ScoreCurves, out_path: Path) -> Path:
     """Precision-recall curves (one line per split) — the headline comparison."""
     plt = _plt()

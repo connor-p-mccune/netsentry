@@ -155,6 +155,7 @@ what actually ships.
 | Conformal alert FDR | a **false-discovery-rate guarantee** on the alert batch: conformal p-values + Benjamini–Hochberg, holds where a fixed FPR's precision collapses (Bates et al. 2023) | ✅ Done |
 | Label-shift correction | recover + correct for the deployment prior with **zero** labels: BBSE + MLLS/EM (Lipton 2018, Saerens 2002) | ✅ Done |
 | Explanation trust | feature-importance stability across bootstrap refits | ✅ Done |
+| Glass-box modelling | a from-scratch GAM/GA2M that **is** its own explanation and can be *edited*, with a capacity dial showing what the honest split punishes (Lou, Caruana & Gehrke 2012) | ✅ Done |
 | Threat intel | MITRE ATT&CK mapping in predictions + coverage report + Navigator layer | ✅ Done |
 | Data efficiency | learning curves (does more data help?) | ✅ Done |
 | Active learning | uncertainty vs random labeling (label-efficiency win) | ✅ Done |
@@ -1260,6 +1261,58 @@ ranking does not. The report renders the chosen tree in full and states the scop
 claims plainly: a K-leaf tree emits K distinct scores (tight FP budgets are
 unreachable by construction), and a surrogate explains *behavior*, not mechanism.
 See [`docs/reports/distill.md`](docs/reports/distill.md).
+
+## The glass box, and what the honest split actually punishes
+
+```bash
+python -m netsentry.cli gam   # -> docs/reports/gam.md
+```
+
+Everything in `netsentry/explain` is **post hoc** — SHAP, anchors, distillation each approximate
+the deployed model, and each carries its own error. A **generalized additive model** (Lou,
+Caruana & Gehrke 2012) needs none of that: it *is* a sum of one-dimensional curves, so the
+explanation is the model. Fitted here from scratch by cyclic Newton boosting over single-feature
+histograms, with a recovery harness that first points it at a known additive truth (a step, a
+parabola, and a feature carrying **no signal**, whose invented curve of 0.197 log-odds is the
+noise floor every real curve is read against).
+
+| model | readable? | parameters | PR-AUC | detection @ 1% FPR |
+|---|---|---|---|---|
+| **logistic regression** | yes | **77** | **0.569** | 21.1% |
+| gradient-boosted ensemble (deployed) | **no** | 34,902 | 0.529 | 21.0% |
+| additive + pairwise (GA2M) | yes | 2,240 | 0.481 | 16.1% |
+| additive model (GAM) | yes | 1,216 | 0.480 | 12.0% |
+
+**Interpretability is not what costs anything here — capacity is**, and the additive model is
+what makes that measurable, because its capacity is a *dial* rather than an architecture:
+
+| bins per feature | parameters | train | validation | later days |
+|---|---|---|---|---|
+| 2 | 152 | 0.474 | 0.488 | 0.280 |
+| 8 | 608 | 0.708 | 0.698 | 0.424 |
+| **16 (selected on validation)** | 1,216 | 0.752 | **0.711** | 0.480 |
+| 32 | 2,432 | 0.789 | 0.698 | **0.493** |
+| 64 | 4,862 | **0.859** | 0.637 | 0.471 |
+
+Nothing else changes across those rows — same loss, same boosting, same class weights, same
+splits. Training PR-AUC rises monotonically; the later days rise, turn and fall. **Validation,
+carved from the training days, catches the turn but stops one rung early and overstates the
+achievable score by 0.231** — a usable signal about the *shape* of the capacity curve and a
+useless one about its *level*, which is exactly why every headline here is a temporal number.
+A second dial (boosting rounds) replicates it, and a third — pairwise interaction terms, the
+capacity an additive model structurally cannot have — shows where the day-specific structure
+lives: the first pair is worth **+0.042** on the later days, and going to sixteen costs
+**−0.097** while training PR-AUC climbs +0.095.
+
+Because a shape function is a lookup table, an operator can **edit the model**: clamp a region
+that fires on traffic they know is benign, with no retraining and no surrogate. Candidate edits
+are ranked by the trade they make on validation and measured on the later days. At the deployed
+1% budget the whole validation split offers **56 false alarms** to choose from and the best edit
+manages 1.0:1; at a 10% budget, with 10× the evidence, it reaches **5.5:1** — still short of the
+20:1 the [cost study's](docs/reports/cost.md) own economics demand. The regions carrying false
+alarms are the regions carrying detection. What the glass box adds is not a free lunch: it is
+that the trade is inspectable region by region, with its exchange rate visible before the change
+ships.
 
 ## Campaign-level detection (the SOC's unit of account)
 

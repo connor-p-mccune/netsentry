@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def gam(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Fit a readable additive model beside the ensemble, sweep its capacity, and edit it."""
+    from netsentry.models.gam import run_gam_report
+
+    settings = _load(config, override)
+    out = run_gam_report(settings)
+    logger.info("GAM report ready", extra={"path": str(out)})
+
+
+@app.command()
 def transport(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -99,6 +99,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Influence functions | which training flows caused a verdict, validated against real LOO (Koh & Liang 2017) | [open](influence.md) |
 | Optimal sparse trees | how far greedy CART sits from the provably optimal tree, with a certificate (Hu, Rudin & Seltzer 2019) | [open](optimal_tree.md) |
 | Surrogate distillation | the model's closest auditable imitation, with fidelity priced | [open](distill.md) |
+| Glass-box additive model | a model that is its own explanation, and the capacity dial that shows what the honest split actually punishes (Lou, Caruana & Gehrke 2012) | [open](gam.md) |
 | Active learning | uncertainty vs random labeling efficiency | [open](active_learning.md) |
 | Seed sensitivity | the training-noise floor under every reported metric | [open](seed_variance.md) |
 | Release gate | honesty invariants + metric floors the candidate must clear | [open](gate.md) |

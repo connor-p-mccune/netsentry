@@ -2008,6 +2008,43 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class GamConfig(BaseModel):
+    """The glass box: a generalized additive model fitted beside the deployed ensemble.
+
+    Everything in ``netsentry/explain`` is post hoc -- an approximation of the deployed model
+    whose own error has to be measured. An additive model is legible by construction: it *is*
+    a sum of one-dimensional curves, so the explanation is exact rather than attributed, and
+    the curves are lookup tables an operator can edit without retraining. The study prices what
+    that costs against the boosted incumbent, decomposes the gap with a bounded number of
+    pairwise terms, and measures surgical edits chosen on validation and scored on the later
+    days (Lou, Caruana & Gehrke 2012; Caruana et al. 2015)."""
+
+    n_bins: int = 32  # bins per shape function, for the recovery harness
+    rounds: int = 60  # cycles over every feature
+    learning_rate: float = 0.2
+    l2: float = 1.0  # ridge on the Newton step, so a sparse bin cannot swing the curve
+    # The capacity dials. Bins per shape function is resolution, parameter count and capacity
+    # in one integer; the boosting schedule is the second, independent dial, and it is here
+    # because one hyperparameter behaving a certain way is an anecdote.
+    bin_ladder: list[int] = Field(default_factory=lambda: [2, 4, 8, 16, 32, 64])
+    round_ladder: list[int] = Field(default_factory=lambda: [1, 3, 10, 30, 120])
+    pair_candidates: int = 16  # top features by swing that pairwise terms may be drawn from
+    pair_ladder: list[int] = Field(default_factory=lambda: [1, 4, 16])
+    pair_rounds: int = 60
+    budget: float = 0.01  # the shared false-positive budget every arm is scored at
+    top_features: int = 8
+    plot_features: int = 4
+    n_edits: int = 6
+    min_removed: int = 3  # an edit clearing one alarm on validation is noise, not a finding
+    # Two budgets on purpose: at the deployed one there are only a few dozen false alarms on
+    # validation to choose an edit from, and whether that is why editing fails is a question.
+    edit_budgets: list[float] = Field(default_factory=lambda: [0.01, 0.10])
+    # The recovery harness: a known additive truth the fitter has to return, including a pure
+    # noise component it has to leave flat.
+    recovery_rows: int = 4000
+    recovery_rounds: int = 200
+
+
 class TransportConfig(BaseModel):
     """Optimal transport: a drift distance with units, and the coupling that explains it.
 
@@ -2881,6 +2918,7 @@ class Settings(BaseSettings):
     lifecycle: LifecycleConfig = Field(default_factory=LifecycleConfig)
     bandit: BanditConfig = Field(default_factory=BanditConfig)
     transport: TransportConfig = Field(default_factory=TransportConfig)
+    gam: GamConfig = Field(default_factory=GamConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)

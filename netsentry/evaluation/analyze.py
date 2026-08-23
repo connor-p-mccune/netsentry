@@ -84,6 +84,7 @@ from netsentry.intel.sigma import run_sigma_export
 from netsentry.intel.sketches import run_sketches_report
 from netsentry.log import get_logger
 from netsentry.models.density import run_density_report
+from netsentry.models.gam import run_gam_report
 from netsentry.models.monotonic import run_monotonic_report
 from netsentry.monitoring.control import run_control_report
 from netsentry.monitoring.covariate_shift import run_covariate_shift_report
@@ -730,6 +731,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "the model's closest auditable imitation, with fidelity priced",
         "distill.md",
         run_distill_report,
+    ),
+    (
+        "Glass-box additive model",
+        "a model that is its own explanation, and the capacity dial that shows what the "
+        "honest split actually punishes (Lou, Caruana & Gehrke 2012)",
+        "gam.md",
+        run_gam_report,
     ),
     (
         "Active learning",
