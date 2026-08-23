@@ -194,6 +194,7 @@ what actually ships.
 | Anchor explanations | high-precision IF-THEN rules with a coverage trade-off, held-out-validated (Ribeiro 2018) | ✅ Done |
 | Influence functions | which training flows caused a verdict, validated against real leave-one-out (Koh & Liang 2017) | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
+| Verifiable inference | proof-carrying verdicts: the ensemble committed as a Merkle tree, seven forgeries refused, and the verifiability/confidentiality trade measured in certificates | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
 | Seed sensitivity | same-seed reproducibility asserted + the cross-seed noise floor | ✅ Done |
 | Release gate | executable definition of done; a *too-good* PR-AUC **fails** it | ✅ Done |
@@ -2635,6 +2636,57 @@ costs $25, so a policy reviewing six times as much traffic is making a trade the
 permits, while a SOC's alert budget is a *rate* — and every fixed-FPR threshold, conformal risk
 bound and Neyman-Pearson certificate in this repository exists to express exactly that
 difference.
+
+## Proof-carrying verdicts (attesting the computation, not the artifact)
+
+```bash
+python -m netsentry.cli attest   # -> docs/reports/attestation.md
+```
+
+`netsentry verify` hashes the bundle **at rest**; the [alert ledger](docs/reports/ledger.md)
+hash-chains the alert **history**. Between them sits the gap that matters at the moment a
+verdict is issued: a service whose in-memory model has been swapped, rolled back or quietly
+truncated passes both checks, because both are about artifacts rather than about the
+computation that produced the answer.
+
+The mechanism needs no new cryptography, because the model already has the right shape. Hash a
+decision tree bottom-up — `leaf = H("L" ‖ value)`, `internal = H("I" ‖ feature ‖ threshold ‖
+H(left) ‖ H(right))` — and **the tree *is* a Merkle tree**. A root-to-leaf path plus each step's
+sibling hash is then an ordinary authentication path, and the ensemble publishes one 32-byte
+root over its per-tree roots. An auditor holding the flow, the certificate and that root can
+check a verdict **without the model, without re-running inference, and without trusting the
+service**.
+
+| forgery | what it models in production | verdict |
+|---|---|---|
+| rewrite a leaf value | reporting a score the model did not produce | **refused** |
+| move a split threshold | a model quietly retuned after approval | **refused** |
+| splice another tree's path | a plausible proof assembled from real fragments | **refused** |
+| rewrite an unvisited sibling | editing the part of the model this flow never touched | **refused** |
+| report a different score | the cheapest attack: leave the proof, change the number | **refused** |
+| **drop a tree** | serving a truncated ensemble to cut latency | **refused** |
+| **serve a stale model** | last week's bundle, still in memory after a rollback | **refused** |
+
+Dropping a tree is the one an obvious design misses: serve 599 of 600 and report the smaller
+score, and every remaining path still hashes into the root while the leaf values still sum to
+exactly the number claimed — the arithmetic check cannot see a missing summand. It is refused
+only because **the ensemble's size is part of the commitment**, a decision that had to be made
+before the attack could be caught.
+
+**A certificate proves a region, not a flow.** Every predicate is an inequality, so the object
+proved is that *some point in a leaf region* scores this way. That region is measurable: an
+unbound certificate still verifies for 84% of flows moved 0.001σ and 28% moved 0.01σ, and none
+moved 0.1σ — the same box the [interval verifier](docs/reports/verify_trees.md) computes for
+robustness, reached from the opposite direction. Binding the flow's digest into the transcript
+costs 32 bytes and takes acceptance to zero at every perturbation.
+
+Then the costs, which nobody advertises. A certificate is **392 KB** — 785× the prediction body
+and ~10% of the entire model — because it must carry a path for every tree. Verification is 14×
+inference (10,970 SHA-256 evaluations against ~4,400 float comparisons), so the usual
+"verification is cheaper than computation" pitch **does not hold for a model this cheap to
+evaluate**. And the confidentiality trade is real and quantified: one certificate reveals 12% of
+the ensemble's internal nodes, 400 reveal **95.5% and recover 114 of 600 trees exactly** — model
+theft by structure, which query-only [extraction](docs/reports/extraction.md) can never do.
 
 ## Provenance & supply chain
 

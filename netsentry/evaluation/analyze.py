@@ -71,6 +71,7 @@ from netsentry.explain.interactions import run_interactions_report
 from netsentry.explain.optimal_tree import run_optimal_tree_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.features.store_report import run_store_report
+from netsentry.governance.attestation import run_attestation_report
 from netsentry.governance.compliance import run_compliance_report
 from netsentry.governance.ledger_report import run_ledger_report
 from netsentry.governance.mlint import run_mlint_report
@@ -843,6 +844,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "violations it claims to catch",
         "mlint.md",
         run_mlint_report,
+    ),
+    (
+        "Proof-carrying verdicts",
+        "commit to the ensemble as a Merkle tree and prove each verdict against it, with "
+        "seven forgeries executed and the leakage priced",
+        "attestation.md",
+        run_attestation_report,
     ),
     (
         "Provenance & supply chain",

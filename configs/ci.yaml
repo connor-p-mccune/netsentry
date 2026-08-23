@@ -198,6 +198,12 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+attestation:
+  max_flows: 120                    # every certificate walks the whole ensemble in Python
+  timing_repeats: 5
+  replay_trials: 20
+  replay_epsilons: [0.000001, 0.01, 1.0]   # inside a leaf, on its edge, well outside
+  leak_counts: [1, 20, 100]
 gam:
   bin_ladder: [4, 16]               # two rungs still bracket a turn in the capacity curve
   round_ladder: [3, 30]

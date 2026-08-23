@@ -7,6 +7,28 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Proof-carrying verdicts** (`netsentry attest`, `netsentry/governance/attestation.py`):
+  `verify` hashes the bundle at rest and the ledger hash-chains the alert history; neither
+  covers the moment a verdict is issued, so a service whose in-memory model has been swapped,
+  rolled back or truncated passes both. The fix needs no new cryptography because the model
+  already has the right shape -- hashing a decision tree bottom-up makes **the tree a Merkle
+  tree**, so a root-to-leaf path plus its sibling hashes is an authentication path an auditor
+  can check against a published 32-byte root without the model, without re-running inference
+  and without trusting the service. **Seven forgeries executed, seven refused**, including the
+  two that a straightforward design misses: *dropping a tree* (the leaf values still sum to the
+  score claimed, so it is caught only because the ensemble's size is part of the commitment)
+  and *serving a stale model* (the bundle hash on disk stays correct and describes a file the
+  process is not using). The measurement that changed the framing is that **a certificate proves
+  a region, not a flow** -- an unbound certificate still verifies for 84% of flows moved 0.001
+  sd and 28% moved 0.01 sd, which is the same box the interval verifier computes for
+  robustness, reached from the other direction; binding the flow's digest costs 32 bytes and
+  takes acceptance to zero. The costs are stated rather than glossed: a certificate is **392 KB**
+  (785x the prediction body, ~10% of the model), verification is **14x inference** because it is
+  10,970 SHA-256 evaluations against ~4,400 float comparisons, so the usual "verification is
+  cheaper than computation" argument does not hold for a model this cheap to evaluate. And the
+  confidentiality trade is quantified: one certificate reveals 12% of the ensemble's internal
+  nodes and 400 reveal **95.5%, recovering 114 of 600 trees exactly** -- model theft by
+  structure, which query-only extraction cannot do.
 - **Glass-box additive model** (`netsentry gam`, `netsentry/models/gam.py`): every explanation
   this project ships is post hoc and carries its own approximation error. A generalized additive
   model (Lou, Caruana & Gehrke 2012), fitted from scratch by cyclic Newton boosting over

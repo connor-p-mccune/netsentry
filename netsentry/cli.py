@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def attest(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Commit to the deployed ensemble and prove each verdict against it, then forge some."""
+    from netsentry.governance.attestation import run_attestation_report
+
+    settings = _load(config, override)
+    out = run_attestation_report(settings)
+    logger.info("Attestation report ready", extra={"path": str(out)})
+
+
+@app.command()
 def gam(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

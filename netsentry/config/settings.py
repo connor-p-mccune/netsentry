@@ -2008,6 +2008,29 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class AttestationConfig(BaseModel):
+    """Proof-carrying verdicts: verifying the computation, not the artefact it ran from.
+
+    ``verify`` hashes the bundle at rest and the ledger hash-chains the alert history; neither
+    covers the moment a verdict is issued. Hashing a decision tree bottom-up turns it into a
+    Merkle tree, so a root-to-leaf path plus its sibling hashes is an authentication path an
+    auditor can check against a published root -- without the model and without re-running
+    inference. The forgeries are executed rather than argued about, and the leakage the
+    certificates create is measured in the same units the attacker would spend."""
+
+    max_flows: int = 600
+    timing_repeats: int = 20
+    replay_trials: int = 100  # how often a certificate still verifies for a moved flow
+    # A certificate covers the leaf region a flow fell into, so the question is how big that
+    # region is. Perturbations are in standardised feature units, like every other budget here.
+    replay_epsilons: list[float] = Field(
+        default_factory=lambda: [1e-9, 1e-6, 1e-4, 1e-3, 1e-2, 0.1, 1.0]
+    )
+    leak_counts: list[int] = Field(default_factory=lambda: [1, 10, 50, 100, 200, 400])
+    response_bytes: int = 512  # a typical /predict body, for the size comparison
+    alerts_per_day: float = 5000.0  # certifying only the alerts, not the whole stream
+
+
 class GamConfig(BaseModel):
     """The glass box: a generalized additive model fitted beside the deployed ensemble.
 
@@ -2919,6 +2942,7 @@ class Settings(BaseSettings):
     bandit: BanditConfig = Field(default_factory=BanditConfig)
     transport: TransportConfig = Field(default_factory=TransportConfig)
     gam: GamConfig = Field(default_factory=GamConfig)
+    attestation: AttestationConfig = Field(default_factory=AttestationConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)
