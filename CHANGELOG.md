@@ -7,6 +7,26 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Private inference** (`netsentry privateinfer`, `netsentry/serving/private_inference.py`):
+  two-party additive secret sharing with Beaver triples, implemented on numpy over a 31-bit
+  prime field, so a client can be scored without uploading its traffic and a server can answer
+  without sharing its model. **38 KB and one round per verdict**, matching the plaintext model
+  to 4e-07, with every field element the server observes passing a uniformity test at p = 0.91
+  -- against a deliberately broken control (one triple reused across flows) that fails at
+  p = 0.0000, because differences of masked selectors cancel the pad and expose the inputs
+  exactly. The protocol is this cheap because of the *model*: an additive model is a sum of
+  table lookups, a lookup is an inner product with a one-hot selector, and since one operand is
+  a selector rather than a value the fixed-point scale survives -- no probabilistic truncation,
+  and a circuit one multiplication deep. The glass box is the private box, structurally. Two
+  things it does not protect are measured rather than mentioned. The bin edges must be public
+  for the client to bin its own flow, and they are a quantile summary: reconstructing the
+  training marginals from them lands **0.084 sd** above the same-data floor, so the model stays
+  secret and the training distribution does not. And against a *malicious* client the guarantee
+  inverts -- secret sharing hides the input so completely that the server cannot check it is an
+  input, and **1,217 crafted queries (2.5 MB) read the whole model out to 5e-05**, strictly
+  stronger than the query-only extraction attack because the input space is the field rather
+  than the space of flows. The fixed-point encoding has a two-sided cliff: too few bits quantise
+  the score, too many make the sum wrap into a different number entirely.
 - **SHAP estimand audit** (`netsentry shapaudit`, `netsentry/explain/shap_estimand.py`):
   `/predict` returns `top_features` from `shap.TreeExplainer(model)` with no background data,
   which silently selects one of three estimands that answer different questions. The library is

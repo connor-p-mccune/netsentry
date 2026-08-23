@@ -2008,6 +2008,29 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class PrivateInferenceConfig(BaseModel):
+    """Scoring a flow neither party will show the other: two-party secret sharing.
+
+    `/predict` requires the client to upload its own traffic and the server to keep its model,
+    which is exactly the arrangement secure two-party computation removes. The model evaluated
+    is the additive one, and that is structural rather than convenient: a GAM is a sum of table
+    lookups, a lookup is an inner product with a one-hot selector, and because one operand is a
+    selector rather than a value the fixed-point scale survives -- no truncation, one round.
+    What the protocol does not protect is measured too: public bin edges are a quantile summary
+    of the training traffic, and against a *malicious* client the server cannot check that the
+    thing it is multiplying is a selector at all."""
+
+    n_bins: int = 16  # bins per shape function; the protocol cost is linear in this
+    rounds: int = 30  # boosting rounds for the model being served
+    fraction_bits: int = 20
+    fraction_bit_sweep: list[int] = Field(default_factory=lambda: [4, 8, 12, 16, 20, 24, 28, 32])
+    precision_flows: int = 20
+    timing_flows: int = 20
+    leak_flows: int = 30
+    edge_features: int = 8
+    extraction_features: int = 4  # the attack is per (feature, bin); four is enough to prove it
+
+
 class ShapEstimandConfig(BaseModel):
     """Which Shapley value does `/predict` ship, and would the other one disagree?
 
@@ -3003,6 +3026,7 @@ class Settings(BaseSettings):
     attestation: AttestationConfig = Field(default_factory=AttestationConfig)
     multifidelity: MultiFidelityConfig = Field(default_factory=MultiFidelityConfig)
     shap_estimand: ShapEstimandConfig = Field(default_factory=ShapEstimandConfig)
+    private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)
     discovery: DiscoveryConfig = Field(default_factory=DiscoveryConfig)

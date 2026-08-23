@@ -117,6 +117,7 @@ from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.batching import run_batching_report
 from netsentry.serving.cascade import run_cascade_report
 from netsentry.serving.lifecycle import run_lifecycle_report
+from netsentry.serving.private_inference import run_private_inference_report
 from netsentry.training.byzantine import run_byzantine_report
 from netsentry.training.continual import run_continual_report
 from netsentry.training.deep_tabular import run_deep_tabular_report
@@ -781,6 +782,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         run_sequential_ab_report,
     ),
     ("MITRE ATT&CK coverage", "attack class -> tactic/technique", "mitre.md", run_mitre_report),
+    (
+        "Private inference",
+        "score a flow under two-party secret sharing so neither side sees the other's "
+        "secret, then read the model out with queries the server cannot refuse",
+        "private_inference.md",
+        run_private_inference_report,
+    ),
     (
         "Private indicator sharing",
         "ask a peer whether they have seen an indicator without telling them which: DH private "

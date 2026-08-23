@@ -198,6 +198,15 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+private_inference:
+  n_bins: 8
+  rounds: 10
+  fraction_bit_sweep: [8, 20, 40]   # coarse, correct, and wrapped
+  precision_flows: 4
+  timing_flows: 4
+  leak_flows: 6
+  edge_features: 3
+  extraction_features: 2
 shap_estimand:
   max_flows: 60
   background_size: 40

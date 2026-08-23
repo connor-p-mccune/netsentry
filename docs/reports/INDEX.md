@@ -107,6 +107,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Release gate | honesty invariants + metric floors the candidate must clear | [open](gate.md) |
 | Anytime-valid A/B | when the shadow model can be promoted: peeking-safe confidence sequences | [open](sequential_ab.md) |
 | MITRE ATT&CK coverage | attack class -> tactic/technique | [open](mitre.md) |
+| Private inference | score a flow under two-party secret sharing so neither side sees the other's secret, then read the model out with queries the server cannot refuse | [open](private_inference.md) |
 | Private indicator sharing | ask a peer whether they have seen an indicator without telling them which: DH private set intersection, and the dictionary attack on the hashing it replaces | [open](psi.md) |
 | MITRE ATLAS coverage | the detector as a target: this repo's own ML attack surface, with the gaps named | [open](atlas.md) |
 | ATT&CK Navigator layer | detection coverage as a loadable Navigator layer | [open](attack_navigator_layer.json) |

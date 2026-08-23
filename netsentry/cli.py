@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def privateinfer(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Score a flow under two-party secret sharing, then attack the protocol."""
+    from netsentry.serving.private_inference import run_private_inference_report
+
+    settings = _load(config, override)
+    out = run_private_inference_report(settings)
+    logger.info("Private-inference report ready", extra={"path": str(out)})
+
+
+@app.command()
 def shapaudit(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

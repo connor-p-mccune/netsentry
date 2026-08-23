@@ -195,6 +195,7 @@ what actually ships.
 | Feature interactions | Friedman's H-statistic → which features the model has entangled (completes the PDP caveat) | ✅ Done |
 | Anchor explanations | high-precision IF-THEN rules with a coverage trade-off, held-out-validated (Ribeiro 2018) | ✅ Done |
 | Influence functions | which training flows caused a verdict, validated against real leave-one-out (Koh & Liang 2017) | ✅ Done |
+| Private inference | two-party secret sharing + Beaver triples from scratch: a verdict neither side can see the other's half of, in 38 KB and one round — plus the malicious-client attack that reads the model out | ✅ Done |
 | Supply chain | CycloneDX SBOM + signed model manifest + `verify` gate | ✅ Done |
 | Verifiable inference | proof-carrying verdicts: the ensemble committed as a Merkle tree, seven forgeries refused, and the verifiability/confidentiality trade measured in certificates | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
@@ -2493,6 +2494,51 @@ That is the argument for computing a front instead of a score, and it is a proof
 preference. The deployed configuration, incidentally, is **dominated by 9 of the 12** — better
 or equal on all three objectives at once — which says its hyperparameters were never chosen
 against these axes rather than that it should be swapped today.
+
+## Scoring a flow neither party will show the other
+
+```bash
+python -m netsentry.cli privateinfer   # -> docs/reports/private_inference.md
+```
+
+`/predict` has a privacy structure nobody writes down: the client uploads 76 features of its own
+network traffic, and the server replies from a model it will not share. For a managed-detection
+provider that *is* the commercial arrangement. Secure two-party computation removes it —
+implemented here from numpy over a 31-bit prime field with **additive secret sharing** and
+**Beaver triples**, no libraries.
+
+**Neither party shows the other anything, and it costs 38 KB and one round.** The result matches
+the plaintext model to 4×10⁻⁷, and every field element the server observes passes a uniformity
+test at **p = 0.91** — against a deliberately broken variant (one triple reused across flows)
+that fails the same test at **p = 0.0000**, because differences of masked selectors cancel the
+pad and expose the inputs exactly.
+
+The reason it is this cheap is the *model*, not the protocol. An additive model is a sum of
+table lookups; a lookup is an inner product with a one-hot selector; and because one operand is
+a **selector rather than a value**, the fixed-point scale survives the multiplication — no
+truncation step, and a circuit one multiplication deep. **The [glass box](docs/reports/gam.md)
+turns out to be the private box**, structurally. (For comparison: a
+[proof-carrying verdict](docs/reports/attestation.md) costs 392 KB, because it scales with trees
+rather than table entries.)
+
+Then the two things it does **not** protect, both measured:
+
+- **The bin edges must be public** for a client to bin its own flow — and those edges are a
+  quantile summary of the training traffic. Reconstructing the training marginals from them
+  lands **0.084 sd** above the floor two halves of the real data would show. The model stays
+  secret; the training distribution does not.
+- **Against a malicious client the guarantee inverts.** Secret sharing hides the input so
+  completely that the server cannot check it *is* an input: a unit vector on one feature and
+  zeros elsewhere returns `intercept + f_j[i]` in the clear. **1,217 crafted queries (2.5 MB)
+  read the whole model out to 5×10⁻⁵** — strictly stronger than the query-only
+  [extraction attack](docs/reports/extraction.md), because the input space is the field rather
+  than the space of flows. The fix is malicious security (a zero-knowledge one-hot argument),
+  which is a different protocol with a different cost.
+
+And the encoding has its own two-sided cliff: of eight fixed-point settings swept, too few
+fraction bits quantise the score past usefulness while too many make the sum **wrap** — not a
+larger error but a different number, with a benign flow decoding as a confident attack and no
+signal that anything went wrong.
 
 ## Asking a peer without telling them what you are looking for
 
