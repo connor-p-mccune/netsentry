@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def universal(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Fit one perturbation for every flow, transfer it, and try to make it impossible."""
+    from netsentry.robustness.universal import run_universal_report
+
+    settings = _load(config, override)
+    out = run_universal_report(settings)
+    logger.info("Universal-perturbation report ready", extra={"path": str(out)})
+
+
+@app.command()
 def privateinfer(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -96,7 +96,32 @@ estimator of what you missed exists**; automatic slice discovery with a permuted
 returns zero findings and a winner's curse that costs the marginal slices half their effect;
 server-side batching that moves the capacity ceiling 629x and needed its queueing model
 replaced, because a batching server is self-regulating rather than M/D/1; and a Pareto front
-whose concave members **no weighted sum can ever select**), and the **sharing, budgets & accountability wave** (private set intersection so one organisation can ask another about an indicator without naming it, alongside the complete dictionary attack that breaks the hash exchange it replaces — the entire IPv4 space in 7.9 hours, and salting the list buys 0.28 seconds — and the inflation attack the protocol has no defence against at all; cost-aware feature acquisition at the exporter, where **four features beat all seventy-six** and the adaptive policy loses to its own random-gating placebo because the cheap tier ranks attacks no better than chance; streaming quantile estimation that holds the 0.1% operating point in **160 bytes** and is graded in alert volume rather than threshold error, where 9 of 10 approximations are operationally identical and every one of them fails the same way when the stream moves; and a conformance mapping onto NIST AI RMF 1.0 and the EU AI Act's high-risk articles in which **every control's evidence is verified against the tree, so a deleted study downgrades its own claim**, and the two unmeetable obligations are named rather than finessed), and the **self-audit wave** (four studies that check what this project had been taking on trust: its own coding rules, turned into six static-analysis rules that are graded by injecting the violations they claim to catch and that produced **five real fixes** in the codebase; its own anomaly premise, where a detector that **never sees the training data** beats four of the six trained ones and almost no skill survives removing a size proxy; its own serving contract, driven as a state machine through 200-operation sequences with **five injected regressions** proving the checker can fail; and its own operating point, against a contextual bandit that achieves the textbook `sqrt(T)` regret and still loses to a threshold chosen once on validation, because **what its exploration spends is the alert budget**).
+whose concave members **no weighted sum can ever select**), and the **sharing, budgets & accountability wave** (private set intersection so one organisation can ask another about an indicator without naming it, alongside the complete dictionary attack that breaks the hash exchange it replaces — the entire IPv4 space in 7.9 hours, and salting the list buys 0.28 seconds — and the inflation attack the protocol has no defence against at all; cost-aware feature acquisition at the exporter, where **four features beat all seventy-six** and the adaptive policy loses to its own random-gating placebo because the cheap tier ranks attacks no better than chance; streaming quantile estimation that holds the 0.1% operating point in **160 bytes** and is graded in alert volume rather than threshold error, where 9 of 10 approximations are operationally identical and every one of them fails the same way when the stream moves; and a conformance mapping onto NIST AI RMF 1.0 and the EU AI Act's high-risk articles in which **every control's evidence is verified against the tree, so a deleted study downgrades its own claim**, and the two unmeetable obligations are named rather than finessed), and the **self-audit wave** (four studies that check what this project had been taking on trust: its own coding rules, turned into six static-analysis rules that are graded by injecting the violations they claim to catch and that produced **five real fixes** in the codebase; its own anomaly premise, where a detector that **never sees the training data** beats four of the six trained ones and almost no skill survives removing a size proxy; its own serving contract, driven as a state machine through 200-operation sequences with **five injected regressions** proving the checker can fail; and its own operating point, against a contextual bandit that achieves the textbook `sqrt(T)` regret and still loses to a threshold chosen once on validation, because **what its exploration spends is the alert budget**), and the
+**unexamined-premise wave** (six studies, four of which point at an assumption this project or
+the field had been running on without measuring it, and three of those came back false:
+**interpretability is not what costs accuracy, capacity is** — a from-scratch additive model
+turns capacity into a *dial* and the most readable arm in the comparison, logistic regression,
+wins the honest split outright, while validation carved from the training days catches the
+capacity turn but stops one rung early and overstates the achievable score by **0.231**;
+**hyperparameter search rests on two premises and neither holds** — no cheap fidelity rung ranks
+configurations like the full run while the cheap rungs correlate **+0.71 with the learning
+rate**, validation ranking predicts the later days at **+0.23 (p = 0.277)**, and all four
+searches finish *below* the configuration nobody searched for; **the mimicry attack this
+repository already shipped aims at the worst target available** — optimal transport gives evasion
+a distance with units and a plan, and shows that only a *coupling* can be distributionally
+invisible, so centroid mimicry ends up further from benign traffic than the undisguised attack
+was, at a worst-feature PSI of 5.63 the deployed drift monitor catches without being told the
+attack exists; and **`top_features` answers a question nobody wrote down** — TreeExplainer's
+default is one of three estimands, graded here against a brute-force coalition sum to
+5x10^-9 and separated from the other two by a duplicate-feature experiment whose answers are
+provable in advance. The other two extend the trust boundary rather than auditing it:
+**proof-carrying verdicts**, where hashing a decision tree bottom-up makes the tree a Merkle tree
+so an auditor can check a verdict against a published root without the model — seven forgeries
+refused, and the confidentiality price measured at **95.5% of the model's internal nodes
+recovered from 400 certificates**; and **private inference**, a two-party secret-sharing protocol
+built from scratch that scores a flow in **38 KB and one round** without either side seeing the
+other's secret, alongside the malicious-client attack that reads the whole model out in 1,217
+queries because the server cannot check that the thing it is multiplying is an input).
 `make check` is green (lint + type-check + **1,554 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
@@ -130,6 +155,7 @@ what actually ships.
 | Probability calibration | isotonic/Platt calibrator + reliability/Brier/ECE diagnostics | ✅ Done |
 | Adversarial robustness | mimicry + adaptive query-search evasion, robustness curves | ✅ Done |
 | Adversarial hardening | adversarial training vs mimicry, re-measured (measure → fix → re-measure) | ✅ Done |
+| Universal perturbation | one vector shipped as a constant — no queries at attack time, transfers across model families, and **exactly zero** effect against monotone constraints (Moosavi-Dezfooli 2017) | ✅ Done |
 | Certified robustness | randomized smoothing → a **provable** L2 radius per flow (Cohen et al. 2019) | ✅ Done |
 | Membership inference | privacy audit (Shokri shadow + Yeom threshold); the overfit reference prices the leak | ✅ Done |
 | Differential privacy | DP-SGD + a from-scratch pure-stdlib Rényi accountant; the (ε, δ) guarantee priced on a utility–leakage frontier | ✅ Done |
@@ -945,6 +971,52 @@ operating point, and the most-exploitable features (Flow Duration, packet counts
 flow rates) line up with the SHAP global importances. That fragility is the
 concrete argument for pairing the classifier with the benign-only anomaly
 detector. See [`docs/reports/robustness.md`](docs/reports/robustness.md).
+
+## One perturbation, shipped once
+
+```bash
+python -m netsentry.cli universal   # -> docs/reports/universal.md
+```
+
+Every evasion attack measured here is **per-flow** — mimicry, the query search, the transport
+coupling — and most need model access *at attack time*, which is exactly what a rate limit and a
+query-volume alarm are for. A **universal adversarial perturbation** (Moosavi-Dezfooli et al.
+2017) removes the requirement: one vector, computed once, added to every future flow.
+
+| direction (matched 4σ budget) | detection on flows it never saw |
+|---|---|
+| **the fitted universal vector** | **1.4%** |
+| the transport plan's mean displacement | 10.6% |
+| the benign centroid (the deployed attack's direction) | 11.1% |
+| a random direction of the same norm | 24.6% |
+| _untouched attack flows_ | _21.9%_ |
+
+There is **no generalisation gap** — the vector performs on 800 unseen flows exactly as on the
+400 it was fitted to — and it does not need the model: fitted on a differently-seeded model of
+the same family it still reaches 1.4% on the deployed one (cosine +0.97), and fitted on a
+*different family* it reaches 1.1% (cosine +0.55). **Query-side defences do not apply to an
+attacker who asks their own surrogate, once, offline.**
+
+Then the two measurements that make it much less alarming, and both were the point of running
+it. **The vector asks the attacker to send less** — 7 of its 8 largest coordinates are negative
+(fewer bytes per second, smaller packets, fewer forward packets), and what is being removed is
+the attack. Restricted to additions only, which is what padding and delays actually do, the same
+procedure takes just **2.7 points** off the deployed model. And against that feasible attacker
+the defence already exists and is nearly free:
+
+| model | clean PR-AUC | detection before | after | removed |
+|---|---|---|---|---|
+| unconstrained (deployed) | 0.779 | 20.6% | 17.9% | +2.7 pts |
+| **monotone-constrained** | 0.774 | 21.5% | 21.5% | **+0.0 pts** |
+
+Not approximately nothing — *exactly* nothing, because a non-decreasing function cannot be
+decreased by a non-negative shift. That is a property of the hypothesis class, not an empirical
+result a stronger search might overturn.
+
+And in the other currency the [transport study](docs/reports/transport.md) opened: a universal
+perturbation adds the **same offset to every flow**, translating the whole population, so its
+worst-feature PSI reaches **7.3** against 0.59 for untouched attacks. The cheapest attack in this
+repository is also the loudest. There is no cell in that table for cheap and quiet.
 
 ## Adversarial hardening (measure → fix → re-measure)
 

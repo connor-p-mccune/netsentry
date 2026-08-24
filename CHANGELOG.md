@@ -7,6 +7,24 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Universal adversarial perturbation** (`netsentry universal`,
+  `netsentry/robustness/universal.py`): every evasion attack measured here is per-flow and most
+  need model access *at attack time*, which is what rate limits and query alarms are for. One
+  vector, fitted once by greedy coordinate descent on 400 attacker-held flows, takes detection on
+  **800 flows it has never seen** from 21.9% to **1.4%** at a matched 4-sigma budget -- against
+  11.1% for the benign-centroid direction the deployed evasion study uses, 10.6% for the
+  transport plan's mean displacement, and a random direction of the same norm that does not help
+  at all. There is **no generalisation gap**, and no need for the model: a vector fitted on a
+  differently-seeded model reaches the same 1.4% (cosine +0.97) and one fitted on a *different
+  family* reaches 1.1% (cosine +0.55), so query-side defences do not apply. Two measurements make
+  it far less alarming and were the reason for running it. **The vector asks the attacker to send
+  less** -- 7 of its 8 largest coordinates are negative, and what is being removed is the attack
+  -- so restricted to additions only it takes just **2.7 points**. And against that feasible
+  attacker the defence already exists: a monotone-constrained model loses **exactly zero**,
+  because a non-decreasing function cannot be decreased by a non-negative shift, at a clean
+  PR-AUC of 0.774 against 0.779. In the aggregate currency the transport study opened, the
+  universal attack is the extreme case: it translates the whole population, reaching a
+  worst-feature PSI of **7.3** against 0.59 untouched. The cheapest attack here is the loudest.
 - **Private inference** (`netsentry privateinfer`, `netsentry/serving/private_inference.py`):
   two-party additive secret sharing with Beaver triples, implemented on numpy over a 31-bit
   prime field, so a client can be scored without uploading its traffic and a server can answer

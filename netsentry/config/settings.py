@@ -2008,6 +2008,39 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class UniversalConfig(BaseModel):
+    """One perturbation vector, computed once, applied to flows it has never seen.
+
+    Every evasion attack measured so far is per-flow, and most need model access at attack
+    time -- which a rate limit and a query alarm can make expensive. A universal perturbation
+    (Moosavi-Dezfooli et al. 2017) removes that: fit once on flows the attacker already holds,
+    then ship it as a constant. Fitted by greedy coordinate descent on the batch mean score,
+    projected onto an L2 ball, restricted to the features the threat model allows -- no
+    gradients, because the target is a tree ensemble and the attacker does not have any
+    either."""
+
+    fit_rows: int = 400  # attack flows the attacker holds
+    holdout_rows: int = 800  # flows the vector has never seen, where it is scored
+    steps: int = 40
+    step_size: float = 0.25  # standardised units per greedy step
+    budget_sweep: list[float] = Field(default_factory=lambda: [1.0, 2.0, 4.0, 8.0])
+    headline_budget: float = 4.0
+    profile: str = "fpr_1pct"
+    budget_fpr: float = 0.01
+    psi_bins: int = 10
+    top_features: int = 8
+    transport_rows: int = 400
+    share: float = 0.25  # the surrogate's own alert share, for its threshold
+    # Attackers the vector could be fitted on instead of the deployed model: a differently
+    # seeded model of the same family, and a different family entirely.
+    surrogates: list[tuple[str, int, str]] = Field(
+        default_factory=lambda: [
+            ("the same family, a different seed", 7, "auto"),
+            ("a different family (hist gradient boosting)", 11, "hist_gbdt"),
+        ]
+    )
+
+
 class PrivateInferenceConfig(BaseModel):
     """Scoring a flow neither party will show the other: two-party secret sharing.
 
@@ -3026,6 +3059,7 @@ class Settings(BaseSettings):
     attestation: AttestationConfig = Field(default_factory=AttestationConfig)
     multifidelity: MultiFidelityConfig = Field(default_factory=MultiFidelityConfig)
     shap_estimand: ShapEstimandConfig = Field(default_factory=ShapEstimandConfig)
+    universal: UniversalConfig = Field(default_factory=UniversalConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

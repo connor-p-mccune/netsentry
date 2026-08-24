@@ -29,6 +29,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Adaptive conformal | coverage restored online under drift (ACI) | [open](adaptive_conformal.md) |
 | Adversarial robustness | evasion (mimicry + query search) | [open](robustness.md) |
 | Training-set poisoning | label flips + benign-pool contamination | [open](poisoning.md) |
+| Universal perturbation | one vector fitted once and shipped as a constant: no queries at attack time, transferable across models, and structurally impossible against monotone constraints (Moosavi-Dezfooli et al. 2017) | [open](universal.md) |
 | Adversarial hardening | adversarial training vs mimicry, re-measured | [open](hardening.md) |
 | Certified robustness | randomized smoothing: a provable L2 radius per flow (Cohen et al. 2019) | [open](certify.md) |
 | Sensor failure | the deployed model with a broken exporter: missing / stuck / mis-assembled fields | [open](degradation.md) |

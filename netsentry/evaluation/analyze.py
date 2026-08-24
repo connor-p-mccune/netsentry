@@ -112,6 +112,7 @@ from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.robustness.strategic import run_strategic_report
+from netsentry.robustness.universal import run_universal_report
 from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
 from netsentry.serving.batching import run_batching_report
@@ -305,6 +306,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "label flips + benign-pool contamination",
         "poisoning.md",
         run_poisoning_report,
+    ),
+    (
+        "Universal perturbation",
+        "one vector fitted once and shipped as a constant: no queries at attack time, "
+        "transferable across models, and structurally impossible against monotone constraints "
+        "(Moosavi-Dezfooli et al. 2017)",
+        "universal.md",
+        run_universal_report,
     ),
     (
         "Adversarial hardening",

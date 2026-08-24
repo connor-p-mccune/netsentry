@@ -198,6 +198,12 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+universal:
+  fit_rows: 60
+  holdout_rows: 120
+  steps: 6
+  budget_sweep: [1.0, 4.0]
+  transport_rows: 60
 private_inference:
   n_bins: 8
   rounds: 10
