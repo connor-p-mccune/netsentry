@@ -1,18 +1,19 @@
 {
   "schema": "netsentry/model-manifest@1",
-  "created_at": "2026-07-04T15:34:06Z",
-  "git_commit": "30e52acd629a7a65162b8421856a80808cbdd82b",
+  "created_at": "2026-08-24T03:39:01Z",
+  "git_commit": "d30fa300fd166f6fea49209185fb4479b5b9cc9a",
   "runtime": {
     "python": "3.14.4",
     "platform": "Windows-11-10.0.26200-SP0"
   },
   "bundle": {
     "name": "serving_bundle.joblib",
-    "sha256": "166041cea54870f440996b18a9e508aa46b02939d78895270a7eb90781805674",
-    "size_bytes": 20093028
+    "sha256": "e3140afdc4fd1451d377b3454b5ef13f57a3cf18e6d3ced47ce1ca70d0380504",
+    "size_bytes": 20830644,
+    "behavioural_sha256": "75401c3fdca9c57dcf5f4d09f3e075a9971e28d5b00ebe67a402f9bbe6b7e731"
   },
   "model": {
-    "version": "0.1.0",
+    "version": "0.2.0",
     "task": "multiclass",
     "split_strategy": "stratified",
     "backend": "lightgbm",
@@ -49,10 +50,10 @@
   },
   "config": {
     "seed": 42,
-    "digest_sha256": "cb06b25888e3e8e0bad0ebb144086e66bbd47e963c45e9756850037a0170346a"
+    "digest_sha256": "87cef17af6161f4a5251de8047e000ea57d1265b4f731f038e432b7d18c4d47b"
   },
   "sbom": {
-    "component_count": 35,
-    "digest_sha256": "e0757993bb3146c7e98cc0fa329662c8d801a3968d4fe472fd82d625d4405756"
+    "component_count": 36,
+    "digest_sha256": "2f0c1f8bb33a9f54f9d2557953faafb9bc88c8a8f7cbc33e19d493647cc9d320"
   }
 }

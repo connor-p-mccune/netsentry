@@ -7,6 +7,28 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Reproducibility audit** (`netsentry determinism`, `netsentry/training/determinism.py`):
+  the rules say a run must be re-creatable from its logged config and seed, and three mechanisms
+  hash the result -- the integrity manifest, `netsentry verify`, and the attestation root.
+  Nobody had checked. Changing one thing at a time: the row order does not matter, a round trip
+  through disk does not matter, the batch size predictions are made in does not matter, and the
+  **thread count does -- but only to the bytes**. Every variant produces bit-for-bit identical
+  raw margins, PR-AUC agreeing to four decimals and **zero changed verdicts** on 24,957 flows;
+  the entire difference is one line of the serialised model recording the machine's core count,
+  because `n_jobs: -1` is a lookup rather than a configuration value. So **byte and behavioural
+  reproducibility are different properties**: a bundle rebuilt on a machine with a different core
+  count fails `netsentry verify` while being the same detector, and the attestation root -- built
+  a wave earlier for an unrelated reason -- is stable exactly where the file hash is not, because
+  it commits to the ensemble's trees rather than to its parameter block. A commitment to the
+  computation is more portable than a commitment to the artifact.
+
+### Changed
+- **`netsentry provenance` records a behavioural digest beside the file hash.** The bundle's
+  SHA-256 answers "are these the bytes that were reviewed" and is the right check for a swapped
+  artifact at rest; the new digest strips environment-recorded parameters and answers "is this
+  the same function". The two disagreeing is informative rather than alarming -- it means the
+  bundle was rebuilt elsewhere and is otherwise unchanged, which a single hash reports as
+  tampering.
 - **Response side channel** (`netsentry sidechannel`, `netsentry/serving/side_channel.py`):
   every adversary defence here is query-side -- an API key, a rate limit, a query counter -- and
   all of them assume the attacker learns the verdict by being told it. `mitre` is null for a

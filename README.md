@@ -226,6 +226,7 @@ what actually ships.
 | Verifiable inference | proof-carrying verdicts: the ensemble committed as a Merkle tree, seven forgeries refused, and the verifiability/confidentiality trade measured in certificates | ✅ Done |
 | Governance & API | auto-generated model card + API-key auth / rate limiting | ✅ Done |
 | Seed sensitivity | same-seed reproducibility asserted + the cross-seed noise floor | ✅ Done |
+| Reproducibility, audited | byte vs behavioural vs verdict reproducibility separated and measured; `n_jobs: -1` found to break the manifest hash while changing nothing, and a behavioural digest shipped | ✅ Done |
 | Release gate | executable definition of done; a *too-good* PR-AUC **fails** it | ✅ Done |
 | Champion/challenger | paired-bootstrap promotion; margins from the measured noise | ✅ Done |
 | Retrain triggers | never / periodic / drift-triggered, priced on the stream | ✅ Done |
@@ -2949,6 +2950,51 @@ inference (10,970 SHA-256 evaluations against ~4,400 float comparisons), so the 
 evaluate**. And the confidentiality trade is real and quantified: one certificate reveals 12% of
 the ensemble's internal nodes, 400 reveal **95.5% and recover 114 of 600 trees exactly** — model
 theft by structure, which query-only [extraction](docs/reports/extraction.md) can never do.
+
+## Is the seed enough?
+
+```bash
+python -m netsentry.cli determinism   # -> docs/reports/determinism.md
+```
+
+`.claude/rules/ml.md` says a run must be re-creatable from its logged config and seed, and three
+mechanisms take that literally and hash the result: the integrity manifest, its `netsentry
+verify` gate, and the [attestation root](docs/reports/attestation.md). Nobody had checked. This
+changes one thing at a time and hashes what comes out.
+
+| what changed | same bytes | same function | same scores, bit for bit | verdicts changed |
+|---|---|---|---|---|
+| nothing (a second identical fit) | yes | yes | yes | 0 |
+| the order of the training rows | yes | yes | yes | 0 |
+| **the thread count** (`n_jobs = 1 / 2 / 4`) | **no** | yes | yes | **0** |
+| a round trip through disk | yes | yes | yes | 0 |
+| the batch size predictions are made in | yes | yes | yes | 0 |
+
+**The seed is not enough, and the thing it fails to pin does not change the model.** Every
+variant scores identically — bit-for-bit equal raw margins, PR-AUC agreeing to four decimals,
+zero changed verdicts on 24,957 flows. What moves is one line of the serialised model,
+`[num_threads: 14]`, because `n_jobs: -1` is not a configuration value but a **lookup resolved
+from the host**.
+
+So **byte reproducibility and behavioural reproducibility are different properties**, and they
+fail in different places:
+
+| mechanism | what it hashes | across a thread-count change |
+|---|---|---|
+| the integrity manifest + `netsentry verify` | the bundle file's SHA-256 | **breaks** |
+| proof-carrying verdicts (`netsentry attest`) | a Merkle root over the ensemble's *trees* | holds |
+| the release gate and promotion checks | metrics, not bytes | holds |
+
+A bundle rebuilt on a machine with a different core count fails `verify` while being the same
+detector — and the attestation root, built a wave earlier for an unrelated reason, is stable
+exactly where the file hash is not: **a commitment to the computation turns out to be more
+portable than a commitment to the artifact.**
+
+The fix shipped with the study. `netsentry provenance` now records a **behavioural digest**
+beside the file hash — the serialised model with environment-recorded parameters stripped — so
+the manifest can answer both questions instead of conflating them. The two disagreeing is itself
+informative: it means the bundle was rebuilt elsewhere and is otherwise unchanged, which a
+single hash reports as tampering.
 
 ## Provenance & supply chain
 

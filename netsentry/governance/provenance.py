@@ -163,6 +163,29 @@ def build_sbom(settings: Settings, pyproject_path: Path) -> dict[str, Any]:
     return sbom
 
 
+def behavioural_digest(bundle: Any) -> str | None:
+    """Digest of what the model *does*, with environment-recorded parameters removed.
+
+    The bundle's SHA-256 answers "are these the bytes that were reviewed", which is the right
+    question about a file at rest and the wrong one about a model: LightGBM writes the resolved
+    thread count into its serialisation, so a rebuild on a machine with a different core count
+    changes the file and nothing else. The [determinism audit](determinism.md) measures that --
+    byte-different, bit-identical margins, zero changed verdicts -- and this is the complement
+    it argues for. Returns ``None`` when the estimator has no serialisable booster, since a
+    digest nobody can recompute is worse than none.
+    """
+    from netsentry.training.determinism import behavioural_digest as digest
+
+    booster = getattr(getattr(bundle.model, "model", None), "booster_", None)
+    if booster is None:
+        return None
+    try:
+        return digest(booster.model_to_string())
+    except Exception:  # a backend without a text serialisation is not an integrity failure
+        logger.debug("No behavioural digest available for this estimator")
+        return None
+
+
 def _bundle_summary(bundle: Any) -> dict[str, Any]:
     """A tamper-evident summary of what the bundle carries (not the weights)."""
     meta = bundle.metadata
@@ -202,6 +225,11 @@ def build_manifest(
             "name": bundle_path.name,
             "sha256": sha256_file(bundle_path),
             "size_bytes": bundle_path.stat().st_size,
+            # Two digests, because they answer different questions: the file hash detects a
+            # swapped artifact, the behavioural digest detects a changed function. They
+            # disagree exactly when a bundle was rebuilt somewhere else and is otherwise the
+            # same model, which a single hash reports as tampering.
+            "behavioural_sha256": behavioural_digest(bundle),
         },
         "model": _bundle_summary(bundle),
         "config": {

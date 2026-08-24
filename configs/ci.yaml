@@ -198,6 +198,10 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+determinism:
+  n_estimators: 30                  # every variant is a full refit
+  thread_counts: [1, 2]
+  batch_probe_rows: 50
 side_channel:
   n_flows: 40                       # every request runs SHAP; 40 still separates the classes
   timing_repeats: 1

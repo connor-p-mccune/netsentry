@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def determinism(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Change one thing at a time and hash what comes out: is the seed enough?"""
+    from netsentry.training.determinism import run_determinism_report
+
+    settings = _load(config, override)
+    out = run_determinism_report(settings)
+    logger.info("Determinism report ready", extra={"path": str(out)})
+
+
+@app.command()
 def sidechannel(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

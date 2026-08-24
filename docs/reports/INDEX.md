@@ -123,4 +123,5 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Anomaly-score semantics | is the anomaly score a density estimate or a complexity measure: six benign-only detectors, a control that learns nothing, and the size component regressed out | [open](density.md) |
 | ML-invariant static analysis | the leakage rules enforced by a parser, with the rule set graded by injecting the violations it claims to catch | [open](mlint.md) |
 | Proof-carrying verdicts | commit to the ensemble as a Merkle tree and prove each verdict against it, with seven forgeries executed and the leakage priced | [open](attestation.md) |
+| Reproducibility audit | change one thing at a time and hash what comes out: which of byte, function and verdict reproducibility actually holds | [open](determinism.md) |
 | Provenance & supply chain | CycloneDX SBOM + model-integrity manifest | [open](provenance.md) |

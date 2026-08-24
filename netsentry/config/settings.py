@@ -2008,6 +2008,22 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class DeterminismConfig(BaseModel):
+    """Is the seed enough? The invariant three hash-based mechanisms are built on.
+
+    The rules say a run must be re-creatable from its logged config and seed, and the integrity
+    manifest, `netsentry verify` and the attestation root all hash the result. This changes one
+    thing at a time -- the row order, the thread count, a round trip through disk, the batch
+    size -- and reports what moved: the file, the function, or the verdicts. They are three
+    different properties and only one of them is what a manifest checks."""
+
+    n_estimators: int = 60  # every variant is a full refit; the audit is about bytes, not skill
+    thread_counts: list[int] = Field(default_factory=lambda: [1, 2, 4])
+    budget: float = 0.01
+    batch_probe_rows: int = 200
+    roundtrip_name: str = "determinism_roundtrip.joblib"
+
+
 class SideChannelConfig(BaseModel):
     """The API answers twice: once in the body, once in the shape of the reply.
 
@@ -3102,6 +3118,7 @@ class Settings(BaseSettings):
     shap_estimand: ShapEstimandConfig = Field(default_factory=ShapEstimandConfig)
     universal: UniversalConfig = Field(default_factory=UniversalConfig)
     side_channel: SideChannelConfig = Field(default_factory=SideChannelConfig)
+    determinism: DeterminismConfig = Field(default_factory=DeterminismConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

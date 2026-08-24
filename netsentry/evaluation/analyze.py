@@ -123,6 +123,7 @@ from netsentry.serving.side_channel import run_side_channel_report
 from netsentry.training.byzantine import run_byzantine_report
 from netsentry.training.continual import run_continual_report
 from netsentry.training.deep_tabular import run_deep_tabular_report
+from netsentry.training.determinism import run_determinism_report
 from netsentry.training.dro import run_dro_report
 from netsentry.training.federated import run_federated_report
 from netsentry.training.invariance import run_invariance_report
@@ -892,6 +893,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "seven forgeries executed and the leakage priced",
         "attestation.md",
         run_attestation_report,
+    ),
+    (
+        "Reproducibility audit",
+        "change one thing at a time and hash what comes out: which of byte, function and "
+        "verdict reproducibility actually holds, and which guarantees depend on which",
+        "determinism.md",
+        run_determinism_report,
     ),
     (
         "Provenance & supply chain",

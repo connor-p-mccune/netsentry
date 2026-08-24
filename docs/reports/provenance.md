@@ -13,11 +13,11 @@ manifest and `netsentry verify` answer the second.
 
 | field | value |
 |---|---|
-| bundle | `serving_bundle.joblib` (20,093,028 bytes) |
-| bundle SHA-256 | `166041cea54870f440996b18a9e508aa46b02939d78895270a7eb90781805674` |
-| git commit | `30e52acd629a7a65162b8421856a80808cbdd82b` |
+| bundle | `serving_bundle.joblib` (20,830,644 bytes) |
+| bundle SHA-256 | `e3140afdc4fd1451d377b3454b5ef13f57a3cf18e6d3ced47ce1ca70d0380504` |
+| git commit | `d30fa300fd166f6fea49209185fb4479b5b9cc9a` |
 | runtime | Python 3.14.4 · Windows-11-10.0.26200-SP0 |
-| config digest | `cb06b25888e3e8e0bad0ebb1…` (seed 42) |
+| config digest | `87cef17af6161f4a5251de80…` (seed 42) |
 | model | lightgbm · multiclass · 76 features · 13 classes |
 | attached components | calibrator: True · anomaly detector: True · conformal: True |
 | threshold profiles | `cost_optimal`, `fpr_0.1pct`, `fpr_1pct`, `per_service` |
@@ -43,6 +43,7 @@ Declared but not installed in this environment: jupyterlab.
 | `black` | 26.5.1 | dev |
 | `fastapi` | 0.138.0 | serve |
 | `httpx` | 0.28.1 | serve |
+| `hypothesis` | 6.156.4 | dev |
 | `imbalanced-learn` | 0.14.2 | train |
 | `ipykernel` | 7.3.0 | notebooks |
 | `joblib` | 1.5.3 | core |
