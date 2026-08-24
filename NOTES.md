@@ -2736,3 +2736,174 @@ broken one. Three of the four carry injection harnesses for exactly that reason.
   comfortable half of nothing.
 - **`np.random.Generator.choice` over a weighted list is not coverage.** If a rare draw is
   load-bearing, allocate it and shuffle instead of sampling and hoping.
+
+## Wave 21 — the unexamined-premise wave (v0.21.0)
+
+Seven studies. Four of them point at an assumption this project (or the field) had been running on
+without ever measuring it, and three of those four came back false. Two more extend the
+trust boundary rather than auditing it — a verdict an auditor can check without the model, and a
+verdict neither party can see the other's half of.
+
+The thread I did not plan: **in four of the seven, the sentence I had written before running the
+code was the opposite of the result.** I had written that constraining an evader to the features
+they control would cost them detection; that interpretability would cost accuracy; and that a
+certificate would replay onto an unrelated flow. All three were wrong, and in each case the true
+answer was more interesting than the one I was expecting to report.
+
+### transport: an attack study hiding inside a drift study
+
+- **I set out to add "another two-sample test, but with units", and the useful half turned out to
+  be the plan rather than the distance.** The distance is mostly the curse of dimensionality:
+  8.43 sd of the attack's 10.52 is sampling, measured against two disjoint benign samples.
+  Quoting the raw number would have been a statement about `n`.
+- **The four-arm design is what made it say anything.** Coupling or not, optimal or not — a
+  two-by-two. The random-coupling cell is the instructive one: it satisfies the distributional
+  constraint exactly as the transport plan does and loses anyway, which isolates *optimality*
+  from *the constraint* instead of confounding them.
+- **The centroid mimicry this repository already ships is the worst target on both axes**, and
+  its worst-feature PSI of 5.63 means the deployed drift monitor catches it without being told
+  the attack exists. An attack study produced a defensive finding.
+- **The constrained arm went the other way from the sentence I had written.** Spending the whole
+  budget inside the 39 features an attacker controls *beats* spreading it over all 76: the
+  displacement in fields the exporter derives is dead weight as far as the model is concerned.
+  The first implementation capped the full displacement and then discarded the uncontrollable
+  part, so the constrained arm travelled less distance for free — matching the budget *inside*
+  the subspace is the comparison that means something.
+
+### gam: the study that changed its own headline
+
+- **Built to price interpretability, it priced capacity.** Logistic regression — 77 parameters,
+  the most readable arm in the comparison — wins the honest split outright. The additive model's
+  contribution is not that it is accurate; it is that its capacity is a **dial**, so the
+  leaderboard's cross-family observation becomes a controlled within-family measurement.
+- **The three-column ladder is the whole study.** Train rises monotonically, the later days rise
+  and turn, and validation — carved from the training days — catches the turn but stops one rung
+  early and overstates the level by 0.231. A second dial (boosting rounds) replicates it.
+- **The gradient has to be refreshed after every feature, not once per round.** With a stale
+  gradient two correlated features each take full credit, and the curves an operator reads claim
+  twice the influence that exists. It is cheap, it is easy to get wrong, and it now has a test
+  that fails if the refresh is removed.
+- **A negative result with two candidate explanations is not a result yet.** The edit demo failed
+  at the deployed 1% budget and I nearly wrote "model editing does not pay". Running a second
+  budget separated the two causes: at 1% there are 56 validation false alarms to select from
+  (a sample-size failure), while the exchange rate — 5.5:1 against the 20:1 the cost study's own
+  economics require — is the real one and does not improve with evidence.
+- Zero-inflated flow features opened bins no row can reach. A dead bin is a flat segment in a
+  shape function nobody can act on and a candidate edit that can never fire, so the binner now
+  drops cuts at or below a column's minimum.
+
+### attestation: two of my forgeries were not attacks
+
+- **The first forgery table had two entries that were undetectable and harmless**: a `tree_index`
+  field the verifier never reads, and a reordering of the proof list that changes nothing about
+  the sum. Deleting them was right. A forgery table padded with attacks that are not attacks is
+  worse than a short one, because it makes the caught column meaningless.
+- **Dropping a tree is caught only because the ensemble's size is part of the commitment.** Serve
+  599 of 600 and report the smaller score: every remaining path still hashes into the root and
+  the leaf values still sum to exactly the number claimed. The arithmetic check cannot see a
+  missing summand. That design decision had to be made *before* the attack could be refused.
+- **The replay attack I predicted did not happen, and the honest version was better.** Two random
+  flows never share 600 leaf regions. The real question is how *big* the region a certificate
+  covers is: it survives 0.001 sd of movement and dies by 0.1 — the same box the interval
+  verifier computes for robustness, arrived at from the opposite direction.
+- **The first prover was quadratic in the number of trees** because it rebuilt each tree's Merkle
+  authentication path per verdict — 370x inference for nothing. The paths depend only on the
+  model.
+- **The half I would not have thought to measure is the leakage.** 400 certificates recover 95.5%
+  of the ensemble's internal nodes and 114 of 600 trees *exactly*. Verifiability and
+  confidentiality trade off, and here the trade is denominated in certificates.
+
+### multifidelity: the premise is cheaper to measure than the method is to run
+
+- **Both premises failed, and checking them cost less than one search.** That is the transferable
+  lesson: the diagnostic that licenses a method is usually cheaper than the method.
+- **The learning-rate column is what turns "the cheap rung is noisy" into "the cheap rung is
+  biased".** A short boosting run rewards whatever climbs fastest, which is a property of the
+  step size; averaging over more configurations does not fix it.
+- **The resource model multi-fidelity assumes is not the one the machine has.** Fitting time is
+  0.19s fixed plus 24.2ms per round, so the cheapest rung is 89% overhead. The first full run
+  spent forty minutes demonstrating this — Hyperband schedules 405 one-round fits in its widest
+  bracket — and flooring the searches at three rounds is the honest response to a measured cost
+  model rather than a convenience.
+- **Two tables in the same report appear to disagree.** Selecting on validation among the fixed
+  pool lands on the configuration that is also best on the later days; four searches selecting on
+  validation among fresh configurations all finish below the unsearched default. Both are what a
+  +0.23 rank correlation produces, and naming that beats smoothing it.
+
+### shap_estimand: the experiment whose answer is provable in advance
+
+- **The duplicate experiment as first designed could not work.** An unused feature has no nodes,
+  so TreeExplainer's path-dependent estimand gives it exactly zero — the same answer as the
+  interventional one. The experiment only became decisive when the *conditional* value function
+  was added, because symmetry forces it to credit two identical columns equally.
+- **The magnitude of a kNN conditional estimate moves with k (0.0438 at 24, 0.0699 at 6); the
+  symmetry does not.** Printing both is the difference between reporting an estimand and
+  reporting an estimator, and it is the only honest way to use an approximation inside an
+  argument that is otherwise exact.
+- **The two shipped estimands agree at 96.3% here because this data's features are nearly
+  independent** — the MMD study measured 0.005 mean absolute pairwise correlation. The correct
+  reading is "the choice is currently cheap on this stand-in", not "the choice does not matter".
+- The validation half is worth keeping for its own sake: TreeExplainer matches a brute-force sum
+  over all 256 coalitions to 5e-09. An explanation nobody has validated is an assertion with a
+  colour scheme.
+
+### private_inference: the model choice was structural, not convenient
+
+- **The additive model is the private model, and for the same reason it is the readable one.**
+  One operand of every product is a 0/1 selector, so the fixed-point scale survives and the usual
+  probabilistic truncation is not needed at all. Two studies in the same wave arrived at the same
+  model class from unrelated directions, which is the kind of coincidence worth writing down.
+- **The protocol's guarantee is against the adversary it was designed for.** Secret sharing hides
+  the client's vector so completely that the server cannot check it *is* a selector: 1,217
+  crafted queries read the whole model out. The honest-but-curious assumption was doing all the
+  work, and the fix is a different protocol (a zero-knowledge one-hot argument), not more sharing.
+- **The broken control fails by an equation rather than by a statistic.** Reuse one triple across
+  flows and the difference of the two opened vectors *is* the difference of the two secret
+  inputs. That makes the clean uniformity result (p = 0.91) worth reading, because the test
+  demonstrably can fail.
+- **The public bin edges are a quantile summary of the training traffic.** Reconstructing the
+  marginals from them lands 0.084 sd above the same-data floor: the model stays secret and the
+  training distribution does not, which is a separable leak with a separable fix.
+
+### universal: the attack that is devastating and infeasible at the same time
+
+- **The headline and the honest reading point in opposite directions, and both are true.** One
+  vector fitted on 400 flows takes detection from 21.9% to 1.4% on 800 it has never seen, needs
+  no queries at attack time, and transfers from a different model family. Then the recipe table
+  says what it asks for: seven of its eight largest coordinates are *negative*. The attack is
+  "send less", and what is being sent less of is the attack.
+- **Restricting to additions cost the attack an order of magnitude** (20.5 points down to 2.7),
+  which is the number that decides whether the paragraph above is a finding or a scare. Writing
+  the feasible arm was not optional; without it the report would have been true and misleading.
+- **The monotone defence returns exactly zero, and that is a proof rather than a measurement.**
+  A non-decreasing function cannot be decreased by a non-negative shift. The attack is in the
+  report to demonstrate the property, not to establish it, and the distinction is worth making
+  because every other robustness number in this repository is an empirical bound a better search
+  could move.
+- **The random-direction control is what rules out the lazy explanation.** At the same norm it
+  does not help the attacker at all -- it sits *above* the untouched baseline at three of four
+  budgets -- so "any large perturbation would do" is off the table before the comparison starts.
+- **The cheapest attack is the loudest.** A universal vector adds the same offset to every flow,
+  translating the whole population: worst-feature PSI 7.3 against 0.59 untouched. Read beside the
+  transport study, the three attacks now form a clean spectrum -- per-flow optimal is expensive
+  and quiet, universal is free and deafening, transport-coupled is expensive and quietest -- and
+  there is no cell for cheap and quiet.
+
+### Mechanics worth remembering
+
+- **Write the sentence after the number.** Three of six studies here had a narrative drafted
+  against an expected result, and all three expectations were wrong. The generated-report pattern
+  helps — a report whose prose is computed from the study cannot drift far from it — but only if
+  the *claims* are computed too, not just the figures.
+- **A checker that has never failed is indistinguishable from one that cannot.** Three studies in
+  this wave carry a deliberately broken control (a reused Beaver triple, seven forgeries, a
+  commitment without the tree count), and in two of them the control found a defect in the
+  checker before it found anything about the subject.
+- **Cost models are assumptions too.** The multi-fidelity study budgets in rounds and pays in
+  fits; the attestation prover was quadratic in a dimension nobody had looked at. Both surfaced
+  as a wall-clock number that did not match the accounting, which is the only place they can.
+- **Heredocs mangle escapes inside Python string literals.** Writing generator code through
+  `bash <<'EOF'` turned `\n\n` into real newlines and produced an unterminated string; anything
+  containing escape sequences goes through the file-write path instead.
+- **PowerShell here-strings mangle embedded double quotes in `git commit -m`.** `git commit -F`
+  with a message file is the only reliable route for a commit body that quotes anything.

@@ -98,7 +98,9 @@ can therefore run against production traffic, separated into structural relation
 violation is a code defect) and semantic ones (a violation is a statement about the model).
 
 **Monitoring (`netsentry/monitoring`)** — PSI drift detection (offline report and
-rolling serving gauges), the prequential streaming study that closes the
+rolling serving gauges), optimal transport (a drift distance in *units* plus the coupling that
+explains where the mass went, and the finding that only a coupling makes evasion
+distributionally invisible), the prequential streaming study that closes the
 drift → retrain → recover loop on the later-day stream, and the detection SLOs:
 error budgets with multiwindow burn-rate alerting, whose Prometheus rules are
 *generated* from the measured operating point so the thresholds cannot drift from
@@ -109,14 +111,28 @@ tactic/technique mapping in predictions and a coverage report; CycloneDX SBOM an
 model-integrity manifest with a `netsentry verify` CI gate; and a hash-chained,
 tamper-evident alert ledger with a published anchor (the only defence against tail
 truncation) and Merkle inclusion proofs, so the alert history can be attested without
-being disclosed.
+being disclosed. Attestation extends from artifacts to *computations*: hashing a decision tree
+bottom-up makes the tree a Merkle tree, so each verdict can carry an authentication path an
+auditor checks against a published root without the model — closing the gap where a swapped or
+truncated in-memory model passes both the bundle hash and the ledger.
 
 **Explain (`netsentry/explain`)** — SHAP global importance and per-prediction
 attributions (in the report and in API responses), plus counterfactual recourse:
-the minimal feature change that would clear a flagged flow.
+the minimal feature change that would clear a flagged flow. Which *Shapley value* those
+attributions are is itself audited: TreeExplainer's default is the path-dependent estimand,
+graded here against a brute-force sum over all coalitions and separated from the interventional
+and conditional quantities by a duplicate-feature experiment whose answers are provable in
+advance.
+
+**Robustness (`netsentry/robustness`)** — evasion (per-flow mimicry and query search),
+adversarial hardening, poisoning and its defence, certified radii, and the *universal*
+perturbation: one vector shipped as a constant, which needs no queries at attack time, transfers
+across model families, and is defeated exactly (not approximately) by monotone constraints.
 
 **Serving (`netsentry/serving`)** — FastAPI app loading the bundle once; predict /
-batch / health / metrics; pydantic contract; Prometheus latency; selectable
+batch / health / metrics; a two-party secret-sharing path that scores a flow without either
+side seeing the other's secret (and the malicious-client attack that reads the model out
+anyway); pydantic contract; Prometheus latency; selectable
 threshold profile; benchmarked. The scoring path's cost is dominated by a per-call
 constant rather than per-flow work, which is what makes server-side micro-batching a
 capacity decision rather than a micro-optimisation; the batching study measures both

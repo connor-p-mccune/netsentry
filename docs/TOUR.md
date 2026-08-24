@@ -359,7 +359,47 @@ every case those found a defect in the checker before they found anything about 
   against the deployed 0.88%, catching more attacks and losing money doing it. A reward function
   is not a constraint, which is why every operating point in this repository is a rate.
 
-## Stop 14 — Where the bodies are buried, on purpose
+## Stop 15 — The premises nothing had checked
+
+Four of the seven studies in the newest wave audit an assumption the project (or the field) had
+been running on without measuring it, and three of them found the assumption false.
+
+- **Interpretability is not what costs accuracy — capacity is.** A from-scratch additive model
+  (GAM) makes capacity a *dial* rather than an architecture: sweeping bins per shape function
+  2 → 64 takes training PR-AUC 0.474 → 0.859 while the later days rise, turn and fall. Validation,
+  carved from the training days, catches the turn but stops one rung early and **overstates the
+  achievable score by 0.231**. And the most readable model in the comparison — logistic
+  regression — wins the honest split outright ([`reports/gam.md`](reports/gam.md)).
+- **Hyperparameter search rests on two premises and both fail here.** No cheap rung of the
+  fidelity ladder ranks configurations like the full run (−0.07 to +0.26, changing sign) while the
+  cheap rungs correlate **+0.71 with the learning rate**; and validation ranking predicts the
+  later days at **+0.23, p = 0.277**. Consequence, measured: all four searches finish *below* the
+  configuration nobody searched for ([`reports/multifidelity.md`](reports/multifidelity.md)).
+- **The mimicry attack this repo already shipped aims at the worst target available.** Optimal
+  transport gives evasion a distance with units and a plan — and shows that only a *coupling*
+  can be distributionally invisible. Centroid mimicry ends up **further** from benign traffic
+  than the undisguised attack was, at a worst-feature PSI of 5.63 the deployed drift monitor
+  catches without being told the attack exists ([`reports/transport.md`](reports/transport.md)).
+- **`top_features` answers a question nobody wrote down.** TreeExplainer's default is one of
+  three estimands; graded against a brute-force coalition sum (5×10⁻⁹) and separated from the
+  other two by a duplicate-feature experiment whose answers are provable in advance
+  ([`reports/shap_estimand.md`](reports/shap_estimand.md)).
+
+A seventh is an attack that is devastating and infeasible at once: a **universal perturbation**
+fitted on 400 flows takes detection on 800 unseen ones from 21.9% to **1.4%**, needs no queries
+at attack time, and transfers from a *different model family* — and then the recipe says it works
+by asking the attacker to *send less*. Restricted to additions, which is what padding actually
+does, it takes 2.7 points; against a monotone-constrained model it takes **exactly zero**, which
+is a property of the hypothesis class rather than an empirical bound
+([`reports/universal.md`](reports/universal.md)).
+
+The last two extend the trust boundary rather than auditing it: **proof-carrying verdicts**
+(the model committed as a Merkle tree, seven forgeries refused, 392 KB and 95.5% node leakage
+priced — [`reports/attestation.md`](reports/attestation.md)) and **private inference** (38 KB and
+one round, plus the malicious-client attack that reads the model out in 1,217 queries —
+[`reports/private_inference.md`](reports/private_inference.md)).
+
+## Stop 16 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own
 first ECE bar, a report render that assumed a result the numbers contradicted, the
@@ -373,7 +413,7 @@ file is probably the fastest signal in the repo.
 make install
 netsentry download && netsentry prep   # synthetic stand-in, out of the box
 make lifecycle                         # seeds → gate → promote → retrainpolicy → canary
-netsentry analyze                      # regenerate all 115 reports + the index
+netsentry analyze                      # regenerate every report + the index
 netsentry pcap --demo                  # raw packets → CIC flows → verdicts
 ```
 
