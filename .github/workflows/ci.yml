@@ -148,6 +148,18 @@ jobs:
           python -m netsentry.cli density -o configs/ci.yaml
           python -m netsentry.cli statemachine -o configs/ci.yaml
           python -m netsentry.cli bandit -o configs/ci.yaml
+      - name: Unexamined-premise studies (transport - gam - attest)
+        run: |
+          python -m netsentry.cli transport -o configs/ci.yaml
+          python -m netsentry.cli gam -o configs/ci.yaml
+          python -m netsentry.cli attest -o configs/ci.yaml
+      - name: Unexamined-premise studies (hyperband - shapaudit - privateinfer)
+        run: |
+          python -m netsentry.cli hyperband -o configs/ci.yaml
+          python -m netsentry.cli shapaudit -o configs/ci.yaml
+          python -m netsentry.cli privateinfer -o configs/ci.yaml
+      - name: Universal perturbation (fit - transfer - defend)
+        run: python -m netsentry.cli universal -o configs/ci.yaml
       - name: Slow integration tests
         run: python -m pytest -m slow
 
