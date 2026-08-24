@@ -6,6 +6,21 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.21.0] — 2026-08-23
+
+The **unexamined-premise wave**: seven studies, four of which point at an assumption this project
+(or the field) had been running on without ever measuring it. Three of those four came back
+false. Two more extend the trust boundary rather than auditing it — a verdict an auditor can
+check without the model, and a verdict neither party can see the other's half of — and the
+seventh is an attack that turns out to be devastating and infeasible at the same time.
+
+The thread was not planned: **in four of the seven, the sentence written before the code ran was
+the opposite of the result.** Constraining an evader to the features they control was supposed to
+cost them detection and instead helped; interpretability was supposed to cost accuracy and
+capacity turned out to be what costs; a certificate was supposed to replay onto an unrelated flow
+and does not; and a universal perturbation was supposed to be a nightmare and asks the attacker
+to stop attacking.
+
 ### Added
 - **Universal adversarial perturbation** (`netsentry universal`,
   `netsentry/robustness/universal.py`): every evasion attack measured here is per-flow and most

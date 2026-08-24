@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.20.0`.** The build plan in
+**Released `v0.21.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and seventeen post-release waves build on top — the
+tested, and committed, and eighteen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -122,7 +122,7 @@ recovered from 400 certificates**; and **private inference**, a two-party secret
 built from scratch that scores a flow in **38 KB and one round** without either side seeing the
 other's secret, alongside the malicious-client attack that reads the whole model out in 1,217
 queries because the server cannot check that the thing it is multiplying is an input).
-`make check` is green (lint + type-check + **1,554 passing tests**, property-based invariants and a
+`make check` is green (lint + type-check + **1,672 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
