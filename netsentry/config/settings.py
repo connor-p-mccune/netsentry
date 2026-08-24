@@ -2008,6 +2008,47 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class SideChannelConfig(BaseModel):
+    """The API answers twice: once in the body, once in the shape of the reply.
+
+    `mitre` is null for a clear verdict and an object for an alert; the optional anomaly
+    explanation is computed only for flagged flows. So the response's length and its latency
+    both depend on the answer, and an observer who can see encrypted traffic between a sensor
+    and the service reads the verdict off the packet lengths -- a free, passive, undetectable
+    oracle, which is exactly what every query-side defence in this project is built to ration.
+    The two standard mitigations (pad to a constant length, do the optional work
+    unconditionally) are applied and priced, because a fix nobody costed is a fix nobody
+    keeps."""
+
+    n_flows: int = 120  # every request runs SHAP, which is a quarter-second of the budget
+    timing_repeats: int = 2  # a single timing is about the machine, not about the service
+    field_flows: int = 40
+    field_query: str = "?anomaly_explain=true"
+    # Fields a client can reconstruct from one it already holds: the ATT&CK object is a
+    # lookup on `predicted_class`, so returning it is redundant *and* is the channel.
+    derivable_fields: list[str] = Field(default_factory=lambda: ["mitre"])
+    # Fields whose length varies with the decision rather than with the flow.
+    variable_width_fields: list[str] = Field(
+        default_factory=lambda: ["recommended_action", "prediction_set", "predicted_class"]
+    )
+    # The rung that catches everyone: a boolean is a variable-length field too.
+    boolean_fields: list[str] = Field(default_factory=lambda: ["is_attack", "is_anomaly"])
+    # And the rung that catches everyone who survived the last one: 0.01 is four characters
+    # and 0.9871234 is nine, so a probability is a variable-length field as well.
+    numeric_fields: list[str] = Field(
+        default_factory=lambda: ["attack_probability", "anomaly_score"]
+    )
+    pad_width: int = 24
+    endpoints: list[tuple[str, str]] = Field(
+        default_factory=lambda: [
+            ("the default contract", ""),
+            ("with explanations off", "?explain=false"),
+            ("with the anomaly explanation requested", "?anomaly_explain=true"),
+            ("with exemplars requested", "?exemplars=true"),
+        ]
+    )
+
+
 class UniversalConfig(BaseModel):
     """One perturbation vector, computed once, applied to flows it has never seen.
 
@@ -3060,6 +3101,7 @@ class Settings(BaseSettings):
     multifidelity: MultiFidelityConfig = Field(default_factory=MultiFidelityConfig)
     shap_estimand: ShapEstimandConfig = Field(default_factory=ShapEstimandConfig)
     universal: UniversalConfig = Field(default_factory=UniversalConfig)
+    side_channel: SideChannelConfig = Field(default_factory=SideChannelConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

@@ -6,6 +6,27 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- **Response side channel** (`netsentry sidechannel`, `netsentry/serving/side_channel.py`):
+  every adversary defence here is query-side -- an API key, a rate limit, a query counter -- and
+  all of them assume the attacker learns the verdict by being told it. `mitre` is null for a
+  clear verdict and an object for an alert, the optional anomaly explanation is computed only for
+  flagged flows, and `recommended_action` changes length with the decision, so **the verdict is
+  recoverable from the reply's length at AUC 1.000 and 100% accuracy** on every endpoint
+  configuration tested -- a free, passive, undetectable oracle. There is no timing channel, for a
+  reason worth keeping: SHAP runs unconditionally and costs a quarter of a second, so the
+  conditional work hides underneath the unconditional work. The study's substance is the fix
+  ladder, tried in the order an engineer would try it: dropping the ATT&CK object (which is a
+  lookup on `predicted_class` and therefore redundant) takes it from 1.000 to **0.772, not to
+  0.5**; fixing the decision fields' widths changes almost nothing; normalising the booleans
+  helps a little (`true` is four bytes, `false` is five); normalising the scores helps a lot
+  (`0.01` is four characters, `0.9871234` is nine) -- and after **four** corrections the channel
+  still sits at **0.578**, carried by `top_features`, a list of floating-point contributions.
+  Padding closes it at +125 bytes and is the only rung whose correctness does not depend on
+  somebody having enumerated every variable-length field. Building it surfaced a real bug in the
+  study's own best-cut search: it scored cuts inside a tie group, which on a constant signal
+  claims perfect separation out of nothing. Now pinned by a test.
+
 ## [0.21.0] — 2026-08-23
 
 The **unexamined-premise wave**: seven studies, four of which point at an assumption this project

@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def sidechannel(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Read the API's own verdicts off the length and timing of its replies."""
+    from netsentry.serving.side_channel import run_side_channel_report
+
+    settings = _load(config, override)
+    out = run_side_channel_report(settings)
+    logger.info("Side-channel report ready", extra={"path": str(out)})
+
+
+@app.command()
 def universal(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

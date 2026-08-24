@@ -118,6 +118,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 | Tamper-evident alert ledger | hash-chained alert history: every edit attempted, and what verification catches | [open](ledger.md) |
 | Conformance mapping | NIST AI RMF and EU AI Act obligations mapped to artifacts, with every claim verified against the repository | [open](compliance.md) |
 | Online triage learning | a contextual bandit learning the operating point under partial feedback, and the alert budget its exploration spends | [open](bandit.md) |
+| Response side channel | the verdict read off the length and timing of the reply, and which change to the contract actually closes it | [open](side_channel.md) |
 | Serving lifecycle conformance | the API contract as a state machine, driven through random operation sequences, with deliberately broken services proving the checker fails | [open](state_machine.md) |
 | Anomaly-score semantics | is the anomaly score a density estimate or a complexity measure: six benign-only detectors, a control that learns nothing, and the size component regressed out | [open](density.md) |
 | ML-invariant static analysis | the leakage rules enforced by a parser, with the rule set graded by injecting the violations it claims to catch | [open](mlint.md) |

@@ -790,6 +790,49 @@ gauges**, and the attack-probability distribution. Prometheus
 here: major input drift (PSI > 0.25), an attack-flag spike, error-rate, and a p99
 latency SLO. Grafana at `:3000` (admin/admin), Prometheus at `:9090`.
 
+## The API answers twice
+
+```bash
+python -m netsentry.cli sidechannel   # -> docs/reports/side_channel.md
+```
+
+Every adversary defence in this repository is **query-side**: an API key, a rate limit, a query
+counter. All of them assume the attacker learns the verdict by being told it. But `mitre` is
+`null` for a clear verdict and an object for an alert, the optional anomaly explanation is
+computed *only* for flagged flows, and `recommended_action` changes length with the decision —
+so an observer who can see encrypted traffic between a sensor and the service reads the verdict
+off the **packet lengths**, without decrypting anything.
+
+| endpoint | mean reply, clear | mean reply, alert | size AUC | verdict recovered from size alone |
+|---|---|---|---|---|
+| the default contract | 664 B | 787 B | **1.000** | **100%** |
+| with explanations off | 338 B | 464 B | **1.000** | **100%** |
+| with the anomaly explanation | 664 B | 787 B | **1.000** | **100%** |
+| with exemplars | 944 B | 1,062 B | **1.000** | **100%** |
+
+A free, passive, undetectable oracle — exactly the thing every rate limit exists to ration. And
+there is **no timing channel**, for a reason that is almost funny: latency separates the classes
+at AUC 0.615, because SHAP runs unconditionally and costs a quarter of a second, so the
+conditional work hides underneath the unconditional work.
+
+The part worth reading is the fix, tried in the order an engineer would try it:
+
+| change | size AUC after | bytes per reply |
+|---|---|---|
+| none (the shipped contract) | **1.000** | +0 B |
+| drop `mitre` (a lookup on `predicted_class`) | 0.772 | −33 B |
+| …and give every decision field a fixed width | 0.775 | +13 B |
+| …and the booleans: `true` is four bytes, `false` is five | 0.745 | +55 B |
+| …and every score: `0.01` is four characters, `0.9871234` is nine | 0.578 | +71 B |
+| **pad every reply to the longest one** | **0.500** | +125 B |
+
+**Four successive corrections, each of which an engineer would reasonably believe was the fix,
+leave the channel at 0.578** — better than a coin, from nothing but the length of an encrypted
+reply. What is still leaking at that point is `top_features`: a list of floating-point
+contributions whose serialised length depends on the answer. **You cannot enumerate your way out
+of a length channel, because the last thing leaking is the thing the contract exists to return.**
+Padding is the only rung whose correctness does not depend on somebody's list being complete.
+
 ## Kubernetes deployment (Helm + Kustomize)
 
 Beyond `docker compose`, the API ships production Kubernetes manifests in
