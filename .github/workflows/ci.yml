@@ -165,6 +165,7 @@ jobs:
           python -m netsentry.cli sidechannel -o configs/ci.yaml
           python -m netsentry.cli determinism -o configs/ci.yaml
           python -m netsentry.cli hull -o configs/ci.yaml
+          python -m netsentry.cli reuse -o configs/ci.yaml
       - name: Slow integration tests
         run: python -m pytest -m slow
 

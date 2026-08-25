@@ -36,6 +36,7 @@ from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.hierarchy import run_hierarchy_report
 from netsentry.evaluation.hmeasure import run_hmeasure_report
 from netsentry.evaluation.hull import run_hull_report
+from netsentry.evaluation.reuse import run_reuse_report
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.label_shift import run_label_shift_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
@@ -165,6 +166,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Held-out reuse",
+        "how many times this package reads the sealed split, what selecting on it costs "
+        "measured against a never-queried half, and whether Thresholdout or a confidence "
+        "gate closes the gap without losing the ability to find a real improvement",
+        "reuse.md",
+        run_reuse_report,
     ),
     (
         "Operating-point frontier",

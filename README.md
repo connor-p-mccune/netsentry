@@ -2863,6 +2863,48 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## How many times has the holdout been asked?
+
+```bash
+python -m netsentry.cli reuse   # -> docs/reports/reuse.md
+```
+
+`.claude/rules/ml.md` says the test set is touched **once**, at the end. A static pass over the
+package finds it read **103 times, from 98 modules**. Both cannot be right, and the resolution is
+worth more than either the rule or the count.
+
+The failure at issue is not the syntactic one — `scaler.fit(X_test)` is a bug in the source and
+[`netsentry mlint`](docs/reports/mlint.md) already refuses it. It is the statistical one (Dwork et
+al., *Science* 349, 2015): a holdout queried **adaptively** stops being a holdout. Nothing is
+fitted, no column leaks, the number is simply optimistic by an amount that grows with the number
+of questions. So the later days are cut three ways — a third the analyst may query, a third for
+the mechanism that needs a reference, and a **sealed** third nothing ever touches — and an
+adaptive analyst is run over 400 candidate detectors twice.
+
+| the 400 candidates are… | reported | true (sealed) | cost of selection |
+|---|---|---|---|
+| **indistinguishable** (score + per-flow noise, identical in truth) | 0.5331 | 0.5131 | **+0.0093** |
+| **genuinely different** (score nudged along feature directions) | 0.5656 | 0.5541 | **−0.0006** |
+
+In the first pool the analyst's chosen detector is **worse than the one it replaced** (0.5131 vs
+0.5162) while reporting a better number — selection on noise does not just inflate the estimate,
+it degrades the thing being estimated. In the second, 400 questions cost nothing and find a
+detector worth **6 points** more PR-AUC.
+
+**A holdout is not burned by being read. It is burned by being asked to choose between things it
+cannot tell apart.** That is what resolves the count: reads that report a number, or compare a
+model against a baseline separated from it by far more than sampling noise, do not spend the
+split — and every threshold this project ships is chosen on validation, which is a different one.
+
+The fixes are priced on both harm *and* power, because a mechanism that reports honestly by never
+adopting anything is not a fix. A **confidence gate** — adopt a challenger only when it clears the
+incumbent by more than the **0.0211** bootstrap half-width — adopts 0 of 400 noise candidates and
+still finds a planted improvement. **Thresholdout** fails here twice, instructively: with an
+exchangeable reference it protects the holdout but not the reported number (the analyst still
+takes a *maximum* over its answers, and no query-answering mechanism can debias an argmax), and
+with validation as the reference its budget is gone in 20 questions because a temporal split is
+not exchangeable by construction.
+
 ## Is the operating point on the frontier?
 
 ```bash

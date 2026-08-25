@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def reuse(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Count the questions asked of the held-out set, and price what asking costs."""
+    from netsentry.evaluation.reuse import run_reuse_report
+
+    settings = _load(config, override)
+    out = run_reuse_report(settings)
+    logger.info("Reuse report ready", extra={"path": str(out)})
+
+
+@app.command()
 def hull(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -7,6 +7,22 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Held-out reuse audit** (`netsentry reuse`, `netsentry/evaluation/reuse.py`): the rules say
+  the test set is touched once; a static pass over the package finds it read **103 times from 98
+  modules**. The failure that matters is not the syntactic one `netsentry mlint` already refuses
+  but the statistical one (Dwork et al., Science 2015) -- a holdout queried adaptively stops being
+  a holdout, with nothing fitted and no column leaked. The later days are cut three ways (query /
+  reference / **sealed**) and an adaptive analyst is run over 400 candidates twice. Where the
+  candidates are **indistinguishable** -- the deployed score plus per-flow noise, identical in
+  true quality -- 400 questions cost **+0.0093 PR-AUC** of optimism beyond the sampling floor, and
+  the chosen detector is *worse* than the one it replaced while reporting a better number. Where
+  the candidates **genuinely differ**, the same 400 questions cost **-0.0006** and find six points
+  of real PR-AUC. **A holdout is burned by being asked to choose between things it cannot tell
+  apart, not by being read**, which is what resolves the count. Two fixes are priced on harm *and*
+  power: a confidence gate (adopt only past the 0.0211 bootstrap half-width) adopts 0 of 400 noise
+  candidates and still finds a planted improvement; Thresholdout fails twice, protecting the
+  holdout but not the argmax taken over its answers, and exhausting its budget in 20 questions
+  when pointed at a validation split that a temporal design makes non-exchangeable.
 - **Operating-point frontier** (`netsentry hull`, `netsentry/evaluation/hull.py`): every
   decision this project ships is a threshold, which silently assumes a threshold is the best rule
   available at its own false-positive rate. It is not -- the achievable operating points are the

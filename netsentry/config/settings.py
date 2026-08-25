@@ -2029,6 +2029,28 @@ class HullConfig(BaseModel):
     skew_points: int = 201
 
 
+class ReuseConfig(BaseModel):
+    """How many times has the sealed split been asked a question, and what did it cost?
+
+    The rules say the test set is touched once. Every study here reads it. Fitting on test is a
+    syntactic bug `netsentry mlint` already refuses; querying it adaptively is a statistical one
+    no linter can see (Dwork et al., Science 2015). This counts the reads statically, then
+    measures what selecting on a holdout costs by running an adaptive analyst against a sealed
+    half of the same split, and prices two fixes on both harm and power."""
+
+    package_root: str = "netsentry"  # the tree the static audit walks
+    rounds: int = 40
+    candidates_per_round: int = 10
+    perturbation: float = 0.08  # feature-direction nudge: a genuinely different detector
+    jitter: float = 0.05  # per-flow noise: a detector the holdout cannot distinguish
+    planted_edge: float = 0.012  # one candidate really is better, so power is measurable
+    tolerance: float = 0.01  # Thresholdout's T: how far train and holdout may disagree for free
+    noise_scale: float = 0.005  # Thresholdout's Laplace scale
+    query_budget: int = 20  # Thresholdout's overfitting budget
+    bootstrap_resamples: int = 200
+    confidence_level: float = 0.95
+
+
 class DeterminismConfig(BaseModel):
     """Is the seed enough? The invariant three hash-based mechanisms are built on.
 
@@ -3141,6 +3163,7 @@ class Settings(BaseSettings):
     side_channel: SideChannelConfig = Field(default_factory=SideChannelConfig)
     determinism: DeterminismConfig = Field(default_factory=DeterminismConfig)
     hull: HullConfig = Field(default_factory=HullConfig)
+    reuse: ReuseConfig = Field(default_factory=ReuseConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

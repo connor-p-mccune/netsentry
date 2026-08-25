@@ -198,6 +198,11 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+reuse:
+  rounds: 6
+  candidates_per_round: 4
+  bootstrap_resamples: 40
+  query_budget: 8
 hull:
   budgets: [0.001, 0.01]            # the tight cut and the deployed one
   threshold_probabilities: [0.05, 0.2, 0.5]
