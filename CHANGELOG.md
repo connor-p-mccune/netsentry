@@ -7,6 +7,22 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Operating-point frontier** (`netsentry hull`, `netsentry/evaluation/hull.py`): every
+  decision this project ships is a threshold, which silently assumes a threshold is the best rule
+  available at its own false-positive rate. It is not -- the achievable operating points are the
+  **convex hull** of the ROC points (Provost & Fawcett 2001), so wherever the curve dips below its
+  own hull a biased coin between two cuts strictly dominates every plain threshold there. **All
+  four deployed budgets are dominated on validation**, by up to +1.81 points of detection. Then
+  the rule is carried to the later days and **three of the four gains evaporate**: they were
+  wobbles in a finite ROC, and only the tightest budget -- where the curve is genuinely jagged --
+  delivers, at +1.23 points (9.0% to 10.2% detection). **The project declines it anyway**, because
+  a per-flow coin changes 0.67% of verdicts between runs, and the metamorphic oracle and the
+  load-time canary both exist to catch exactly that; the study's value is pricing what is given
+  up. Two threshold-free views round it out: **net benefit** (Vickers & Elkin 2006) shows the
+  model beats both trivial policies only above a 20% indifference probability at the split's 25%
+  attack rate, and in a narrow band near 1% at a production base rate; **cost curves** (Drummond
+  & Holte 2006) show the 0.1% budget is optimal over just 2.5% of the probability-cost skew axis
+  while the 5% budget owns 51%.
 - **Reproducibility audit** (`netsentry determinism`, `netsentry/training/determinism.py`):
   the rules say a run must be re-creatable from its logged config and seed, and three mechanisms
   hash the result -- the integrity manifest, `netsentry verify`, and the attestation root.

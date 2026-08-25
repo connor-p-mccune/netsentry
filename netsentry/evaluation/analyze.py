@@ -35,6 +35,7 @@ from netsentry.evaluation.evt import run_evt_report
 from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.hierarchy import run_hierarchy_report
 from netsentry.evaluation.hmeasure import run_hmeasure_report
+from netsentry.evaluation.hull import run_hull_report
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.label_shift import run_label_shift_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
@@ -164,6 +165,13 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Operating-point frontier",
+        "is the deployed cut on the ROC convex hull, does the gain a coin promises survive the "
+        "later days, and what net benefit says without a threshold (Provost & Fawcett 2001)",
+        "hull.md",
+        run_hull_report,
     ),
     ("Cost-sensitive thresholds", "decision-theoretic operating point", "cost.md", run_cost_report),
     (

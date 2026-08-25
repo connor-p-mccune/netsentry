@@ -2008,6 +2008,27 @@ class DensityConfig(BaseModel):
     max_attacks: int = 9
 
 
+class HullConfig(BaseModel):
+    """Is the deployed operating point on the achievable frontier at all?
+
+    Every decision here is a threshold, which assumes a threshold is the best rule available at
+    its own false-positive rate. The ROC convex hull says otherwise: wherever the curve dips
+    below its own hull, a randomised mixture of two thresholds strictly dominates (Provost &
+    Fawcett 2001). The study measures the gap on validation, then asks the question that decides
+    whether it is real -- does the rule derived there deliver anything on the later days -- and
+    prices the coin against the determinism the metamorphic study tests for. Cost curves and net
+    benefit then ask the same question without a threshold at all."""
+
+    budgets: list[float] = Field(default_factory=lambda: [0.001, 0.005, 0.01, 0.05])
+    tolerance: float = 1e-9  # a gap this small is a floating-point artefact, not a finding
+    threshold_probabilities: list[float] = Field(
+        default_factory=lambda: [0.01, 0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9]
+    )
+    skew_min: float = 0.0
+    skew_max: float = 1.0
+    skew_points: int = 201
+
+
 class DeterminismConfig(BaseModel):
     """Is the seed enough? The invariant three hash-based mechanisms are built on.
 
@@ -3119,6 +3140,7 @@ class Settings(BaseSettings):
     universal: UniversalConfig = Field(default_factory=UniversalConfig)
     side_channel: SideChannelConfig = Field(default_factory=SideChannelConfig)
     determinism: DeterminismConfig = Field(default_factory=DeterminismConfig)
+    hull: HullConfig = Field(default_factory=HullConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

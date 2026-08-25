@@ -198,6 +198,10 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+hull:
+  budgets: [0.001, 0.01]            # the tight cut and the deployed one
+  threshold_probabilities: [0.05, 0.2, 0.5]
+  skew_points: 41
 determinism:
   n_estimators: 30                  # every variant is a full refit
   thread_counts: [1, 2]

@@ -6,6 +6,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 |---|---|---|
 | Operational evaluation | PR-AUC, TPR@FPR, per-class, calibration | [open](evaluation.md) |
 | H-measure | a coherent, cost-explicit alternative to ROC-AUC (Hand 2009) | [open](hmeasure.md) |
+| Operating-point frontier | is the deployed cut on the ROC convex hull, does the gain a coin promises survive the later days, and what net benefit says without a threshold (Provost & Fawcett 2001) | [open](hull.md) |
 | Cost-sensitive thresholds | decision-theoretic operating point | [open](cost.md) |
 | Alert-queue capacity | detection vs analyst budget; lift over random triage | [open](alert_queue.md) |
 | SOC queue simulation | FIFO vs score-priority attack-SLA under queueing load | [open](socsim.md) |

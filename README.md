@@ -122,7 +122,7 @@ recovered from 400 certificates**; and **private inference**, a two-party secret
 built from scratch that scores a flow in **38 KB and one round** without either side seeing the
 other's secret, alongside the malicious-client attack that reads the whole model out in 1,217
 queries because the server cannot check that the thing it is multiplying is an input).
-`make check` is green (lint + type-check + **1,672 passing tests**, property-based invariants and a
+`make check` is green (lint + type-check + **1,722 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise
@@ -2862,6 +2862,56 @@ and a test asserts coverage across five seeds. And the corrupted bundle the relo
 refuse has to be written *after* the app binds to the real one, because the engine resolves
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
+
+## Is the operating point on the frontier?
+
+```bash
+python -m netsentry.cli hull   # -> docs/reports/hull.md
+```
+
+Every decision this project ships is a **threshold** — a score cut chosen on validation at a
+false-positive budget. That assumes something nobody here had checked: that a threshold is the
+best rule available at its own false-positive rate. It need not be. The achievable operating
+points of a scoring classifier are the **convex hull** of its ROC points, not the curve itself
+(Provost & Fawcett 2001), and wherever the curve dips below its own hull a randomised rule — a
+biased coin between two thresholds — strictly dominates every plain cut at that rate.
+
+**All four deployed budgets are dominated, and one of the four gains is real.**
+
+| budget | free detection on validation | delivered on the later days | verdicts that are a coin flip |
+|---|---|---|---|
+| **0.1%** | +1.81 pts | **+1.23 pts** (9.0% → 10.2%) | 0.67% |
+| 0.5% | +0.01 pts | +0.00 pts | 0.00% |
+| 1.0% | +0.68 pts | **−0.19 pts** | 0.37% |
+| 5.0% | +0.32 pts | **−0.03 pts** | 0.69% |
+
+The transfer test is the load-bearing part: a dip below the hull is either real structure in the
+score distribution or a wobble in a finite sample, and the two are indistinguishable until the
+rule derived from one split is applied to another. Three of four turn out to be wobbles. The one
+that survives is the tightest budget — where the ROC is most jagged because fewest positives sit
+above the cut — and it is worth **1.23 points of detection for free**.
+
+**And the project declines it**, because the last column is the price. A per-flow coin returns a
+different verdict for the same flow on a re-run, and two other components exist specifically to
+catch that: the [metamorphic oracle](docs/reports/metamorphic.md) tests determinism as a
+label-free correctness relation, and the [load-time canary](docs/reports/state_machine.md)
+replays fixed flows and flips `/health` to degraded on a mismatch. A randomised operating point
+would fail both **by design**, which is a harder conversation with an auditor than 1.23 points is
+worth. The study's value is knowing the size of what is being given up, and why.
+
+The same report answers the operating-point question two more ways that need no threshold at all.
+**Net benefit** (Vickers & Elkin 2006) asks whether the model beats *alert on everything* and
+*alert on nothing* at an operator's own indifference probability — and the answer flips with the
+base rate: at the split's 25% attack rate the model only wins above a 20% indifference
+probability, while at a 1% production rate alerting on everything is never sensible and the model
+wins in a narrow band near 1%. **Cost curves** (Drummond & Holte 2006) fold prevalence and the
+cost ratio into a single skew axis and show that the 0.1% budget — the tightest cut this project
+ships — is optimal over just **2.5%** of that axis, while the 5% budget owns 51%. A fixed-FPR
+budget is a claim about one exchange rate, and this is which one.
+
+Building it produced its own regression test: the first hull popped on the wrong turn and
+returned the **lower** hull, which is the diagonal — a "frontier" whose detection rate equalled
+its false-positive rate at every budget, i.e. what a coin with no model achieves.
 
 ## Learning the operating point online, and what it costs
 

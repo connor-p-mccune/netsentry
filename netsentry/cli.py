@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def hull(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Check the deployed operating point against the frontier a coin could reach."""
+    from netsentry.evaluation.hull import run_hull_report
+
+    settings = _load(config, override)
+    out = run_hull_report(settings)
+    logger.info("Hull report ready", extra={"path": str(out)})
+
+
+@app.command()
 def determinism(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
