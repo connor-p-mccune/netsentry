@@ -47,6 +47,7 @@ from netsentry.evaluation.novelty import run_novelty_report
 from netsentry.evaluation.ope import run_ope_report
 from netsentry.evaluation.openset import run_openset_report
 from netsentry.evaluation.pareto import run_pareto_report
+from netsentry.evaluation.power import run_power_report
 from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.rare_rates import run_rare_rates_report
 from netsentry.evaluation.report import run_evaluation
@@ -167,6 +168,15 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Statistical resolution",
+        "how big a difference has to be on this split before it means anything: bootstrap "
+        "intervals per metric, paired vs unpaired comparison, an exact permutation null, "
+        "and several of the differences this project has already published, against the "
+        "resulting bar",
+        "power.md",
+        run_power_report,
     ),
     (
         "Documentation claims",

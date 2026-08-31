@@ -2863,13 +2863,52 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## How big does a difference have to be?
+
+```bash
+python -m netsentry.cli power   # -> docs/reports/power.md
+```
+
+This project reports differences constantly and almost always as a point estimate. A number like
+"+1.2 points of detection" is a finding only if it is larger than the wobble a second sample of
+the same traffic would produce, and nobody had measured that wobble. The [seed-sensitivity
+study](docs/reports/seed_variance.md) measured the other half — the noise from *training* twice.
+This is the half from *evaluating*.
+
+**The false-positive budget this whole project is organised around is decided by nine flows.**
+
+| metric | value | 95% interval | smallest detectable difference | flows that decide it |
+|---|---|---|---|---|
+| PR-AUC | 0.5276 | [0.5178, 0.5402] | 0.0168 | 6,237 |
+| TPR @ 0.1% budget | 9.0% | [8.3%, 9.7%] | **1.0%** | 561 |
+| **FPR @ 0.1% budget** | 0.048% | [0.021%, 0.080%] | 0.043% | **9** |
+| TPR @ 1.0% budget | 20.7% | [19.8%, 21.8%] | 1.5% | 1,294 |
+
+PR-AUC integrates over every threshold, so all 6,237 attacks contribute and it concentrates. A
+rate at a fixed budget is a proportion over whichever flows clear the cut — and at the tightest
+budget that is 561 attacks and **nine** benign flows. **Tightening a false-positive budget does
+not only lower the detection rate; it lowers the precision with which the detection rate is
+known.** That is a property of the operating point, not of the model, and it applies to every
+fixed-budget number here.
+
+Two methodological results follow. **Pairing is not a refinement.** Comparing the deployed forest
+against a logistic-regression challenger, the paired interval around the difference is **2.6×
+narrower** than the unpaired one, because two models scored on the same flows share almost all of
+their sampling noise and it cancels — so reading two overlapping marginal intervals and
+concluding "not significant" is wrong by a measurable factor. And **some of this repository's own
+published differences sit at or below the bar**: `hull.md`'s −0.19 points at the 1% budget is 13%
+of what would be needed (its own report already treats it as a non-result), and
+`deep_tabular.md`'s +0.0170 PR-AUC clears a bar of 0.0168 — a margin of 1.01 to one. Those
+numbers are not wrong; they are at the resolution of the instrument that produced them, and this
+is the report that says so.
+
 ## Does the README still say what the reports say?
 
 ```bash
 python -m netsentry.cli claims   # -> docs/reports/claims.md  (a CI gate)
 ```
 
-This README quotes **577** computed numbers, each one a promise that running one command
+This README quotes **600** computed numbers, each one a promise that running one command
 reproduces it. Nothing had ever checked that promise, and it is the kind that decays silently: a
 study's config changes, its report is regenerated, and the prose that quoted it three waves ago
 keeps its old figure. The report stays right, the README goes wrong, and no test fails.
@@ -2881,7 +2920,7 @@ them fixed: unsourced claims are budgeted at **0** and the milder class at **9**
 
 | verdict | claims | what it means |
 |---|---|---|
-| **verified** | 568 | the section's own report states this number |
+| **verified** | 591 | the section's own report states this number |
 | **traceable** | 9 | real and regenerable, but from a different study — cross-references and arithmetic the README performs |
 | **unsourced** | 0 | in no report at all; the class that fails the build |
 

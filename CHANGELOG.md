@@ -7,6 +7,20 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Statistical resolution** (`netsentry power`, `netsentry/evaluation/power.py`): this project
+  reports differences constantly and almost always as point estimates, and nobody had measured
+  what a second sample of the same traffic would do to them. Percentile bootstrap, a paired
+  variant, and an exact permutation null over the later days give the answer, and the headline is
+  uncomfortable: **the 0.1% false-positive budget the whole project is organised around is decided
+  by nine benign flows**, so its realised rate is known to plus or minus 90% of itself. Detection
+  at that budget rests on 561 of 6,237 attacks and needs **1.0 points** to be resolvable, against
+  PR-AUC's 3% of its own value -- tightening a budget lowers not just the detection rate but the
+  precision with which it is known. Two consequences follow. **Pairing is not a refinement**: the
+  paired interval around a model-versus-challenger difference is 2.6x narrower than the unpaired
+  one, because the sampling noise the two share cancels. And **several of this repository's own
+  published differences sit at or below the bar** -- `hull.md`'s -0.19 points at the 1% budget is
+  13% of what would be needed, and `deep_tabular.md`'s +0.0170 PR-AUC clears a 0.0168 bar by a
+  margin of 1.01 to one. The claims audited are listed in config with the report each came from.
 - **Documentation-claims gate** (`netsentry claims`, `netsentry/governance/claims.py`): the
   README quotes 572 computed numbers, each a promise that one command reproduces it, and nothing
   had ever checked. **The first run found 12 that no report states** -- a latency table quoting a

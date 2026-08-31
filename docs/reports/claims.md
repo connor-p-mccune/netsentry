@@ -1,6 +1,6 @@
 # NetSentry -- Does the README Still Say What the Reports Say?
 
-_Every precise number in 100 of the README's 116 sections, checked against the 136 generated reports on disk. Regenerate with `netsentry claims`._
+_Every precise number in 101 of the README's 117 sections, checked against the 137 generated reports on disk. Regenerate with `netsentry claims`._
 
 ## Why this report exists
 
@@ -8,20 +8,20 @@ The README quotes several hundred computed numbers, each produced by a study tha
 
 So this is a checker, in the same shape as [`netsentry mlint`](mlint.md) and for the same reason -- an invariant nobody enforces is an invariant nobody has.
 
-**577 numbers in the README claim to come from a study. 568 of them do, 9 come from a different study than the one the section links, and 0 come from nowhere at all.**
+**600 numbers in the README claim to come from a study. 591 of them do, 9 come from a different study than the one the section links, and 0 come from nowhere at all.**
 
 Every precise number in the README is reproducible from a report on disk, which is the state this checker exists to keep. It was not the state when it was written.
 
 The 9 traceable claims are a milder thing, separated rather than lumped in: the number is real and regenerable, but not from the report the section sends a reader to. Most are cross-references between studies and the rest are arithmetic the README performs on figures a report does state, so none of them is wrong -- they are simply unconfirmable where a reader would look. Their count is budgeted rather than driven to zero, for reasons the section below gives.
 
-The checker's own evidence is measured rather than asserted. **97%** of verified claims appear in their report character for character; the rest are quoted at lower precision or in the other unit and are matched by arithmetic, which is correct but weaker. **30%** correspond to exactly one number in their report -- a quote that could be a rounding of thirty different figures is barely confirmation at all. Both limits are measured below rather than left for a reader to find.
+The checker's own evidence is measured rather than asserted. **97%** of verified claims appear in their report character for character; the rest are quoted at lower precision or in the other unit and are matched by arithmetic, which is correct but weaker. **31%** correspond to exactly one number in their report -- a quote that could be a rounding of thirty different figures is barely confirmation at all. Both limits are measured below rather than left for a reader to find.
 
 ## The verdicts
 
 | verdict | claims | share | what it means |
 |---|---|---|---|
-| **verified** | 568 | 98.4% | the token appears in a report the section links; the promise holds |
-| **traceable** | 9 | 1.6% | it appears in some *other* report; real, but not checkable where the reader is sent |
+| **verified** | 591 | 98.5% | the token appears in a report the section links; the promise holds |
+| **traceable** | 9 | 1.5% | it appears in some *other* report; real, but not checkable where the reader is sent |
 | **unsourced** | 0 | 0.0% | it appears in no report at all; the only class that fails the gate |
 
 A **claim** is a number precise enough to be worth checking rather than a round figure someone chose: at least two decimals, or a percentage carrying one. A version string or a `30%` is not a claim; a configured budget like `0.1%` is, and verifies, because the report that spends the budget states it too.
@@ -53,7 +53,7 @@ A rule nobody has watched fire is a rule nobody should trust, and a clean codeba
 | injected fault | what it models in practice | injected | detected | fails the build |
 |---|---|---|---|---|
 | a number drifts one digit | a study regenerated, the prose quoting it not updated | 25 | **88%** | **88%** |
-| a claim moves to a section that cannot source it | prose reorganised, the link left pointing at the old study | 25 | **100%** | **100%** |
+| a claim moves to a section that cannot source it | prose reorganised, the link left pointing at the old study | 25 | **88%** | **92%** |
 | a report link points at nothing | a study renamed or removed, its README section left behind | 25 | **100%** | **100%** |
 
 The digit perturbation is the important one, because it is what real drift looks like: same magnitude, same precision, one digit different. A fault that replaced a number with something obviously wrong would test nothing.
@@ -64,7 +64,7 @@ The first version of the harness also reported 100% detection, which was an arte
 
 ## What the checker cannot see
 
-A claim is only as strong as the uniqueness of what it matched. **30%** of verified claims correspond to exactly one number in their report and are genuinely pinned; the rest could be a rounding of several, where the confirmation is weaker. **97%** match character for character rather than by rounding or unit conversion.
+A claim is only as strong as the uniqueness of what it matched. **31%** of verified claims correspond to exactly one number in their report and are genuinely pinned; the rest could be a rounding of several, where the confirmation is weaker. **97%** match character for character rather than by rounding or unit conversion.
 
 The blind spots follow directly, and the first one is measured rather than asserted:
 
@@ -78,7 +78,7 @@ The remedy for all of them is the same and is already in place elsewhere: the re
 ## The other direction: links and orphans
 
 - **Broken report links:** 0 (every section points at a report that exists)
-- **Reports no README section links:** 26 of 136. Not a fault -- the [report index](INDEX.md) exists precisely so every study is reachable -- but the count is worth knowing, because a study nobody links is a study nobody reads.
+- **Reports no README section links:** 26 of 137. Not a fault -- the [report index](INDEX.md) exists precisely so every study is reachable -- but the count is worth knowing, because a study nobody links is a study nobody reads.
 
 ## Scope and honest limits
 

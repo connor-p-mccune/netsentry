@@ -2029,6 +2029,70 @@ class HullConfig(BaseModel):
     skew_points: int = 201
 
 
+class PublishedClaimConfig(BaseModel):
+    """A difference this repository has already published, to be put against the noise floor.
+
+    They live in config rather than in code because they are data about the repository, not
+    logic: adding a claim to the audit should be an edit to a list, and every one carries the
+    report it came from so a reader can check the quotation."""
+
+    report: str
+    description: str
+    claimed: float
+    metric: str
+
+
+class PowerConfig(BaseModel):
+    """How big does a difference have to be on this split before it means anything?
+
+    The seed-sensitivity study measures the noise that comes from training; this measures the
+    noise that comes from evaluating, which is a property of the sample size and of each metric's
+    construction. It bootstraps the headline metrics, compares two models paired and unpaired
+    (pairing removes the shared sampling noise and is usually the difference between having an
+    answer and not), runs an exact permutation null, and then puts several of this project's own
+    published differences against the resulting minimum detectable effect."""
+
+    resamples: int = 400
+    permutations: int = 400
+    level: float = 0.95
+    budgets: list[float] = Field(default_factory=lambda: [0.001, 0.01])
+    baseline_max_iter: int = 1000
+    published: list[PublishedClaimConfig] = Field(
+        default_factory=lambda: [
+            PublishedClaimConfig(
+                report="evaluation.md",
+                description="the over-optimism gap: stratified split minus temporal",
+                claimed=0.257,
+                metric="pr_auc",
+            ),
+            PublishedClaimConfig(
+                report="operating_point.md",
+                description="MLP trained on partial AUC vs the deployed tree, at the 0.1% budget",
+                claimed=0.053,
+                metric="tpr_at_0.001",
+            ),
+            PublishedClaimConfig(
+                report="hull.md",
+                description="the randomised rule's delivered gain at the 0.1% budget",
+                claimed=0.0123,
+                metric="tpr_at_0.001",
+            ),
+            PublishedClaimConfig(
+                report="deep_tabular.md",
+                description="the tree's PR-AUC gain from 1,800 to 12,000 training rows",
+                claimed=0.017,
+                metric="pr_auc",
+            ),
+            PublishedClaimConfig(
+                report="hull.md",
+                description="the randomised rule's delivered loss at the 1% budget",
+                claimed=-0.0019,
+                metric="tpr_at_0.01",
+            ),
+        ]
+    )
+
+
 class ClaimsConfig(BaseModel):
     """Does the README still say what the reports say?
 
@@ -3179,6 +3243,7 @@ class Settings(BaseSettings):
     hull: HullConfig = Field(default_factory=HullConfig)
     reuse: ReuseConfig = Field(default_factory=ReuseConfig)
     claims: ClaimsConfig = Field(default_factory=ClaimsConfig)
+    power: PowerConfig = Field(default_factory=PowerConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def power(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Measure how big a difference has to be on this split before it means anything."""
+    from netsentry.evaluation.power import run_power_report
+
+    settings = _load(config, override)
+    out = run_power_report(settings)
+    logger.info("Power report ready", extra={"path": str(out)})
+
+
+@app.command()
 def claims(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
