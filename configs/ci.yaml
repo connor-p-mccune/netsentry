@@ -198,6 +198,8 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+claims:
+  injections: 6
 reuse:
   rounds: 6
   candidates_per_round: 4

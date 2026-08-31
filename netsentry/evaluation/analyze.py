@@ -36,7 +36,6 @@ from netsentry.evaluation.gate import run_gate
 from netsentry.evaluation.hierarchy import run_hierarchy_report
 from netsentry.evaluation.hmeasure import run_hmeasure_report
 from netsentry.evaluation.hull import run_hull_report
-from netsentry.evaluation.reuse import run_reuse_report
 from netsentry.evaluation.label_audit import run_label_audit_report
 from netsentry.evaluation.label_shift import run_label_shift_report
 from netsentry.evaluation.leaderboard import run_leaderboard_report
@@ -51,6 +50,7 @@ from netsentry.evaluation.pareto import run_pareto_report
 from netsentry.evaluation.ppi import run_ppi_report
 from netsentry.evaluation.rare_rates import run_rare_rates_report
 from netsentry.evaluation.report import run_evaluation
+from netsentry.evaluation.reuse import run_reuse_report
 from netsentry.evaluation.risk_control import run_risk_control_report
 from netsentry.evaluation.rules import run_rules_report
 from netsentry.evaluation.sampling import run_sampling_report
@@ -75,6 +75,7 @@ from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.explain.shap_estimand import run_shap_estimand_report
 from netsentry.features.store_report import run_store_report
 from netsentry.governance.attestation import run_attestation_report
+from netsentry.governance.claims import run_claims_report
 from netsentry.governance.compliance import run_compliance_report
 from netsentry.governance.ledger_report import run_ledger_report
 from netsentry.governance.mlint import run_mlint_report
@@ -166,6 +167,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Documentation claims",
+        "every precise number the README quotes, checked against the report that generates "
+        "it: verified, traceable to another study, or unsourced -- with an injection harness "
+        "measuring whether the checker fires",
+        "claims.md",
+        run_claims_report,
     ),
     (
         "Held-out reuse",

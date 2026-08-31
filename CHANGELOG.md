@@ -7,6 +7,21 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Documentation-claims gate** (`netsentry claims`, `netsentry/governance/claims.py`): the
+  README quotes 572 computed numbers, each a promise that one command reproduces it, and nothing
+  had ever checked. **The first run found 12 that no report states** -- a latency table quoting a
+  run of the batching study whose config had since changed. Those are corrected, and the gate now
+  holds the line: unsourced claims budgeted at 0 and the milder "real, but from a different
+  study" class at 9, the way `mlint` pins its violation count. Matching is numeric rather than
+  textual, which took three passes: a quote of `2.31` asserts the report says something that
+  *rounds* to 2.31, and a report saying `0.027` where the README says `2.7%` is the same fact in
+  different units -- both added because the first version flagged roundings and unit conversions
+  as faults, and a checker that cries wolf gets switched off. The injection harness corrected the
+  gate (a drift landing in the milder class used to pass) and then corrected itself: it had
+  reported 100% detection by asking whether the *original* token still verified after being
+  replaced, which no replaced token can. Asked properly, one-digit drift is caught **88%** of the
+  time, and the missing 12% -- a drift landing on another figure the same report states -- is the
+  blind spot, measured rather than asserted.
 - **Held-out reuse audit** (`netsentry reuse`, `netsentry/evaluation/reuse.py`): the rules say
   the test set is touched once; a static pass over the package finds it read **103 times from 98
   modules**. The failure that matters is not the syntactic one `netsentry mlint` already refuses

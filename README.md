@@ -2559,24 +2559,24 @@ the class exists.
 python -m netsentry.cli batching   # -> docs/reports/batching.md
 ```
 
-Scoring **one** flow through the deployed path costs 10.2 ms; scoring 512 costs 17.9 ms. The
-affine fit splits that into **10.03 ms of fixed cost per call and 0.0149 ms per flow** — a
-ratio of 673 to one, all of it frame construction, transformer dispatch and ensemble setup.
+Scoring **one** flow through the deployed path costs 10.10 ms; scoring 512 costs 18.06 ms. The
+affine fit splits that into **9.62 ms of fixed cost per call and 0.0166 ms per flow** — a ratio
+of 578 to one, all of it frame construction, transformer dispatch and ensemble setup.
 
 | arrival rate | policy | throughput | p50 | p99 |
 |---|---|---|---|---|
-| 5/s | one at a time | 5/s | 9.88 ms | 18.16 ms |
-| 5/s | adaptive (5 ms wait) | 5/s | 14.88 ms | 17.66 ms |
-| 50/s | one at a time | 50/s | 9.88 ms | 42.26 ms |
-| 50/s | adaptive | 51/s | 14.88 ms | **19.52 ms** |
-| 5,000/s | one at a time | **101/s** | 97 s | 192 s |
-| 5,000/s | adaptive | **5,052/s** | 16.24 ms | **21.65 ms** |
+| 5/s | one at a time | 5/s | 9.63 ms | 17.64 ms |
+| 5/s | adaptive (wait for the batch) | 5/s | 14.63 ms | 17.17 ms |
+| 50/s | one at a time | 50/s | 9.63 ms | 39.63 ms |
+| 50/s | adaptive | 51/s | 14.63 ms | **19.04 ms** |
+| 5,000/s | one at a time | **104/s** | 94 s | 187 s |
+| 5,000/s | adaptive | **5,046/s** | 15.82 ms | **21.04 ms** |
 
-The capacity ceiling moves from `1/(a+c)` = **101 req/s** to `1/c` = **63,479 req/s**. And the
+The capacity ceiling moves from `1/(a+c)` = **104 req/s** to `1/c` = **60,130 req/s**. And the
 first queueing model was wrong in an instructive way: treating this as batches arriving into an
-M/D/1 queue over-predicted latency 25x, because a batching server is **self-regulating** — its
+M/D/1 queue over-predicted latency, because a batching server is **self-regulating** — its
 service capacity grows with its own backlog. The fixed point `b* = lambda a / (1 - lambda c)`,
-with mean latency `1.5 (a + c b*)`, matches the simulation to within **0.9%** on both.
+with mean latency `1.5 (a + c b*)`, matches the simulation to within **1.2%** on both.
 
 ## Choosing on the front, not on a weighted sum
 
@@ -2863,6 +2863,43 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## Does the README still say what the reports say?
+
+```bash
+python -m netsentry.cli claims   # -> docs/reports/claims.md  (a CI gate)
+```
+
+This README quotes **577** computed numbers, each one a promise that running one command
+reproduces it. Nothing had ever checked that promise, and it is the kind that decays silently: a
+study's config changes, its report is regenerated, and the prose that quoted it three waves ago
+keeps its old figure. The report stays right, the README goes wrong, and no test fails.
+
+**On its first run the checker found 12 such numbers** — a whole latency table quoting a run of
+the batching study whose configuration had since changed. They are fixed, and the gate now keeps
+them fixed: unsourced claims are budgeted at **0** and the milder class at **9**, the way
+[`mlint`](docs/reports/mlint.md) pins its violation count.
+
+| verdict | claims | what it means |
+|---|---|---|
+| **verified** | 568 | the section's own report states this number |
+| **traceable** | 9 | real and regenerable, but from a different study — cross-references and arithmetic the README performs |
+| **unsourced** | 0 | in no report at all; the class that fails the build |
+
+Matching is numeric rather than textual, which took three passes to get right. A quote of `2.31`
+does not assert the report says exactly 2.31 — it asserts the report says something that *rounds*
+to 2.31, so a quote is treated as the interval it actually claims. A report stating `0.027` where
+the README says `2.7%` is the same fact in different units. Both extensions exist because the
+first version flagged roundings and unit conversions as faults, and **a checker that cries wolf
+is a checker somebody switches off**.
+
+And the harness that watches it fire corrected both the gate and itself. Injecting a one-digit
+drift into a claim — what real rot looks like — is caught **88%** of the time; the missing 12% is
+a drift landing on another figure the same report already states, which arithmetic cannot tell
+from the truth. The first version of that harness reported 100%, because it asked whether the
+*original* token still verified after being replaced, and a token that no longer exists never
+does. **A harness that had not been checked against itself would have reported the flattering
+number.**
+
 ## How many times has the holdout been asked?
 
 ```bash
@@ -2881,10 +2918,10 @@ of questions. So the later days are cut three ways — a third the analyst may q
 the mechanism that needs a reference, and a **sealed** third nothing ever touches — and an
 adaptive analyst is run over 400 candidate detectors twice.
 
-| the 400 candidates are… | reported | true (sealed) | cost of selection |
-|---|---|---|---|
-| **indistinguishable** (score + per-flow noise, identical in truth) | 0.5331 | 0.5131 | **+0.0093** |
-| **genuinely different** (score nudged along feature directions) | 0.5656 | 0.5541 | **−0.0006** |
+| the 400 candidates are… | true quality of the winner | cost of selection |
+|---|---|---|
+| **indistinguishable** (score + per-flow noise, identical in truth) | 0.5131 | **+0.0093** |
+| **genuinely different** (score nudged along feature directions) | 0.5541 | **−0.0006** |
 
 In the first pool the analyst's chosen detector is **worse than the one it replaced** (0.5131 vs
 0.5162) while reporting a better number — selection on noise does not just inflate the estimate,

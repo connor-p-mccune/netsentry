@@ -6,6 +6,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 |---|---|---|
 | Operational evaluation | PR-AUC, TPR@FPR, per-class, calibration | [open](evaluation.md) |
 | H-measure | a coherent, cost-explicit alternative to ROC-AUC (Hand 2009) | [open](hmeasure.md) |
+| Documentation claims | every precise number the README quotes, checked against the report that generates it, with an injection harness measuring whether the checker fires | [open](claims.md) |
 | Held-out reuse | how many times this package reads the sealed split, what selecting on it costs against a never-queried half, and whether Thresholdout or a confidence gate closes the gap (Dwork et al. 2015) | [open](reuse.md) |
 | Operating-point frontier | is the deployed cut on the ROC convex hull, does the gain a coin promises survive the later days, and what net benefit says without a threshold (Provost & Fawcett 2001) | [open](hull.md) |
 | Cost-sensitive thresholds | decision-theoretic operating point | [open](cost.md) |

@@ -2029,6 +2029,20 @@ class HullConfig(BaseModel):
     skew_points: int = 201
 
 
+class ClaimsConfig(BaseModel):
+    """Does the README still say what the reports say?
+
+    Several hundred computed numbers are quoted in prose, each a promise that regenerating the
+    study reproduces it, and nothing had ever checked. A claim is a precise number in a section
+    that links a report; it is verified, traceable to a different report, or unsourced. Only the
+    last fails the gate, and the injection harness measures whether the checker fires at all."""
+
+    readme: str = "README.md"
+    injections: int = 25  # faults per class in the harness
+    max_unsourced: int = 0  # the gate: every quoted number must be regenerable
+    max_traceable: int = 9  # the current cross-references and derived figures, pinned
+
+
 class ReuseConfig(BaseModel):
     """How many times has the sealed split been asked a question, and what did it cost?
 
@@ -3164,6 +3178,7 @@ class Settings(BaseSettings):
     determinism: DeterminismConfig = Field(default_factory=DeterminismConfig)
     hull: HullConfig = Field(default_factory=HullConfig)
     reuse: ReuseConfig = Field(default_factory=ReuseConfig)
+    claims: ClaimsConfig = Field(default_factory=ClaimsConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

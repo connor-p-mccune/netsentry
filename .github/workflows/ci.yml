@@ -35,6 +35,11 @@ jobs:
           python -m black --check netsentry tests
       - name: Typecheck (mypy)
         run: python -m mypy netsentry
+      # A documentation gate, not a study: it reads the committed reports and never regenerates
+      # them, so it belongs beside the linters rather than in the job that rebuilds every report
+      # from a tiny synthetic dataset.
+      - name: Documentation claims (every quoted number must be regenerable)
+        run: python -m netsentry.cli claims
       - name: Test (fast)
         run: python -m pytest -m "not slow" --cov=netsentry --cov-report=term-missing
 

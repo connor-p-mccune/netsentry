@@ -1503,6 +1503,47 @@ def bandit(
 
 
 @app.command()
+def claims(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Check every number the README quotes against the study that generates it."""
+    from netsentry.governance.claims import (
+        VERIFIED,
+        run_claims_study,
+        write_claims_report,
+    )
+
+    settings = _load(config, override)
+    study = run_claims_study(settings)
+    out = write_claims_report(settings, study)
+    logger.info(
+        "Documentation claims report ready",
+        extra={
+            "path": str(out),
+            "claims": len(study.claims),
+            "unsourced": len(study.unsourced()),
+        },
+    )
+    # The budget is pinned from the current state, so this run is green by construction; it is
+    # the *next* one -- against a README that has drifted -- that the gate exists for.
+    if study.fails_gate():
+        for claim in study.claims:
+            if claim.verdict == VERIFIED:
+                continue
+            logger.error(
+                "Quoted number cannot be checked where the reader is sent",
+                extra={
+                    "verdict": claim.verdict,
+                    "location": f"README.md:{claim.line}",
+                    "finding": f"{claim.token} is not in "
+                    f"{', '.join(claim.reports) or 'any report'}",
+                },
+            )
+        raise typer.Exit(code=1)
+
+
+@app.command()
 def reuse(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
