@@ -2950,7 +2950,7 @@ is the report that says so.
 python -m netsentry.cli claims   # -> docs/reports/claims.md  (a CI gate)
 ```
 
-This README quotes **600** computed numbers, each one a promise that running one command
+This README quotes **625** computed numbers, each one a promise that running one command
 reproduces it. Nothing had ever checked that promise, and it is the kind that decays silently: a
 study's config changes, its report is regenerated, and the prose that quoted it three waves ago
 keeps its old figure. The report stays right, the README goes wrong, and no test fails.
@@ -2962,7 +2962,7 @@ them fixed: unsourced claims are budgeted at **0** and the milder class at **9**
 
 | verdict | claims | what it means |
 |---|---|---|
-| **verified** | 591 | the section's own report states this number |
+| **verified** | 616 | the section's own report states this number |
 | **traceable** | 9 | real and regenerable, but from a different study — cross-references and arithmetic the README performs |
 | **unsourced** | 0 | in no report at all; the class that fails the build |
 
