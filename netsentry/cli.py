@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def composition(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Check whether the safeguards still hold when two things go wrong at once."""
+    from netsentry.robustness.composition import run_composition_report
+
+    settings = _load(config, override)
+    out = run_composition_report(settings)
+    logger.info("Composition report ready", extra={"path": str(out)})
+
+
+@app.command()
 def power(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

@@ -2863,6 +2863,48 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## Do the safeguards compose?
+
+```bash
+python -m netsentry.cli composition   # -> docs/reports/composition.md
+```
+
+This repository has a defence for each failure it has thought of, and every one was measured with
+**one thing wrong at a time**. Production does not have that courtesy. A 2⁴ factorial — temporal
+shift, sensor outage, evasion, prevalence collapse, all sixteen combinations — reads the same four
+guarantees and three monitors in every cell, which separates a **main effect** from an
+**interaction**. One-at-a-time testing measures the first and is structurally blind to the second.
+
+| what is wrong | detection | coverage | feature PSI | score PSI | broken | alarms |
+|---|---|---|---|---|---|---|
+| nothing wrong | 20.7% | 59.7% | 0.11 | 0.03 | coverage | **silent** |
+| evasion | 14.3% | 84.3% | 0.18 | 0.07 | coverage | **silent** |
+| rarity | 16.9% | 56.1% | 0.07 | 0.24 | coverage | score PSI |
+| outage | 0.3% | 35.7% | 12.43 | 0.41 | detection, coverage | both |
+| shift | 2.3% | 49.3% | 0.06 | 0.26 | detection, coverage | score PSI |
+
+Four findings, in ascending order of discomfort. **Before any stressor is applied, the coverage
+promise is already broken** — 59.7% delivered against 90% calibrated — and neither monitor fires:
+the temporal gap alone does it, and nothing watches it. **The stressor a monitor most needs to see
+is the one it cannot**: evasion costs 31% of the detection rate while leaving every monitor
+silent, because a drift monitor calibrated for a *major population shift* is the wrong instrument
+for an adversary specifically trying not to cause one. **The monitor that does fire, fires for the
+wrong reason**: thinning attacks to a 1% production base rate changes no model, no threshold and
+no feature, yet trips score PSI. And the false-positive budget is *never* breached — because every
+stressor lowers the scores, so a budget measured from the top of the distribution looks healthiest
+exactly when the distribution has collapsed.
+
+**No combination breaks a guarantee that no single stressor breaks** — a genuine negative result,
+kept. But **75% of the monitor interactions are negative**: monitor responses do not stack, they
+saturate, so the moment a system is most likely to be breaking is the moment its monitors are
+least able to register the difference.
+
+One cell repays the whole design: evasion **lowers** detection at the deployed 1% cut (20.7% →
+14.3%) while **raising** coverage at the conformal cut (59.7% → 84.3%). Shaping attacks toward the
+benign centroid compresses their scores toward the middle, pushing them below a high threshold and
+above a low one at once. **Whether an attack works is a property of the operating point, not only
+of the attack.**
+
 ## How big does a difference have to be?
 
 ```bash

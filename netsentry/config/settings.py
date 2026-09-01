@@ -2042,6 +2042,35 @@ class PublishedClaimConfig(BaseModel):
     metric: str
 
 
+class CompositionConfig(BaseModel):
+    """Every safeguard here was validated with one thing wrong. Do they compose?
+
+    A 2^4 factorial over four stressors -- temporal shift, sensor outage, evasion, prevalence
+    collapse -- reading the same guarantees and monitors in all sixteen cells. Running one
+    stressor at a time measures main effects and is structurally blind to interactions, which is
+    where compound breakage (two safe stressors that jointly break a guarantee) and masking (a
+    broken guarantee with every monitor silent) live."""
+
+    budget: float = 0.01  # the false-positive budget the threshold is calibrated to
+    budget_tolerance: float = 1.5  # how far past it counts as broken rather than as noise
+    coverage_target: float = 0.90  # the attack-class coverage calibrated on validation
+    detection_floor_ratio: float = 0.5  # half the accepted detection rate is a different system
+    alert_headroom: float = 2.0  # the SLO ceiling, as a multiple of the calibrated alert rate
+    shift_fraction: float = 0.25  # keep the latest quarter of the evaluation window
+    evasion_fraction: float = 0.5  # how far attacks move toward the benign centroid
+    production_prevalence: float = 0.01  # the base rate attacks are thinned to
+    psi_bins: int = 10
+    psi_threshold: float = 0.2  # the "major shift" line the drift study already uses
+    outage_features: list[str] = Field(
+        default_factory=lambda: [
+            "Flow Bytes/s",
+            "Flow Packets/s",
+            "Flow IAT Mean",
+            "Flow IAT Std",
+        ]
+    )
+
+
 class PowerConfig(BaseModel):
     """How big does a difference have to be on this split before it means anything?
 
@@ -3244,6 +3273,7 @@ class Settings(BaseSettings):
     reuse: ReuseConfig = Field(default_factory=ReuseConfig)
     claims: ClaimsConfig = Field(default_factory=ClaimsConfig)
     power: PowerConfig = Field(default_factory=PowerConfig)
+    composition: CompositionConfig = Field(default_factory=CompositionConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

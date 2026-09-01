@@ -7,6 +7,25 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Compositional failure** (`netsentry composition`, `netsentry/robustness/composition.py`):
+  every safeguard here was validated with one thing wrong at a time, which measures main effects
+  and is structurally blind to interactions. A 2^4 factorial -- temporal shift, sensor outage,
+  evasion, prevalence collapse -- reads four guarantees and three monitors in all sixteen cells.
+  Four findings. **The coverage promise is already broken with nothing wrong** (59.7% delivered
+  against 90% calibrated) and neither drift monitor fires, so the breach is invisible to the
+  monitoring actually deployed. **Evasion is the stressor the monitors cannot see**: it costs 31%
+  of the detection rate while leaving feature PSI at 0.18 and score PSI at 0.07, because a monitor
+  calibrated for a major population shift is the wrong instrument for an adversary trying not to
+  cause one. **The alarm that does fire, fires for the wrong reason**: thinning attacks to a 1%
+  base rate changes no model, threshold or feature yet trips score PSI. And the false-positive
+  budget is never breached, because every stressor lowers scores -- a budget read from the top of
+  the distribution looks healthiest exactly when the distribution has collapsed. No combination
+  breaks a guarantee no single stressor breaks (a negative result, kept), but **75% of the monitor
+  interactions are negative**: responses saturate rather than stack, so concurrent failures are
+  less visible than separate ones. One cell repays the design -- evasion lowers detection at the
+  deployed cut while *raising* coverage at the conformal one, because compressing scores toward
+  the middle helps a low threshold and hurts a high one, so whether an attack works is a property
+  of the operating point rather than only of the attack.
 - **Statistical resolution** (`netsentry power`, `netsentry/evaluation/power.py`): this project
   reports differences constantly and almost always as point estimates, and nobody had measured
   what a second sample of the same traffic would do to them. Percentile bootstrap, a paired

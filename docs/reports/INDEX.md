@@ -6,6 +6,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 |---|---|---|
 | Operational evaluation | PR-AUC, TPR@FPR, per-class, calibration | [open](evaluation.md) |
 | H-measure | a coherent, cost-explicit alternative to ROC-AUC (Hand 2009) | [open](hmeasure.md) |
+| Compositional failure | every safeguard was validated with one thing wrong: a 2^4 factorial over shift, outage, evasion and prevalence asks whether the guarantees and their monitors survive two at once | [open](composition.md) |
 | Statistical resolution | how big a difference has to be before it means anything: bootstrap intervals, paired vs unpaired comparison, a permutation null, and this project's own published differences against the bar | [open](power.md) |
 | Documentation claims | every precise number the README quotes, checked against the report that generates it, with an injection harness measuring whether the checker fires | [open](claims.md) |
 | Held-out reuse | how many times this package reads the sealed split, what selecting on it costs against a never-queried half, and whether Thresholdout or a confidence gate closes the gap (Dwork et al. 2015) | [open](reuse.md) |

@@ -198,6 +198,8 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+composition:
+  psi_bins: 5
 power:
   resamples: 40
   permutations: 40
