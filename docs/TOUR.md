@@ -399,6 +399,53 @@ priced — [`reports/attestation.md`](reports/attestation.md)) and **private inf
 one round, plus the malicious-client attack that reads the model out in 1,217 queries —
 [`reports/private_inference.md`](reports/private_inference.md)).
 
+## Stop 15b — The instrument, not the model
+
+Six studies that barely touch the classifier. Each one audits a piece of the **measuring
+apparatus** instead — and that is where the defects turned out to be.
+
+- **The API leaks its verdict in the length of the reply.** Every adversary defence here is
+  query-side and assumes the attacker learns the answer by being told it. The verdict is
+  recoverable from the response size at **AUC 1.000** on every endpoint configuration, free and
+  passive. Five of the six rungs on the fix ladder do nothing, because the leak is the response's
+  *shape*; padding is the only one that closes it. There is no timing channel for an instructive
+  reason: SHAP runs unconditionally and hides the conditional work underneath it
+  ([`reports/side_channel.md`](reports/side_channel.md)).
+- **The seed is not enough, and what it fails to pin does not change the model.** Row order,
+  disk round-trip and batch size are all irrelevant; the **thread count** changes the bytes and
+  nothing else, because `n_jobs: -1` is a lookup resolved from the host. A bundle rebuilt
+  elsewhere fails `netsentry verify` while being the same detector — so `provenance` now records
+  a behavioural digest beside the file hash
+  ([`reports/determinism.md`](reports/determinism.md)).
+- **Every deployed operating point is dominated, and almost none of the gain is real.** All four
+  budgets sit below the ROC convex hull; three of the four gains evaporate on the later days.
+  The one that survives is worth +1.23 points and **the project declines it**, because a per-flow
+  coin changes 0.67% of verdicts between runs and two other components exist to catch exactly
+  that ([`reports/hull.md`](reports/hull.md)).
+- **A holdout is burned by being asked to choose, not by being read.** The sealed split is read
+  103 times from 98 modules. Selecting among *indistinguishable* candidates costs +0.0093 PR-AUC
+  and leaves you with a detector worse than the one you replaced; selecting among *genuinely
+  different* ones costs nothing and finds six points. Thresholdout fails twice — it cannot debias
+  an argmax, and a temporal split is not exchangeable ([`reports/reuse.md`](reports/reuse.md)).
+- **The README quoted twelve numbers no report contains.** Now a CI gate, with numeric rather
+  than textual matching (a quote of `2.31` asserts the report *rounds* to 2.31) because the first
+  version cried wolf at roundings. Its injection harness corrected the gate, then corrected
+  itself: it had reported 100% detection by asking whether a token still verified *after being
+  replaced* ([`reports/claims.md`](reports/claims.md)).
+- **The false-positive budget is decided by nine flows.** At the tightest budget nine benign flows
+  clear the threshold, so the realised rate is known to ±90% of itself, and detection there needs
+  **1.0 points** to be resolvable. Pairing a comparison narrows its interval **2.6×** — and
+  several of this project's own published differences sit at or below the bar
+  ([`reports/power.md`](reports/power.md)).
+
+And one that runs them all at once. A **2⁴ factorial** finds the coverage promise already broken
+before any stressor is applied with no monitor watching; evasion costing 31% of detection while
+every monitor stays silent; a prevalence change tripping an alarm with nothing wrong; and the
+false-positive budget never breached because every failure *lowers* the scores. No compound
+break — kept as a negative — but **75% of the monitor interactions are negative**: responses
+saturate rather than stack, so concurrent failures are less visible than separate ones
+([`reports/composition.md`](reports/composition.md)).
+
 ## Stop 16 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own

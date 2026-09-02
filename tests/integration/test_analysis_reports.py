@@ -1232,3 +1232,55 @@ def test_bandit_report_is_written(prepared: Settings) -> None:
     text = out.read_text(encoding="utf-8").lower()
     assert out.exists() and "linucb" in text
     assert "alert budget" in text and "regret exponent" in text
+
+
+@pytest.mark.slow
+def test_hull_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.hull import run_hull_report
+
+    prepared.hull.budgets = [0.01, 0.05]
+    prepared.hull.threshold_probabilities = [0.1, 0.5]
+    prepared.hull.skew_points = 21
+    out = run_hull_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "convex hull" in text
+    assert "net benefit" in text and "cost curve" in text
+
+
+@pytest.mark.slow
+def test_power_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.power import run_power_report
+
+    prepared.power.resamples = 20
+    prepared.power.permutations = 20
+    prepared.power.budgets = [0.01]
+    out = run_power_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "smallest detectable difference" in text
+    assert "paired" in text and "permutation" in text
+
+
+@pytest.mark.slow
+def test_composition_report_is_written(prepared: Settings) -> None:
+    from netsentry.robustness.composition import run_composition_report
+
+    prepared.composition.psi_bins = 5
+    out = run_composition_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "factorial" in text
+    # All sixteen cells must be present, or the design has silently lost a combination.
+    assert text.count("| evasion") >= 1 and "nothing wrong" in text
+
+
+@pytest.mark.slow
+def test_reuse_report_is_written(prepared: Settings) -> None:
+    from netsentry.evaluation.reuse import run_reuse_report
+
+    prepared.reuse.rounds = 3
+    prepared.reuse.candidates_per_round = 3
+    prepared.reuse.bootstrap_resamples = 20
+    prepared.reuse.query_budget = 4
+    out = run_reuse_report(prepared)
+    text = out.read_text(encoding="utf-8").lower()
+    assert out.exists() and "thresholdout" in text
+    assert "indistinguishable" in text and "sealed" in text

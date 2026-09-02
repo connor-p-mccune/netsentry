@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.21.0`.** The build plan in
+**Released `v0.22.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and eighteen post-release waves build on top — the
+tested, and committed, and nineteen post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -121,8 +121,30 @@ refused, and the confidentiality price measured at **95.5% of the model's intern
 recovered from 400 certificates**; and **private inference**, a two-party secret-sharing protocol
 built from scratch that scores a flow in **38 KB and one round** without either side seeing the
 other's secret, alongside the malicious-client attack that reads the whole model out in 1,217
-queries because the server cannot check that the thing it is multiplying is an input).
-`make check` is green (lint + type-check + **1,722 passing tests**, property-based invariants and a
+queries because the server cannot check that the thing it is multiplying is an input), and the
+**instrument wave** (six studies that barely touch the classifier, auditing the measuring
+apparatus instead — and four of them found a defect in this project rather than in the
+literature: **the API leaks its verdict in the length of its reply** at AUC 1.000, free and
+passive, past every query-side defence, with padding the only rung of a six-rung fix ladder that
+closes it; **the seed is not enough and what it fails to pin does not change the model** — the
+thread count moves the bytes and nothing else, so a bundle rebuilt on another machine fails
+`netsentry verify` while being the same detector, which is why `provenance` now records a
+behavioural digest beside the file hash; **every deployed operating point is dominated by a coin**
+but three of the four gains evaporate on the later days, and the surviving +1.23 points is
+declined because a per-flow coin changes 0.67% of verdicts between runs; **a holdout is burned by
+being asked to choose, not by being read** — the sealed split is read 103 times, and selecting
+among candidates it cannot distinguish costs +0.0093 PR-AUC while leaving a *worse* detector than
+the one replaced, where the same search over genuinely different candidates costs nothing;
+**the README quoted twelve numbers no report contains**, now a CI gate whose injection harness
+corrected the gate and then corrected itself, having first reported 100% detection by asking
+whether a token still verified after being replaced; and **the false-positive budget is decided by
+nine flows**, so it is known to ±90% of itself, a difference in detection there needs a full
+point to be resolvable, pairing a comparison narrows it 2.6×, and several of this project's own
+published differences sit at or below that bar. A seventh runs the failures *together* — a 2⁴
+factorial finding the coverage promise already broken before any stressor, evasion costing 31% of
+detection with every monitor silent, a prevalence change tripping an alarm with nothing wrong, and
+**75% of the monitor interactions negative**, because responses saturate rather than stack).
+`make check` is green (lint + type-check + **1,827 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise

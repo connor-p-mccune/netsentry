@@ -32,15 +32,15 @@ Matching is numeric rather than textual, and getting that right took three passe
 
 | README line | number | section | linked report |
 |---|---|---|---|
-| 344 | `8.5%` | Headline results | evaluation |
-| 344 | `4.3%` | Headline results | evaluation |
-| 345 | `0.537` | Headline results | evaluation |
-| 1062 | `0.59` | One perturbation, shipped once | transport, universal |
-| 1202 | `0.83` | Explaining the anomaly flag (why is this flow abnormal?) | anomaly_explain |
-| 1364 | `12.7%` | Which Shapley value does the API ship? | shap_estimand |
-| 2163 | `0.19` | Budgeted hyperparameter search, and the premises underneath it | multifidelity |
-| 2341 | `0.017` | Deep tabular models vs the trees (the claim, checked) | deep_tabular |
-| 2366 | `0.054` | Training for the operating point (partial AUC) | operating_point |
+| 366 | `8.5%` | Headline results | evaluation |
+| 366 | `4.3%` | Headline results | evaluation |
+| 367 | `0.537` | Headline results | evaluation |
+| 1084 | `0.59` | One perturbation, shipped once | transport, universal |
+| 1224 | `0.83` | Explaining the anomaly flag (why is this flow abnormal?) | anomaly_explain |
+| 1386 | `12.7%` | Which Shapley value does the API ship? | shap_estimand |
+| 2185 | `0.19` | Budgeted hyperparameter search, and the premises underneath it | multifidelity |
+| 2363 | `0.017` | Deep tabular models vs the trees (the claim, checked) | deep_tabular |
+| 2388 | `0.054` | Training for the operating point (partial AUC) | operating_point |
 
 Three things end up here and none of them is a wrong number. Most are legitimate **cross-references** -- a section comparing two studies quotes the other one's figure. Some are **derived**: the README states a difference the report leaves the reader to compute, like the tree's `+0.017` between two sample sizes the report gives as 0.520 and 0.537. And a few sit in sections linking several reports, only one of which states them.
 

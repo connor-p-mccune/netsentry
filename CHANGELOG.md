@@ -6,6 +6,8 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-08-31 — the instrument wave
+
 ### Added
 - **Compositional failure** (`netsentry composition`, `netsentry/robustness/composition.py`):
   every safeguard here was validated with one thing wrong at a time, which measures main effects

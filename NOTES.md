@@ -2737,6 +2737,145 @@ broken one. Three of the four carry injection harnesses for exactly that reason.
 - **`np.random.Generator.choice` over a weighted list is not coverage.** If a rare draw is
   load-bearing, allocate it and shuffle instead of sampling and hoping.
 
+## Wave 22 — the instrument wave (v0.22.0)
+
+Six studies, and a thread I noticed only halfway through: every one of them audits an
+*instrument* rather than a model. What the API leaks in the length of its reply, whether a seed
+pins what the manifest hashes, whether a threshold is even the right shape of rule, how many
+questions the holdout has been asked, whether the README still says what the reports say, how big
+a difference has to be before it means anything, and whether the monitors can see two failures at
+once. The model is barely touched. The subject is the measuring apparatus.
+
+That turned out to be where the defects were. Four of the six found something wrong in the
+project itself rather than in the literature: a free verdict oracle in the API contract, a
+manifest that breaks on a machine with a different core count, twelve stale numbers in the
+README, and a coverage promise that was already broken before any stressor was applied.
+
+**The pattern worth keeping: a study that measures its own instrument finds bugs in the study.**
+Three of the six found a defect in their own first implementation, and in every case the giveaway
+was a number that was too clean. A frontier whose detection rate equalled its false-positive
+rate. A checker that caught 100% of injected faults. A separation score of 1.000 on a constant
+signal. **Perfect is a symptom.**
+
+### side_channel: the defences were all on the wrong side of the door
+
+- Every adversary defence here is query-side — an API key, a rate limit, a query counter — and
+  each assumes the attacker learns the verdict by being told it. The verdict is recoverable from
+  the reply's **length** at AUC 1.000, on every endpoint configuration, for free.
+- **No timing channel, for an instructive reason:** SHAP runs unconditionally and costs a quarter
+  of a second, so the conditional work hides underneath the unconditional work. An expensive
+  constant-time step is an accidental mitigation.
+- The fix ladder is the substance. Five of the six rungs do nothing, because the leak is not one
+  field but the *shape* of the response, and padding is the only rung that closes it.
+- **`threshold_accuracy` scored cuts inside tie groups** and reported perfect separation on a
+  constant signal. A cut that cannot be realised by any threshold is not a cut.
+
+### determinism: byte and behavioural reproducibility are different properties
+
+- Three mechanisms here hash a run and call it reproducible. Changing one thing at a time: row
+  order does not matter, disk round-trip does not matter, batch size does not matter, and the
+  **thread count does — but only to the bytes.** Every variant scores bit-for-bit identically.
+- `n_jobs: -1` is not a configuration value; it is a lookup resolved from the host, and it lands
+  in the serialised model as `[num_threads: 14]`. A bundle rebuilt on a different machine fails
+  `netsentry verify` while being the same detector.
+- The attestation root, built a wave earlier for an unrelated reason, is stable exactly where the
+  file hash is not. **A commitment to the computation is more portable than one to the artifact.**
+- Shipped the fix with the study: `provenance` now records a behavioural digest beside the file
+  hash, so the manifest can answer both questions instead of conflating them.
+
+### hull: the deployed cut is dominated, and the gain is mostly not real
+
+- All four budgets sit below the ROC convex hull on validation. Three of the four gains evaporate
+  on the later days — they were wobbles in a finite ROC — and only the tightest budget delivers,
+  at +1.23 points.
+- **The project declines it anyway.** A per-flow coin changes 0.67% of verdicts between runs, and
+  the metamorphic oracle and the load-time canary both exist to catch exactly that. Knowing the
+  size of what is being given up is the result.
+- **The first hull popped on the wrong turn and returned the lower hull, which is the diagonal.**
+  The giveaway was a "frontier" whose detection rate equalled its false-positive rate at every
+  budget — which is what a coin with no model achieves. A frontier that agrees with chance is not
+  a subtle error.
+
+### reuse: a holdout is burned by being asked to choose, not by being read
+
+- The rules say the test set is touched once. It is read 103 times, from 98 modules. The count is
+  not the finding; what selecting on it costs is.
+- Two pools, because harm and power are different questions. Among **indistinguishable**
+  candidates 400 questions cost +0.0093 PR-AUC of optimism and the chosen detector is *worse*
+  than the one it replaced. Among **genuinely different** candidates the same 400 questions cost
+  nothing and find six points of real PR-AUC.
+- **The first attempt measured nothing**, twice. A pool with a privileged incumbent is not
+  exchangeable, so the winner's curse had nowhere to come from; and jittered candidates that are
+  all strictly worse than the base can never win, so the naive analyst adopted zero of 400.
+- **Thresholdout fails here twice, instructively.** With an exchangeable reference it protects
+  the holdout but not the *maximum* taken over its answers — a mechanism bounds per-query error
+  and cannot debias an argmax. Pointed at validation, its budget is gone in 20 questions, because
+  a temporal split is not exchangeable by construction.
+
+### claims: the checker that corrected its own gate
+
+- 12 numbers in the README came from no report at all — a latency table quoting a run of the
+  batching study whose config had since changed. Fixed from the current report, and gated at 0.
+- **Matching had to be numeric, not textual, and it took three passes.** `2.31` does not assert
+  the report says exactly 2.31; it asserts the report says something that *rounds* to 2.31. A
+  report saying `0.027` where the README says `2.7%` is the same fact. Both were added because
+  the first version flagged roundings and unit conversions as faults, and **a checker that cries
+  wolf is a checker somebody switches off.**
+- The injection harness changed the gate: a drift landing in the milder class used to leave the
+  build green, so both counts are now pinned.
+- Then it corrected itself. It reported **100% detection** by asking whether the *original* token
+  still verified after being replaced — which no replaced token can. Asked properly: 88%, and the
+  missing 12% is the real blind spot. **A harness that has not been checked against itself
+  reports the flattering number.**
+- Runs in the quality job beside the linters, not with the studies, because it reads the committed
+  reports and must not run after a job that has regenerated them from a tiny synthetic dataset.
+
+### power: the budget is decided by nine flows
+
+- At the tightest budget the deployed threshold lets **nine** benign flows through out of 18,720.
+  That is what the realised false-positive rate is measured from, so it is known to ±90% of
+  itself. **Tightening a budget lowers not just the detection rate but the precision with which
+  the detection rate is known.**
+- **Pairing is not a refinement.** The paired interval around a model-versus-challenger difference
+  is 2.6x narrower than the unpaired one. Reading two overlapping marginal intervals and
+  concluding "no significant difference" is wrong by a measurable factor.
+- The challenger is a logistic regression, which *beats* the deployed forest here — a result the
+  leaderboard study already reports. A challenger built to lose would have tested nothing.
+- Several of this project's own published differences sit at or below the bar. `deep_tabular`'s
+  +0.0170 PR-AUC clears a 0.0168 bar by a margin of 1.01 to one. Those numbers are not wrong; they
+  are at the resolution of the instrument that produced them.
+
+### composition: the monitors saturate
+
+- A 2^4 factorial. Before any stressor is applied, the coverage promise is already broken —
+  59.7% against 90% — and neither monitor fires.
+- **Evasion is the stressor the monitors cannot see:** 31% of the detection rate gone, feature PSI
+  0.18 and score PSI 0.07, both under the line. A monitor calibrated for a major population shift
+  is the wrong instrument for an adversary trying not to cause one.
+- **The alarm that does fire, fires for the wrong reason:** thinning attacks to a 1% base rate
+  changes no model, threshold or feature, and trips score PSI anyway.
+- The false-positive budget is never breached in any cell, because every stressor lowers the
+  scores. **A budget read from the top of the score distribution looks healthiest exactly when
+  the distribution has collapsed.**
+- No compound break — kept as a negative result — but **75% of the monitor interactions are
+  negative.** Responses saturate rather than stack, so the moment a system is most likely to be
+  breaking is the moment its monitors are least able to register the difference.
+- Evasion lowers detection at the deployed cut and *raises* coverage at the conformal cut, because
+  compressing scores toward the middle helps a low threshold and hurts a high one. **Whether an
+  attack works is a property of the operating point, not only of the attack.**
+
+### Process notes
+
+- **A report whose input is the README it is quoted in settles in one pass**, because the totals
+  are integers and integers are not claims. Worth knowing before writing the loop.
+- **Deriving one path from another's parents breaks under an override.** `reports_dir.parent.parent`
+  as a repo root is fine until a scratch overlay redirects the reports; config paths are
+  repo-relative and should be resolved as such.
+- **A gate whose budget is derived from the run it is judging passes by construction.** The
+  numbers belong in config so raising one is a visible edit.
+- **mypy widens a loop variable to the union of every loop in the function.** Two `for row in ...`
+  loops over different record types in one function is an error at the second one; rename.
+
 ## Wave 21 — the unexamined-premise wave (v0.21.0)
 
 Seven studies. Four of them point at an assumption this project (or the field) had been running on
