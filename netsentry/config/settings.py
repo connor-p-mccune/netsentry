@@ -2042,6 +2042,21 @@ class PublishedClaimConfig(BaseModel):
     metric: str
 
 
+class ThreatModelConfig(BaseModel):
+    """Is `robustness.controllable_features` the right list?
+
+    Every robustness number here is conditional on that list, and it was written once and
+    inherited since. This derives each of the 77 columns' controllability from how CICFlowMeter
+    computes it -- forward, backward, joint, environmental -- compares that with the shipped list,
+    and re-runs the mimicry attack under each threat model to price the difference. It then
+    measures **flow splitting**, a capability a per-flow perturbation budget cannot express at
+    all: no feature moves, the session is simply reported as several smaller records."""
+
+    budget: float = 0.01  # the operating point the attack is judged at
+    mimicry_fraction: float = 0.5  # how far attacks move toward the benign centroid
+    split_factors: list[int] = Field(default_factory=lambda: [1, 2, 4, 8, 16, 32])
+
+
 class CalibrationAttackConfig(BaseModel):
     """Poison the threshold instead of the model.
 
@@ -3317,6 +3332,7 @@ class Settings(BaseSettings):
     composition: CompositionConfig = Field(default_factory=CompositionConfig)
     consistency: ConsistencyConfig = Field(default_factory=ConsistencyConfig)
     calibration_attack: CalibrationAttackConfig = Field(default_factory=CalibrationAttackConfig)
+    threat_model: ThreatModelConfig = Field(default_factory=ThreatModelConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

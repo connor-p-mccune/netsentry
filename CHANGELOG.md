@@ -7,6 +7,23 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Threat-model audit** (`netsentry threatmodel`, `netsentry/robustness/threat_model.py`):
+  three studies share `robustness.controllable_features`, so every robustness number is
+  conditional on it -- and it had never been derived from anything. Classifying all 77 columns by
+  which side of the conversation produces their packets makes the list **wrong 24 ways**: 12
+  backward features it grants that a client-side attacker cannot set without already owning the
+  server, and 12 forward features it omits that they plainly can. Not a subset or a superset --
+  a different set. **The published evasion result depends on the over-claim**: restricted to the
+  forward direction the identical mimicry attack takes detection from 20.7% to 23.8%, *higher*
+  than doing nothing, because moving half a flow toward benign traffic produces a record that
+  looks benign in one direction and hostile in the other -- a combination absent from training.
+  The second half measures **flow splitting**, a capability a per-flow perturbation budget cannot
+  express at all: delivering a session as 32 shorter ones perturbs no feature and only changes the
+  accounting. It backfires too -- detection rises to 30.2%, 46% above the undisguised attack at an
+  unchanged false-positive rate, monotonically, so the best available split is not to split --
+  because this dataset's attacks *are* short low-volume flows and fragmenting moves toward them.
+  Writing it corrected a modelling error of its own: flag counts do not divide when a session
+  splits, since each fragment is its own TCP connection carrying its own SYN.
 - **Calibration poisoning** (`netsentry calibrationattack`,
   `netsentry/robustness/calibration_attack.py`): every poisoning study here attacks the training
   data, which assumes the thing worth corrupting is the model. It is not -- every operational

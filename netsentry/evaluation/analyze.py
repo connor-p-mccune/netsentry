@@ -119,6 +119,7 @@ from netsentry.robustness.poisoning import run_poisoning_report
 from netsentry.robustness.report import run_robustness_report
 from netsentry.robustness.sanitize import run_sanitize_report
 from netsentry.robustness.strategic import run_strategic_report
+from netsentry.robustness.threat_model import run_threat_model_report
 from netsentry.robustness.universal import run_universal_report
 from netsentry.robustness.verify_trees import run_verify_trees_report
 from netsentry.robustness.watermark import run_watermark_report
@@ -171,6 +172,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Threat-model audit",
+        "which of the 77 features an attacker can physically set, derived from how each is "
+        "computed rather than asserted -- plus flow splitting, a capability a per-flow "
+        "perturbation budget cannot express",
+        "threat_model.md",
+        run_threat_model_report,
     ),
     (
         "Calibration poisoning",

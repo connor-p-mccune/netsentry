@@ -6,6 +6,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 |---|---|---|
 | Operational evaluation | PR-AUC, TPR@FPR, per-class, calibration | [open](evaluation.md) |
 | H-measure | a coherent, cost-explicit alternative to ROC-AUC (Hand 2009) | [open](hmeasure.md) |
+| Threat-model audit | which features an attacker can physically set, derived from how each is computed rather than asserted, plus the flow-splitting capability the perturbation budget cannot express | [open](threat_model.md) |
 | Calibration poisoning | the threshold is a quantile of benign validation scores, so its breakdown point is the false-positive budget itself: the tighter the budget, the cheaper the attack | [open](calibration_attack.md) |
 | Cross-report consistency | every report states the incumbent's score; do they agree, and which methodology knob explains each value | [open](consistency.md) |
 | Compositional failure | every safeguard was validated with one thing wrong: a 2^4 factorial over shift, outage, evasion and prevalence asks whether the guarantees and their monitors survive two at once | [open](composition.md) |

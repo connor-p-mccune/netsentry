@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def threatmodel(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Audit which features an attacker can actually change, and what the list gets wrong."""
+    from netsentry.robustness.threat_model import run_threat_model_report
+
+    settings = _load(config, override)
+    out = run_threat_model_report(settings)
+    logger.info("Threat-model report ready", extra={"path": str(out)})
+
+
+@app.command()
 def calibrationattack(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

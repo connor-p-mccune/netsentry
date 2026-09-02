@@ -2885,6 +2885,52 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## Which features can an attacker actually change?
+
+```bash
+python -m netsentry.cli threatmodel   # -> docs/reports/threat_model.md
+```
+
+The [evasion study](docs/reports/evasion.md), the [interval
+verifier](docs/reports/verify_trees.md) and the [universal
+perturbation](docs/reports/universal.md) share one list: `robustness.controllable_features`. Every
+robustness number here is conditional on that list, and it has never been derived from anything —
+it was written once and inherited since.
+
+Deriving it is not a matter of opinion. An attacker sending traffic *to* a service occupies one
+side of the conversation: they set their own packet sizes, inter-arrival times, flags and window
+sizes. They do not set the server's. **The list is wrong 24 ways out of 77** — 12 backward-direction
+features it grants that a client-side attacker cannot set, and 12 forward features it omits that
+they plainly can. It is not a subset or a superset of the honest answer. It is a different set.
+
+| threat model | features | detection after mimicry | vs no attack |
+|---|---|---|---|
+| the shipped list | 39 | 14.3% | −31% |
+| **forward only** (what the attacker sends) | 24 | **23.8%** | **+15%** |
+| forward and joint | 54 | 14.4% | −30% |
+| every feature (an upper bound, not a threat) | 77 | 15.7% | −24% |
+
+**The published evasion result depends on the over-claim.** Restricted to the forward direction,
+the identical attack makes attacks *more* detectable than doing nothing. Moving only half of a
+flow toward benign traffic produces a record that looks benign in one direction and like an attack
+in the other — a combination that appears nowhere in training, which a tree ensemble scores
+however its splits happen to fall. **Partial mimicry is not a weaker full mimicry; it is a
+different input.**
+
+The second half measures a capability the threat model does not mis-specify but **omits entirely**.
+Every attack here perturbs one flow; an attacker who delivers a session as 32 shorter ones
+perturbs nothing and changes only the accounting — invisible to a per-flow perturbation budget.
+It backfires too: detection rises to **30.2%**, 46% *above* the undisguised attack at an unchanged
+false-positive rate, monotonically, so **the best available split is not to split**. The reason is
+checkable: this dataset's attacks *are* short low-volume flows, so fragmenting moves toward them.
+The folklore that splitting hides you assumes a detector keying on volume crossing a threshold; a
+model trained on scans keys on volume being **low**.
+
+Three results, all saying the same thing: the threat model was written from intuition rather than
+derived. The published robustness numbers are pessimistic about this attacker — the safe direction,
+but nobody had established it, and **a threat model that is accidentally conservative is not a
+threat model**.
+
 ## Poisoning the threshold instead of the model
 
 ```bash
@@ -3057,7 +3103,7 @@ is the report that says so.
 python -m netsentry.cli claims   # -> docs/reports/claims.md  (a CI gate)
 ```
 
-This README quotes **654** computed numbers, each one a promise that running one command
+This README quotes **659** computed numbers, each one a promise that running one command
 reproduces it. Nothing had ever checked that promise, and it is the kind that decays silently: a
 study's config changes, its report is regenerated, and the prose that quoted it three waves ago
 keeps its old figure. The report stays right, the README goes wrong, and no test fails.
@@ -3069,7 +3115,7 @@ them fixed: unsourced claims are budgeted at **0** and the milder class at **9**
 
 | verdict | claims | what it means |
 |---|---|---|
-| **verified** | 645 | the section's own report states this number |
+| **verified** | 650 | the section's own report states this number |
 | **traceable** | 9 | real and regenerable, but from a different study — cross-references and arithmetic the README performs |
 | **unsourced** | 0 | in no report at all; the class that fails the build |
 
