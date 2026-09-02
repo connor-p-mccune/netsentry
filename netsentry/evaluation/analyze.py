@@ -26,6 +26,7 @@ from netsentry.evaluation.bandit import run_bandit_report
 from netsentry.evaluation.baserate import run_base_rate_report
 from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
+from netsentry.evaluation.consistency import run_consistency_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.data_value import run_data_value_report
 from netsentry.evaluation.defer import run_defer_report
@@ -169,6 +170,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Cross-report consistency",
+        "every report states what the incumbent scores; this checks whether they agree, "
+        "and "
+        "reproduces the spread by turning one methodology knob at a time",
+        "consistency.md",
+        run_consistency_report,
     ),
     (
         "Compositional failure",

@@ -2885,6 +2885,48 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## Do the reports agree with each other?
+
+```bash
+python -m netsentry.cli consistency   # -> docs/reports/consistency.md
+```
+
+A great many reports here open by saying what the deployed model scores — a baseline to beat, an
+incumbent to compare against, a control arm. The [claims gate](docs/reports/claims.md) checks each
+number against the report a reader is sent to. Nothing checked whether the reports agree **with
+one another**. A naive harvest says they badly do not: **7 different answers across 12 reports**.
+
+**Four of the seven are not disagreements at all**, and establishing that is most of the work.
+Two are ROC-AUC, stated as "AUC" a few words from a PR-AUC in the same sentence — different
+metrics, one insensitive to prevalence and one not. Two belong to the far side of a comparison
+(`rises from 0.433 (static) to 0.544 (retrained)`), where the qualifier owning the number
+*follows* it. **Each is a trap a reader falls into as readily as a regular expression does**, and
+the first version of this study fell into all of them, which is why the rejections are published
+rather than quietly applied.
+
+What survives is three values spanning **0.021** PR-AUC, and a ladder of one-knob recomputations
+says what produces them:
+
+| configuration | PR-AUC | vs canonical |
+|---|---|---|
+| the canonical configuration | 0.528 | — |
+| trained on 12,000 rows | 0.530 | +0.003 |
+| 60 trees instead of 600 | 0.538 | +0.011 |
+| scored on 33% of the later days | 0.512 – 0.544 | range over draws |
+| **averaged over 6 time-ordered batches** | 0.434 | **−0.094** |
+| **one capture day** | 0.648 | **+0.120** |
+
+**It is not how the model was trained that makes the reports differ; it is what population it was
+scored on.** Cutting the training set or thinning the ensemble moves the number by about what the
+[resolution study](docs/reports/power.md) says a difference needs to be worth reporting at all.
+Changing *what gets scored* moves it ten times further. A study documenting its hyperparameters
+and not its evaluation population has documented the part that does not matter.
+
+Two design choices keep the ladder from being a curve that fits everything. A rung whose knob is
+random is an **interval**, not a point. And attribution takes the **narrowest** covering rung,
+then reports how many rungs covered the value at all — one is *pinned*, several is *bracketed*,
+none is the finding. Here: one pinned, two bracketed, none unexplained.
+
 ## Do the safeguards compose?
 
 ```bash

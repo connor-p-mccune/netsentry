@@ -2042,6 +2042,25 @@ class PublishedClaimConfig(BaseModel):
     metric: str
 
 
+class ConsistencyConfig(BaseModel):
+    """Do the reports agree with each other about what the deployed model scores?
+
+    Many reports open by stating the incumbent's PR-AUC as a baseline to beat. The claims gate
+    checks each number against its own report; nothing checks the reports against one another.
+    This harvests every stated incumbent score, then reproduces the spread by turning one knob at
+    a time from the canonical configuration -- so a difference can be attributed to a methodology
+    choice rather than left looking like a result."""
+
+    plausible_low: float = 0.40  # the band a PR-AUC for this model plausibly occupies; outside
+    plausible_high: float = 0.70  # it, the harvester is collecting some other quantity
+    tolerance: float = 0.005  # how close a recomputation must come to count as an explanation
+    capped_rows: int = 12000  # the training cap an expensive comparison arm imposes
+    thin_trees: int = 60  # the ensemble a study that refits repeatedly can afford
+    evaluated_fraction: float = 0.33  # the share of the split a study that seals the rest uses
+    subset_draws: int = 25  # a random-subset rung is an interval, not a point
+    batches: int = 6  # time-ordered batches, for the prequential construction
+
+
 class CompositionConfig(BaseModel):
     """Every safeguard here was validated with one thing wrong. Do they compose?
 
@@ -3274,6 +3293,7 @@ class Settings(BaseSettings):
     claims: ClaimsConfig = Field(default_factory=ClaimsConfig)
     power: PowerConfig = Field(default_factory=PowerConfig)
     composition: CompositionConfig = Field(default_factory=CompositionConfig)
+    consistency: ConsistencyConfig = Field(default_factory=ConsistencyConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

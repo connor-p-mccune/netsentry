@@ -198,6 +198,10 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+consistency:
+  capped_rows: 400
+  thin_trees: 20
+  batches: 3
 composition:
   psi_bins: 5
 power:

@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def consistency(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Check whether the reports agree with each other about the deployed model's score."""
+    from netsentry.evaluation.consistency import run_consistency_report
+
+    settings = _load(config, override)
+    out = run_consistency_report(settings)
+    logger.info("Consistency report ready", extra={"path": str(out)})
+
+
+@app.command()
 def composition(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

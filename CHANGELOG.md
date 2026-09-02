@@ -6,6 +6,25 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+### Added
+- **Cross-report consistency** (`netsentry consistency`, `netsentry/evaluation/consistency.py`):
+  the claims gate checks each quoted number against its own report; nothing checked whether the
+  reports agree with **one another**. A naive harvest finds **7 different answers across 12
+  reports** for what reads like one quantity -- and **4 of them are not disagreements at all**.
+  Two are ROC-AUC stated as "AUC" a few words from a PR-AUC in the same sentence; two belong to
+  the far side of a comparison, where the qualifier owning the number follows it rather than
+  preceding it. Each is a trap a reader falls into as readily as a regular expression does, and
+  the first version of this study fell into all of them, so the rejections are published rather
+  than quietly applied. What survives is three values spanning 0.021 PR-AUC, and a ladder of
+  one-knob recomputations attributes them: **it is not how the model was trained that makes the
+  reports differ, it is what population it was scored on** -- capping the training rows or
+  thinning the ensemble moves the score by about the resolution study's minimum detectable
+  effect, while averaging over time-ordered batches costs 0.094 and scoring a single capture day
+  moves it 0.120. Two choices keep the ladder honest: a random knob is an interval rather than a
+  point, and attribution takes the narrowest covering rung and then reports how many rungs
+  covered the value at all -- pinned, bracketed, or unexplained -- because an explanation that
+  fits every value explains none.
+
 ## [0.22.0] — 2026-08-31 — the instrument wave
 
 ### Added
