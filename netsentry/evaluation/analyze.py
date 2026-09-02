@@ -106,6 +106,7 @@ from netsentry.monitoring.slo import run_slo_report
 from netsentry.monitoring.streaming import run_streaming_report
 from netsentry.monitoring.transport import run_transport_report
 from netsentry.robustness.backdoor import run_backdoor_report
+from netsentry.robustness.calibration_attack import run_calibration_attack_report
 from netsentry.robustness.certify import run_certify_report
 from netsentry.robustness.composition import run_composition_report
 from netsentry.robustness.degradation import run_degradation_report
@@ -170,6 +171,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Calibration poisoning",
+        "the deployed threshold is a quantile of benign validation scores, so its breakdown "
+        "point is the false-positive budget itself -- the tighter the budget, the cheaper "
+        "the attack; with a trimmed and a median-of-days defence priced both ways",
+        "calibration_attack.md",
+        run_calibration_attack_report,
     ),
     (
         "Cross-report consistency",

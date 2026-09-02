@@ -2042,6 +2042,28 @@ class PublishedClaimConfig(BaseModel):
     metric: str
 
 
+class CalibrationAttackConfig(BaseModel):
+    """Poison the threshold instead of the model.
+
+    Every poisoning study here attacks the training data. The deployed threshold is a quantile of
+    benign *validation* scores, and a quantile's breakdown point is its own tail mass -- so the
+    tighter the false-positive budget, the smaller the share of the calibration set an attacker
+    needs to own. This sweeps injection fraction against detection loss for a blind and an
+    informed attacker, asks whether the drift monitors notice, and prices a trimmed quantile and
+    a median-of-days rule on clean data as well as poisoned."""
+
+    budget: float = 0.01  # the false-positive budget whose threshold is under attack
+    fractions: list[float] = Field(
+        default_factory=lambda: [0.0, 0.001, 0.0025, 0.005, 0.0075, 0.01, 0.02, 0.05]
+    )
+    budget_ladder: list[float] = Field(default_factory=lambda: [0.05, 0.01, 0.005, 0.001])
+    defence_fraction: float = 0.02  # the poisoning level the defences are judged at
+    trim: float = 0.02  # how much of the top the trimmed quantile discards
+    min_day_flows: int = 50  # a day with fewer flows cannot calibrate its own threshold
+    psi_bins: int = 10
+    psi_threshold: float = 0.2  # the "major shift" line the drift study already uses
+
+
 class ConsistencyConfig(BaseModel):
     """Do the reports agree with each other about what the deployed model scores?
 
@@ -3294,6 +3316,7 @@ class Settings(BaseSettings):
     power: PowerConfig = Field(default_factory=PowerConfig)
     composition: CompositionConfig = Field(default_factory=CompositionConfig)
     consistency: ConsistencyConfig = Field(default_factory=ConsistencyConfig)
+    calibration_attack: CalibrationAttackConfig = Field(default_factory=CalibrationAttackConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

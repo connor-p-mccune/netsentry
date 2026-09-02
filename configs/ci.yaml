@@ -198,6 +198,9 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+calibration_attack:
+  fractions: [0.0, 0.01, 0.05]
+  min_day_flows: 5
 consistency:
   capped_rows: 400
   thin_trees: 20

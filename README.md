@@ -2885,6 +2885,49 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## Poisoning the threshold instead of the model
+
+```bash
+python -m netsentry.cli calibrationattack   # -> docs/reports/calibration_attack.md
+```
+
+Every poisoning study here attacks the **training** data — [flipped labels and a contaminated
+benign pool](docs/reports/poisoning.md), a [planted backdoor](docs/reports/backdoor.md) — and each
+is answered by a defence that inspects the training set. They share an assumption nobody wrote
+down: that the thing worth corrupting is the model.
+
+It is not. Every operational number here comes from a threshold, and that threshold is a
+**quantile of benign validation scores**. A quantile's breakdown point is the mass in its own
+tail — which is exactly the false-positive budget. **The tighter the budget, the cheaper the
+attack.**
+
+| false-positive budget | flows deciding the realised rate | flows an attacker must own | detection it buys |
+|---|---|---|---|
+| 5.0% | 820 | **281** | 29.3% |
+| 1.0% | 153 | **56** | 20.7% |
+| 0.1% | 9 | **6** | 9.0% |
+
+**Six flows** break the operating point this project leads with. The arithmetic holds exactly: at
+1.0% of the calibration set an informed attacker takes detection from 20.7% to **2.3%**, and one
+step further to zero. A *blind* attacker — no knowledge of the model or the threshold, just their
+own traffic present while a detector is being tuned — reaches 15.7% with the same 56 flows. And
+**nothing notices**: score PSI peaks at 0.017 against a 0.2 alarm line, because a few hundred
+individually unremarkable flows barely move a binned distribution.
+
+Two defences, each priced on clean data as well as under attack:
+
+| calibration rule | clean FPR (budget 1.0%) | attacker spread across days | attacker confined to one |
+|---|---|---|---|
+| the deployed rule (plain quantile) | 0.82% | 0% kept | 0% kept |
+| trimmed quantile (drop the top 2%) | **1.71%** | 34% kept | 34% kept |
+| median of per-day thresholds | 0.79% | **0% kept** | **94% kept** |
+
+**The trimmed quantile buys uniform, mediocre robustness at a permanent price** — 71% over its
+own budget on traffic nobody is attacking. **The median of per-day thresholds is free and nearly
+total against a concentrated attacker, and worthless against a patient one** who spreads the same
+flows across every day. That is not a weaker defence but a different claim, which is why the
+table is split by attacker shape rather than averaged over it.
+
 ## Do the reports agree with each other?
 
 ```bash
@@ -3014,7 +3057,7 @@ is the report that says so.
 python -m netsentry.cli claims   # -> docs/reports/claims.md  (a CI gate)
 ```
 
-This README quotes **625** computed numbers, each one a promise that running one command
+This README quotes **654** computed numbers, each one a promise that running one command
 reproduces it. Nothing had ever checked that promise, and it is the kind that decays silently: a
 study's config changes, its report is regenerated, and the prose that quoted it three waves ago
 keeps its old figure. The report stays right, the README goes wrong, and no test fails.
@@ -3026,7 +3069,7 @@ them fixed: unsourced claims are budgeted at **0** and the milder class at **9**
 
 | verdict | claims | what it means |
 |---|---|---|
-| **verified** | 616 | the section's own report states this number |
+| **verified** | 645 | the section's own report states this number |
 | **traceable** | 9 | real and regenerable, but from a different study — cross-references and arithmetic the README performs |
 | **unsourced** | 0 | in no report at all; the class that fails the build |
 

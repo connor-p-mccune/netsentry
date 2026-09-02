@@ -7,6 +7,22 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Calibration poisoning** (`netsentry calibrationattack`,
+  `netsentry/robustness/calibration_attack.py`): every poisoning study here attacks the training
+  data, which assumes the thing worth corrupting is the model. It is not -- every operational
+  number comes from a threshold, and that threshold is a **quantile of benign validation scores**.
+  A quantile's breakdown point is the mass in its own tail, which is exactly the false-positive
+  budget, so **the tighter the budget the cheaper the attack**: 281 flows to move the 5% cut, 56
+  for the 1% cut, and **6** for the 0.1% cut this project leads with. The arithmetic holds
+  exactly -- at 1% of the calibration set an informed attacker takes detection from 20.7% to 2.3%,
+  and one step further to zero -- and a *blind* attacker with no knowledge of the model or the
+  threshold, merely present while a detector is tuned, reaches 15.7% with the same 56 flows.
+  **Nothing notices**: score PSI peaks at 0.017 against a 0.2 line. Two defences, each priced on
+  clean data as well as poisoned: a trimmed quantile keeps 34% of detection against either
+  attacker shape and runs 71% over its own budget permanently, while a median of per-day
+  thresholds is free on clean data and keeps **94%** against a concentrated attacker and **0%**
+  against one who spreads the same flows across every day -- a different claim rather than a
+  weaker defence, so the table is split by attacker shape rather than averaged over it.
 - **Cross-report consistency** (`netsentry consistency`, `netsentry/evaluation/consistency.py`):
   the claims gate checks each quoted number against its own report; nothing checked whether the
   reports agree with **one another**. A naive harvest finds **7 different answers across 12

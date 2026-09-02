@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def calibrationattack(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Poison the threshold instead of the model, and price the fixes."""
+    from netsentry.robustness.calibration_attack import run_calibration_attack_report
+
+    settings = _load(config, override)
+    out = run_calibration_attack_report(settings)
+    logger.info("Calibration-attack report ready", extra={"path": str(out)})
+
+
+@app.command()
 def consistency(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
