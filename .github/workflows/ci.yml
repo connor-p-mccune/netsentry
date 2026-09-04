@@ -165,17 +165,23 @@ jobs:
           python -m netsentry.cli privateinfer -o configs/ci.yaml
       - name: Universal perturbation (fit - transfer - defend)
         run: python -m netsentry.cli universal -o configs/ci.yaml
-      - name: Contract-audit studies (sidechannel - determinism - hull)
+      - name: Instrument studies (sidechannel - determinism - hull)
         run: |
           python -m netsentry.cli sidechannel -o configs/ci.yaml
           python -m netsentry.cli determinism -o configs/ci.yaml
           python -m netsentry.cli hull -o configs/ci.yaml
+      - name: Instrument studies (reuse - power - composition)
+        run: |
           python -m netsentry.cli reuse -o configs/ci.yaml
           python -m netsentry.cli power -o configs/ci.yaml
           python -m netsentry.cli composition -o configs/ci.yaml
+      - name: Assumption audits (consistency - calibrationattack - threatmodel)
+        run: |
           python -m netsentry.cli consistency -o configs/ci.yaml
           python -m netsentry.cli calibrationattack -o configs/ci.yaml
           python -m netsentry.cli threatmodel -o configs/ci.yaml
+      - name: Assumption audits (staleness - controls)
+        run: |
           python -m netsentry.cli staleness -o configs/ci.yaml
           python -m netsentry.cli controls -o configs/ci.yaml
       - name: Slow integration tests

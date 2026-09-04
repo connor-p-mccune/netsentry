@@ -6,6 +6,8 @@ semantic versioning once released.
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-09-03 — the load-bearing-assumption wave
+
 ### Added
 - **Negative controls** (`netsentry controls`, `netsentry/evaluation/controls.py`): the leakage
   study builds leakage *up* and watches PR-AUC climb to 1.000; nothing had checked the opposite

@@ -17,9 +17,9 @@ with explainable predictions.**
 
 ## Project status
 
-**Released `v0.22.0`.** The build plan in
+**Released `v0.23.0`.** The build plan in
 [`BUILD_PROMPTS.md`](BUILD_PROMPTS.md) ran in ten phases; all ten are implemented,
-tested, and committed, and nineteen post-release waves build on top — the
+tested, and committed, and twenty post-release waves build on top — the
 ML-engineering suite (calibration, adversarial robustness, cost-sensitive
 thresholds, conformal prediction, Optuna HPO, a Prometheus/Grafana stack), the
 adaptive-operations wave (the base-rate fallacy measured, adaptive conformal,
@@ -143,8 +143,24 @@ point to be resolvable, pairing a comparison narrows it 2.6×, and several of th
 published differences sit at or below that bar. A seventh runs the failures *together* — a 2⁴
 factorial finding the coverage promise already broken before any stressor, evasion costing 31% of
 detection with every monitor silent, a prevalence change tripping an alarm with nothing wrong, and
-**75% of the monitor interactions negative**, because responses saturate rather than stack).
-`make check` is green (lint + type-check + **1,827 passing tests**, property-based invariants and a
+**75% of the monitor interactions negative**, because responses saturate rather than stack), and the **load-bearing-assumption wave** (five
+studies auditing what the instruments themselves take for granted, three of them returning
+negative results with mechanisms rather than shrugs: **four of seven apparent disagreements
+between reports are not disagreements** — two are ROC-AUC stated as "AUC" beside a PR-AUC, two are
+the far side of a comparison sentence — and what survives is explained by evaluation population
+rather than training; **the false-positive budget is its own breakdown point**, so the 0.1% cut
+this project leads with can be moved by an attacker owning six calibration flows while score PSI
+peaks at 0.017 against a 0.2 alarm line; **the threat model was wrong 24 ways out of 77** and the
+published evasion result depends on the over-claim, since restricted to features a client-side
+attacker can physically set the same mimicry attack makes attacks *more* detectable, as does flow
+splitting — a capability a per-flow perturbation budget cannot express at all; **the leakage rule
+is free on this model class**, because a gradient-boosted tree is invariant to monotone rescaling
+so 228 carried-forward transformer constants and 11 badly drifted ones cost 0.0024 PR-AUC and the
+oracle arm comes last; and **the pipeline returns chance when the signal is destroyed**, four
+negative arms landing on predictions fixed before they ran with a largest excess of +0.0036,
+against two positive arms without which a harness returning chance unconditionally would pass
+every one of them).
+`make check` is green (lint + type-check + **1,945 passing tests**, property-based invariants and a
 Hypothesis parser fuzzer included), and the full `download → prep → train → eval →
 serve` pipeline runs end-to-end on the bundled synthetic data (raw packet captures
 included, via `netsentry pcap`), followed by a **model-lifecycle layer** (noise

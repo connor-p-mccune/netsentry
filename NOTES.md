@@ -2737,6 +2737,112 @@ broken one. Three of the four carry injection harnesses for exactly that reason.
 - **`np.random.Generator.choice` over a weighted list is not coverage.** If a rare draw is
   load-bearing, allocate it and shuffle instead of sampling and hoping.
 
+## Wave 23 — the load-bearing-assumption wave (v0.23.0)
+
+Five studies, and the thread was set by the first one: **audit the assumptions the machinery
+rests on, not the model it produces.** Wave 22 audited the instruments — what the API leaks, what
+a seed pins, how noisy a metric is. This wave went one level down, to the things those
+instruments take for granted. Do the reports agree with each other? Is the calibration set
+trustworthy? Is the threat model right? Is the preprocessing current? And the one nobody had
+asked: does the pipeline return nothing when there is nothing?
+
+**Three of the five came back negative, and two of those negatives are the most useful results in
+the wave.** Flow splitting backfires. Preprocessing staleness costs nothing. Both were expected to
+go the other way, and both have mechanisms rather than shrugs behind them.
+
+The recurring methodological lesson: **an explanation that fits everything explains nothing.**
+It came up three separate times — a ladder rung wide enough to cover every value, a harness that
+reported 100% detection by asking a question no answer could fail, a defence averaged over
+attacker shapes that hid the case an operator faces. Each time the fix was the same shape: make
+the claim narrower and say how specific it is.
+
+### consistency: four of the seven disagreements were not disagreements
+
+- A naive harvest finds seven values across twelve reports for what reads like one quantity. **Two
+  are ROC-AUC** stated as "AUC" a few words from a PR-AUC; **two are the far side of a comparison**
+  where the qualifier that owns the number *follows* it.
+- The ownership rule took three attempts. Looking only backwards attributes `rises from 0.433
+  (static) to 0.544 (retrained)` to the static model; ranking by raw character distance then hands
+  `the deployed model scores 0.529, unlike the MLP` to the MLP. A rival owns a number when it sits
+  **between** the qualifier and the value, or **immediately after with no clause break**.
+- The surviving spread is explained by evaluation population, not by training: capping rows or
+  thinning the ensemble moves PR-AUC by about the minimum detectable difference; averaging over
+  batches costs 0.094 and scoring one day 0.120. **A study documenting its hyperparameters and
+  not its evaluation population has documented the part that does not matter.**
+- Attribution takes the **narrowest** covering rung and reports how many rungs covered the value
+  at all — pinned, bracketed, or unexplained. An interval rung wide enough to contain everything
+  explained everything until it didn't.
+
+### calibration_attack: the budget is its own breakdown point
+
+- Every poisoning study here attacks training data, assuming the thing worth corrupting is the
+  model. The threshold is a **quantile of benign validation scores**, and a quantile's breakdown
+  point is the mass in its own tail — which *is* the false-positive budget.
+- So **tighter budgets are cheaper to attack**: 281 flows to move the 5% cut, 56 for 1%, **six**
+  for the 0.1% cut the project leads with. The same nine-ish flows the resolution study found
+  deciding the realised rate.
+- The blind attacker — no knowledge of model or threshold, merely present while a detector is
+  tuned — reaches 15.7% detection with 56 flows. Score PSI peaks at **0.017** against a 0.2 line.
+- Defences priced both ways. The trimmed quantile keeps 34% against either attacker shape and runs
+  **71% over budget permanently**. Median-of-days is free on clean data and keeps **94%** against a
+  concentrated attacker, **0%** against a distributed one — a different claim, not a weaker
+  defence, so the table is split by attacker shape rather than averaged over it.
+
+### threat_model: the list was wrong 24 ways out of 77
+
+- Three studies share `robustness.controllable_features` and it had never been derived. Classifying
+  each column by which side of the conversation produces its packets: **12 over-claimed** (backward
+  features a client cannot set) and **12 under-claimed** (forward features it omits).
+- **The published evasion result depends on the over-claim.** Forward-only, the identical mimicry
+  attack takes detection 20.7% → **23.8%** — higher than doing nothing. Partial mimicry produces a
+  record benign in one direction and hostile in the other, a combination absent from training.
+- Flow splitting is a capability a per-flow perturbation budget **cannot express**, and it
+  backfires too: 30.2%, monotone, so the best split is not to split. This dataset's attacks *are*
+  short low-volume flows, so fragmenting moves toward them. The folklore assumes a detector keying
+  on volume crossing a threshold; a model trained on scans keys on volume being **low**.
+- Corrected a modelling error of its own: **flag counts do not divide** when a session splits, as
+  each fragment is its own connection carrying its own SYN.
+
+### staleness: the leakage rule is free, for a reason
+
+- 228 learned constants carried from the training days into later-day traffic, 11 moved by more
+  than a quarter of their own value. Every arm lands within **0.0024** PR-AUC of every other, and
+  the **oracle arm comes last**.
+- That ordering is the argument. If preprocessing were load-bearing, the arm with the most
+  information about the evaluation distribution would win. It does not, so the differences are
+  noise.
+- The mechanism, not just the measurement: a gradient-boosted tree is **invariant to monotone
+  rescaling**, so the scaler is close to decorative. The imputer is not — but only **2.5%** of
+  later-day flows have a missing value to substitute.
+- Read usefully: the leakage rule costs nothing *on this model class*, and would not on a linear
+  model or a neural network. Worth re-running before changing model class.
+- Also drew a distinction the rules do not: fitting on test **labels** is leakage; fitting on test
+  **features** is transduction, which a deployed detector can do on a schedule.
+
+### controls: the check that was missing
+
+- The leakage study builds leakage up. Nothing had checked that the pipeline returns **chance**
+  when the signal is destroyed — the oldest sanity check there is.
+- The predictions are exact and were written before the arms ran: PR-AUC at the prevalence,
+  detection at the budget. Four negatives all land, largest excess **+0.0036**.
+- **Two positive arms are what make the negatives mean anything.** A harness returning chance
+  unconditionally would pass every negative control. The intact pipeline (0.5276) and a
+  deliberately-leaked arm (1.0000) show the instrument can still see a signal.
+- The shuffled-columns arm is the strict one — marginals, outliers and missing patterns all
+  survive, only the row correspondence breaks. The constants arm passes for a *different* reason
+  (it degenerates to alerting on nothing), which is said rather than left implied.
+
+### Process notes
+
+- **`ruff check --fix` will strip imports a not-yet-written report renderer needs.** Write the
+  module whole, then lint.
+- **mypy widens a loop variable across the entire function**, so two `for row in ...` loops over
+  different record types collide at the second. Rename one.
+- **black reflows a settings field onto one line**, which breaks a patch script anchored on the
+  multi-line form. Anchor on what is on disk, not on what was written.
+- **A study that reads `docs/reports/` must exclude its own report**, or a previous run's output
+  is harvested as fresh evidence.
+
 ## Wave 22 — the instrument wave (v0.22.0)
 
 Six studies, and a thread I noticed only halfway through: every one of them audits an

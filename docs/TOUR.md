@@ -446,6 +446,50 @@ break — kept as a negative — but **75% of the monitor interactions are negat
 saturate rather than stack, so concurrent failures are less visible than separate ones
 ([`reports/composition.md`](reports/composition.md)).
 
+## Stop 15c — The assumptions underneath the instruments
+
+Wave 22 audited the instruments. This one went a level down, to what those instruments take for
+granted — and **three of the five results came back negative**, two of them usefully so.
+
+- **Do the reports agree with each other?** A naive harvest finds seven values across twelve
+  reports for what reads like one quantity — and **four are not disagreements at all**: two are
+  ROC-AUC stated as "AUC" beside a PR-AUC, two are the far side of a comparison where the
+  qualifier owning the number *follows* it. Each is a trap a reader falls into as readily as a
+  regular expression, so the rejections are published rather than applied silently. What survives
+  is explained by **evaluation population, not training**: capping rows or thinning the ensemble
+  moves PR-AUC by about the detectable minimum; averaging over batches costs 0.094
+  ([`reports/consistency.md`](reports/consistency.md)).
+- **The false-positive budget is its own breakdown point.** The threshold is a quantile of benign
+  validation scores, and a quantile breaks at the mass in its own tail — so **tighter budgets are
+  cheaper to attack**: 281 flows move the 5% cut, **six** move the 0.1% cut. A blind attacker,
+  merely present while a detector is tuned, costs a quarter of the detection rate while score PSI
+  peaks at 0.017 against a 0.2 line ([`reports/calibration_attack.md`](reports/calibration_attack.md)).
+- **The threat model was wrong 24 ways out of 77** — 12 backward features granted that a client
+  cannot set, 12 forward features omitted that they can. **The published evasion result depends on
+  the over-claim**: forward-only, the identical attack makes attacks *more* detectable, because
+  partial mimicry produces a record benign in one direction and hostile in the other. Flow
+  splitting — a capability a per-flow budget cannot express — backfires too, monotonically, because
+  this dataset's attacks *are* short low-volume flows
+  ([`reports/threat_model.md`](reports/threat_model.md)).
+- **The leakage rule is free, and there is a mechanism.** 228 transformer constants are carried
+  from the training days and 11 have moved by more than a quarter — and every arm lands within
+  0.0024 PR-AUC, with the **oracle arm last**. A gradient-boosted tree is invariant to monotone
+  rescaling, so the scaler is close to decorative; only 2.5% of flows have a missing value for the
+  imputer to substitute. It would not be free on a linear model
+  ([`reports/staleness.md`](reports/staleness.md)).
+- **And the check that was missing.** The leakage study builds leakage *up*; nothing had asked
+  whether the pipeline returns **chance** when the signal is destroyed. Four negative arms land
+  exactly where predicted — predictions written before the arms ran — with a largest excess of
+  **+0.0036**. Two *positive* arms are what make that mean anything, because a harness returning
+  chance unconditionally would pass every negative control
+  ([`reports/controls.md`](reports/controls.md)).
+
+The methodological thread, which came up three separate times: **an explanation that fits
+everything explains nothing.** A ladder rung wide enough to cover every value; a harness reporting
+100% detection by asking a question no answer could fail; a defence averaged over attacker shapes
+that hid the case an operator faces. Each time the fix was the same shape — narrow the claim, and
+report how specific it is.
+
 ## Stop 16 — Where the bodies are buried, on purpose
 
 [`NOTES.md`](../NOTES.md) is a running log of self-audits: the gate failing its own

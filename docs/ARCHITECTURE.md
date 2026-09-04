@@ -96,8 +96,13 @@ poisoning at training time, each reported as detection-vs-attacker-effort curves
 the metamorphic suite, which is the only correctness oracle here that needs no labels and
 can therefore run against production traffic, separated into structural relations (a
 violation is a code defect) and semantic ones (a violation is a statement about the model).
-A **compositional stress test** (`composition.py`) runs the failures *together* rather than one at
-a time: a 2^4 factorial over temporal shift, sensor outage, evasion and prevalence collapse,
+A **threat-model audit** (`threat_model.py`) derives which of the 77 features an attacker can
+physically set from how each is computed, rather than inheriting the list three other studies
+share -- and finds it wrong 24 ways, with the published evasion result depending on the
+over-claim. A **calibration attack** (`calibration_attack.py`) poisons the threshold instead of
+the model: the deployed cut is a quantile of benign validation scores, so its breakdown point is
+the false-positive budget itself and tighter budgets are cheaper to attack. A **compositional
+stress test** (`composition.py`) runs the failures *together* rather than one at a time: a 2^4 factorial over temporal shift, sensor outage, evasion and prevalence collapse,
 reading the same guarantees and monitors in all sixteen cells. It separates a main effect from an
 interaction, which one-at-a-time testing cannot, and the interactions are where the finding is --
 monitor responses saturate rather than stack, so two concurrent failures are less visible than
@@ -106,7 +111,11 @@ either alone.
 **Monitoring (`netsentry/monitoring`)** — PSI drift detection (offline report and
 rolling serving gauges), optimal transport (a drift distance in *units* plus the coupling that
 explains where the mass went, and the finding that only a coupling makes evasion
-distributionally invisible), the **statistical-resolution study** that measures what each headline
+distributionally invisible), a **negative-control suite** (`evaluation/controls.py`) that runs the whole path on destroyed
+signal against predictions fixed before each arm runs -- with positive controls, because a
+harness returning chance unconditionally would pass every negative one -- a **preprocessing
+staleness** decomposition (`features/staleness.py`) separating what a train-era scaler costs from
+what concept drift costs, the **statistical-resolution study** that measures what each headline
 metric can actually resolve on this split (a fixed-budget false-positive rate is decided by nine
 flows, so a difference has to clear roughly a point of detection before it means anything, and a
 paired comparison is 2.6x tighter than an unpaired one), the prequential streaming study that closes the
@@ -123,8 +132,11 @@ truncation) and Merkle inclusion proofs, so the alert history can be attested wi
 being disclosed. Attestation extends from artifacts to *computations*: hashing a decision tree
 bottom-up makes the tree a Merkle tree, so each verdict can carry an authentication path an
 auditor checks against a published root without the model — closing the gap where a swapped or
-truncated in-memory model passes both the bundle hash and the ledger. A **documentation-claims
-gate** (`claims.py`) completes the set from the other end: every precise number the README quotes
+truncated in-memory model passes both the bundle hash and the ledger. A **cross-report consistency audit**
+(`evaluation/consistency.py`) asks whether the reports agree with *each other* about the
+incumbent's score, and reproduces the spread by turning one methodology knob at a time -- finding
+that evaluation population, not training configuration, is what makes two reports differ. A
+**documentation-claims gate** (`claims.py`) completes the set from the other end: every precise number the README quotes
 is matched numerically against the report that generates it, so a figure whose study has been
 regenerated cannot silently outlive it. It runs beside the linters rather than with the studies,
 because it reads the committed reports and must not follow a job that has rewritten them.
