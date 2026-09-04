@@ -75,6 +75,7 @@ from netsentry.explain.interactions import run_interactions_report
 from netsentry.explain.optimal_tree import run_optimal_tree_report
 from netsentry.explain.partial_dependence import run_partial_dependence_report
 from netsentry.explain.shap_estimand import run_shap_estimand_report
+from netsentry.features.staleness import run_staleness_report
 from netsentry.features.store_report import run_store_report
 from netsentry.governance.attestation import run_attestation_report
 from netsentry.governance.claims import run_claims_report
@@ -172,6 +173,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Preprocessing staleness",
+        "the imputer and scaler carry training-day constants into later-day traffic; how "
+        "much of the temporal gap that costs, and how much of it recomputing on unlabelled "
+        "production flows recovers without touching a label",
+        "staleness.md",
+        run_staleness_report,
     ),
     (
         "Threat-model audit",

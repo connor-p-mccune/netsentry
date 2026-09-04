@@ -2042,6 +2042,24 @@ class PublishedClaimConfig(BaseModel):
     metric: str
 
 
+class StalenessConfig(BaseModel):
+    """What does a train-era scaler cost when the traffic has moved?
+
+    The leakage rules forbid fitting transformers on anything but the training split, correctly.
+    That means the imputer's medians and the scaler's constants are training-day statistics
+    applied to later-day traffic, and nobody had measured the price. The study separates two
+    things the rule does not: fitting on test *labels* is leakage and is never allowed, while
+    fitting on test *features* is transduction, which a deployed detector can do on a schedule
+    without ever seeing a label. The gap between those is a cheap fix; what remains is concept
+    drift, which recentring cannot reach."""
+
+    budget: float = 0.01  # the operating point detection is read at
+    refit_fraction: float = 0.2  # the slice a scheduled recalibration would see
+    detectable: float = 0.0168  # the resolution study's minimum detectable PR-AUC difference
+    worst_statistics: int = 12  # how many drifted constants the report names
+    moved_threshold: float = 0.25  # relative movement that counts as a statistic having moved
+
+
 class ThreatModelConfig(BaseModel):
     """Is `robustness.controllable_features` the right list?
 
@@ -3333,6 +3351,7 @@ class Settings(BaseSettings):
     consistency: ConsistencyConfig = Field(default_factory=ConsistencyConfig)
     calibration_attack: CalibrationAttackConfig = Field(default_factory=CalibrationAttackConfig)
     threat_model: ThreatModelConfig = Field(default_factory=ThreatModelConfig)
+    staleness: StalenessConfig = Field(default_factory=StalenessConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

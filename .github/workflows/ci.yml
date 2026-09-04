@@ -176,6 +176,7 @@ jobs:
           python -m netsentry.cli consistency -o configs/ci.yaml
           python -m netsentry.cli calibrationattack -o configs/ci.yaml
           python -m netsentry.cli threatmodel -o configs/ci.yaml
+          python -m netsentry.cli staleness -o configs/ci.yaml
       - name: Slow integration tests
         run: python -m pytest -m slow
 

@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def staleness(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Separate what stale preprocessing costs from what concept drift costs."""
+    from netsentry.features.staleness import run_staleness_report
+
+    settings = _load(config, override)
+    out = run_staleness_report(settings)
+    logger.info("Staleness report ready", extra={"path": str(out)})
+
+
+@app.command()
 def threatmodel(
     config: ConfigOpt = None,
     override: OverrideOpt = None,

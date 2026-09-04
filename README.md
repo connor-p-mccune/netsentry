@@ -2885,6 +2885,44 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## What does a train-era scaler cost?
+
+```bash
+python -m netsentry.cli staleness   # -> docs/reports/staleness.md
+```
+
+`.claude/rules/ml.md` is categorical and correct: *never compute a mean, std, min, max or category
+list over the full dataset*. Every pipeline here obeys it — which means the imputer's medians and
+the scaler's constants are **training-day statistics applied unchanged to later-day traffic**.
+That is not leakage. It is staleness, and nobody had measured the price.
+
+The distinction that makes it actionable is one the rule does not draw: fitting on test **labels**
+is leakage and is never allowed; fitting on test **features** is transduction, which a deployed
+detector can do on a schedule without ever seeing a label.
+
+| preprocessing fitted on | allowed? | PR-AUC | vs deployed |
+|---|---|---|---|
+| the deployed pipeline | yes | 0.5276 | — |
+| periodic refit (first 20% of the later days) | yes | 0.5276 | −0.0001 |
+| transductive (all later-day features) | yes | 0.5287 | +0.0011 |
+| oracle (fit on the later days alone) | **no — upper bound** | 0.5264 | −0.0013 |
+
+**Stale preprocessing is not what the temporal gap is made of, and the ordering proves it rather
+than merely suggesting it.** 228 learned constants are carried forward and 11 have moved by more
+than a quarter of their own value, so the statistics really are stale — but every arm lands within
+**0.0024** PR-AUC of every other against a [minimum detectable difference](docs/reports/power.md)
+of 0.0168, and the **oracle arm, which cheats, comes last**. If preprocessing were load-bearing,
+the arm with the most information about the evaluation distribution would win.
+
+There is a mechanism, not just a measurement: a gradient-boosted tree is **invariant to monotone
+rescaling**, so centring and scaling move the split points exactly as much as they move the data.
+The scaler is close to decorative for this model class. The imputer is not — but only **2.5%** of
+later-day flows have a missing value to substitute, which bounds the effect from the other side.
+
+Read in the useful direction: **the leakage rule is free here**. It would not be on a linear model
+or a neural network, where the scaler is load-bearing, and a project changing model class should
+re-run this before assuming the rule stays costless.
+
 ## Which features can an attacker actually change?
 
 ```bash
@@ -3103,7 +3141,7 @@ is the report that says so.
 python -m netsentry.cli claims   # -> docs/reports/claims.md  (a CI gate)
 ```
 
-This README quotes **659** computed numbers, each one a promise that running one command
+This README quotes **669** computed numbers, each one a promise that running one command
 reproduces it. Nothing had ever checked that promise, and it is the kind that decays silently: a
 study's config changes, its report is regenerated, and the prose that quoted it three waves ago
 keeps its old figure. The report stays right, the README goes wrong, and no test fails.
@@ -3115,7 +3153,7 @@ them fixed: unsourced claims are budgeted at **0** and the milder class at **9**
 
 | verdict | claims | what it means |
 |---|---|---|
-| **verified** | 650 | the section's own report states this number |
+| **verified** | 660 | the section's own report states this number |
 | **traceable** | 9 | real and regenerable, but from a different study — cross-references and arithmetic the README performs |
 | **unsourced** | 0 | in no report at all; the class that fails the build |
 

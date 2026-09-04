@@ -7,6 +7,21 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Preprocessing staleness** (`netsentry staleness`, `netsentry/features/staleness.py`): the
+  leakage rules forbid fitting transformers outside the training split, correctly -- which means
+  the imputer's medians and the scaler's constants are training-day statistics applied unchanged
+  to later-day traffic. That is staleness, not leakage, and the price had never been measured. The
+  study draws a distinction the rule does not: fitting on test **labels** is leakage and is never
+  allowed, while fitting on test **features** is transduction, which a deployed detector can do on
+  a schedule without seeing a label. Four arms -- deployed, periodic refit, transductive, and a
+  labelled oracle as an upper bound. **228 constants are carried forward and 11 have moved by more
+  than a quarter of their own value, and it does not matter**: every arm lands within 0.0024 PR-AUC
+  of every other against a 0.0168 minimum detectable difference, and the oracle arm comes *last*.
+  That ordering is the argument -- if preprocessing were load-bearing, the arm with the most
+  information about the evaluation distribution would win. The mechanism is that a gradient-boosted
+  tree is invariant to monotone rescaling, so the scaler is close to decorative, and only 2.5% of
+  later-day flows have a missing value for the imputer to substitute. Read usefully: **the leakage
+  rule is free on this model class**, and would not be on a linear model or a neural network.
 - **Threat-model audit** (`netsentry threatmodel`, `netsentry/robustness/threat_model.py`):
   three studies share `robustness.controllable_features`, so every robustness number is
   conditional on it -- and it had never been derived from anything. Classifying all 77 columns by
