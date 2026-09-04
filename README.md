@@ -2885,6 +2885,43 @@ refuse has to be written *after* the app binds to the real one, because the engi
 "newest bundle in the models directory"; otherwise the service under test is the broken bundle
 and every number is about that instead.
 
+## Does the pipeline return nothing when there is nothing?
+
+```bash
+python -m netsentry.cli controls   # -> docs/reports/controls.md
+```
+
+The [leakage study](docs/reports/leakage.md) builds leakage *up* — it stacks a shuffled split, a
+memorised port and an identifier column and watches PR-AUC climb from 0.529 to 1.000. That shows
+the instrument can be fooled in known ways. It does not show the opposite and more basic thing:
+that the pipeline, run end to end on data with the signal removed, returns **chance**.
+
+The prediction is exact, which is what makes it a test rather than an observation. A model trained
+on scrambled labels must score **at the prevalence**; a threshold placed to let 1% of benign flows
+through must let **1% of attacks** through too. Both were fixed in the code before any arm ran —
+a control whose expected value is decided afterwards is not a control.
+
+| arm | direction | predicted | measured | detection |
+|---|---|---|---|---|
+| intact (the deployed pipeline) | positive | ≥ 0.400 | **0.5276** | 20.75% |
+| permuted labels | negative | 0.250 ± 0.030 | **0.2535** | 1.57% |
+| each feature column shuffled | negative | 0.250 ± 0.030 | **0.2445** | 1.01% |
+| features replaced with noise | negative | 0.250 ± 0.030 | **0.2517** | 1.03% |
+| features held constant | negative | 0.250 ± 0.030 | **0.2499** | 0.00% |
+| trained on the evaluation rows | positive | ≥ 0.900 | **1.0000** | 100.00% |
+
+Every arm lands where it was predicted, and the largest excess over chance anywhere is
+**+0.0036** PR-AUC — about five times smaller than the [minimum detectable
+difference](docs/reports/power.md) this split supports, so the residual skill on destroyed data is
+below what the evaluation could resolve even if it were real.
+
+**A suite of negative controls proves nothing on its own**, which is why half the table runs the
+other way: a harness that returned chance unconditionally would pass every negative arm. The
+intact pipeline at 0.5276 and the deliberately-leaked arm at 1.0000 are what make the zeros mean
+something. The shuffled-columns arm is the strict one — it keeps every marginal, outlier and
+missing-value pattern intact and breaks only the row correspondence, so a model still scoring
+above chance there would be finding signal in something other than the features.
+
 ## What does a train-era scaler cost?
 
 ```bash
@@ -3141,7 +3178,7 @@ is the report that says so.
 python -m netsentry.cli claims   # -> docs/reports/claims.md  (a CI gate)
 ```
 
-This README quotes **669** computed numbers, each one a promise that running one command
+This README quotes **696** computed numbers, each one a promise that running one command
 reproduces it. Nothing had ever checked that promise, and it is the kind that decays silently: a
 study's config changes, its report is regenerated, and the prose that quoted it three waves ago
 keeps its old figure. The report stays right, the README goes wrong, and no test fails.
@@ -3153,7 +3190,7 @@ them fixed: unsourced claims are budgeted at **0** and the milder class at **9**
 
 | verdict | claims | what it means |
 |---|---|---|
-| **verified** | 660 | the section's own report states this number |
+| **verified** | 687 | the section's own report states this number |
 | **traceable** | 9 | real and regenerable, but from a different study — cross-references and arithmetic the README performs |
 | **unsourced** | 0 | in no report at all; the class that fails the build |
 

@@ -6,6 +6,7 @@ _Refreshed 2026-08-21 14:48 UTC. `netsentry analyze` regenerates every report li
 |---|---|---|
 | Operational evaluation | PR-AUC, TPR@FPR, per-class, calibration | [open](evaluation.md) |
 | H-measure | a coherent, cost-explicit alternative to ROC-AUC (Hand 2009) | [open](hmeasure.md) |
+| Negative controls | the whole pipeline run on destroyed signal against predictions fixed in advance, with positive controls so the suite means something | [open](controls.md) |
 | Preprocessing staleness | the scaler's constants are training-day statistics applied to later-day traffic: what that costs, and how much recomputing on unlabelled flows recovers without touching a label | [open](staleness.md) |
 | Threat-model audit | which features an attacker can physically set, derived from how each is computed rather than asserted, plus the flow-splitting capability the perturbation budget cannot express | [open](threat_model.md) |
 | Calibration poisoning | the threshold is a quantile of benign validation scores, so its breakdown point is the false-positive budget itself: the tighter the budget, the cheaper the attack | [open](calibration_attack.md) |

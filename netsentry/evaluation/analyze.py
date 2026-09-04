@@ -27,6 +27,7 @@ from netsentry.evaluation.baserate import run_base_rate_report
 from netsentry.evaluation.campaigns import run_campaigns_report
 from netsentry.evaluation.conformal import run_conformal_report
 from netsentry.evaluation.consistency import run_consistency_report
+from netsentry.evaluation.controls import run_controls_report
 from netsentry.evaluation.cost import run_cost_report
 from netsentry.evaluation.data_value import run_data_value_report
 from netsentry.evaluation.defer import run_defer_report
@@ -173,6 +174,14 @@ _ANALYSES: list[tuple[str, str, str, Callable[[Settings], Path]]] = [
         "a coherent, cost-explicit alternative to ROC-AUC (Hand 2009)",
         "hmeasure.md",
         run_hmeasure_report,
+    ),
+    (
+        "Negative controls",
+        "the whole pipeline run on destroyed signal, against predictions written before the "
+        "numbers came back -- with positive controls, because a suite of negative controls a "
+        "broken harness would also pass proves nothing",
+        "controls.md",
+        run_controls_report,
     ),
     (
         "Preprocessing staleness",

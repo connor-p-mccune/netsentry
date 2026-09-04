@@ -198,6 +198,9 @@ bandit:
   max_flows: 2000
   n_repeats: 2
   alpha_sweep: [0.5, 1.0]
+controls:
+  tolerance: 0.08
+  signal_floor: 0.20
 staleness:
   worst_statistics: 5
 threat_model:

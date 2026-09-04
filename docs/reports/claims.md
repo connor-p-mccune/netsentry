@@ -1,6 +1,6 @@
 # NetSentry -- Does the README Still Say What the Reports Say?
 
-_Every precise number in 106 of the README's 122 sections, checked against the 142 generated reports on disk. Regenerate with `netsentry claims`._
+_Every precise number in 107 of the README's 123 sections, checked against the 143 generated reports on disk. Regenerate with `netsentry claims`._
 
 ## Why this report exists
 
@@ -8,7 +8,7 @@ The README quotes several hundred computed numbers, each produced by a study tha
 
 So this is a checker, in the same shape as [`netsentry mlint`](mlint.md) and for the same reason -- an invariant nobody enforces is an invariant nobody has.
 
-**669 numbers in the README claim to come from a study. 660 of them do, 9 come from a different study than the one the section links, and 0 come from nowhere at all.**
+**696 numbers in the README claim to come from a study. 687 of them do, 9 come from a different study than the one the section links, and 0 come from nowhere at all.**
 
 Every precise number in the README is reproducible from a report on disk, which is the state this checker exists to keep. It was not the state when it was written.
 
@@ -20,7 +20,7 @@ The checker's own evidence is measured rather than asserted. **97%** of verified
 
 | verdict | claims | share | what it means |
 |---|---|---|---|
-| **verified** | 660 | 98.7% | the token appears in a report the section links; the promise holds |
+| **verified** | 687 | 98.7% | the token appears in a report the section links; the promise holds |
 | **traceable** | 9 | 1.3% | it appears in some *other* report; real, but not checkable where the reader is sent |
 | **unsourced** | 0 | 0.0% | it appears in no report at all; the only class that fails the gate |
 
@@ -52,15 +52,15 @@ A rule nobody has watched fire is a rule nobody should trust, and a clean codeba
 
 | injected fault | what it models in practice | injected | detected | fails the build |
 |---|---|---|---|---|
-| a number drifts one digit | a study regenerated, the prose quoting it not updated | 25 | **80%** | **80%** |
-| a claim moves to a section that cannot source it | prose reorganised, the link left pointing at the old study | 25 | **88%** | **96%** |
+| a number drifts one digit | a study regenerated, the prose quoting it not updated | 25 | **84%** | **84%** |
+| a claim moves to a section that cannot source it | prose reorganised, the link left pointing at the old study | 25 | **96%** | **100%** |
 | a report link points at nothing | a study renamed or removed, its README section left behind | 25 | **100%** | **100%** |
 
 The digit perturbation is the important one, because it is what real drift looks like: same magnitude, same precision, one digit different. A fault that replaced a number with something obviously wrong would test nothing.
 
 **Running the harness changed the gate, and then corrected the harness.** *Detected* and *fails the build* began as one column, which hid a real weakness: under a gate counting only *unsourced* claims, a drift that lands on a figure appearing in some other report becomes **traceable** instead, and the build stays green. So the gate now pins both counts -- unsourced at 0, traceable at its current 9 -- the way `mlint` pins its violation count. Any claim leaving the verified class moves one of the two.
 
-The first version of the harness also reported 100% detection, which was an artefact: it asked whether the *original* token still verified after being replaced, and a token that no longer exists never verifies. Asking the right question -- does the number now in the README verify? -- gives **80%**. The missing 20% is the checker's real blind spot: a one-digit drift sometimes lands on another figure the same report states, and arithmetic cannot tell that apart from the truth. A harness that had not been checked against itself would have reported the flattering number.
+The first version of the harness also reported 100% detection, which was an artefact: it asked whether the *original* token still verified after being replaced, and a token that no longer exists never verifies. Asking the right question -- does the number now in the README verify? -- gives **84%**. The missing 16% is the checker's real blind spot: a one-digit drift sometimes lands on another figure the same report states, and arithmetic cannot tell that apart from the truth. A harness that had not been checked against itself would have reported the flattering number.
 
 ## What the checker cannot see
 
@@ -68,7 +68,7 @@ A claim is only as strong as the uniqueness of what it matched. **29%** of verif
 
 The blind spots follow directly, and the first one is measured rather than asserted:
 
-- **A number that drifts onto another figure the same report already states** still matches. That is exactly the 20% of injected drifts the harness above does not catch, and it is why the number in that column is not 100%.
+- **A number that drifts onto another figure the same report already states** still matches. That is exactly the 16% of injected drifts the harness above does not catch, and it is why the number in that column is not 100%.
 - **Prose that misdescribes a correct number** is invisible. `0.529` verifies whether the sentence around it says the model beats the baseline or loses to it.
 - **Round figures are not claims.** A README saying "about 30%" where the report says 12% is not checked, because admitting one-significant-figure tokens would flood the class with page numbers, version strings and configured budgets.
 - **Arithmetic the README performs is invisible.** A stated difference between two reported numbers cannot be verified without matching against derived quantities, which at this corpus size would match almost anything.
@@ -78,7 +78,7 @@ The remedy for all of them is the same and is already in place elsewhere: the re
 ## The other direction: links and orphans
 
 - **Broken report links:** 1 -- `evasion` (in *Which features can an attacker actually change?*)
-- **Reports no README section links:** 25 of 142. Not a fault -- the [report index](INDEX.md) exists precisely so every study is reachable -- but the count is worth knowing, because a study nobody links is a study nobody reads.
+- **Reports no README section links:** 25 of 143. Not a fault -- the [report index](INDEX.md) exists precisely so every study is reachable -- but the count is worth knowing, because a study nobody links is a study nobody reads.
 
 ## Scope and honest limits
 

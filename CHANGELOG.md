@@ -7,6 +7,23 @@ semantic versioning once released.
 ## [Unreleased]
 
 ### Added
+- **Negative controls** (`netsentry controls`, `netsentry/evaluation/controls.py`): the leakage
+  study builds leakage *up* and watches PR-AUC climb to 1.000; nothing had checked the opposite
+  and more basic thing -- that the pipeline run end to end on data with the signal removed returns
+  **chance**. The prediction is exact rather than vague, which is what makes it a test: a model
+  trained on scrambled labels must score at the prevalence, and a threshold at a 1% false-positive
+  budget must detect 1% of attacks. Both were fixed in the code before any arm ran, because a
+  control whose expected value is decided afterwards is a rationalisation. Four negative arms --
+  permuted labels, independently shuffled feature columns, pure noise, constants -- all land at
+  chance, with the largest excess anywhere **+0.0036 PR-AUC**, five times smaller than the
+  resolution study's minimum detectable difference. Two **positive** arms are what make that mean
+  anything: a harness returning chance unconditionally would pass every negative control, so the
+  intact pipeline (0.5276) and a deliberately-leaked arm trained on the evaluation rows (1.0000)
+  establish that the instrument can still see a signal. The shuffled-columns arm is the strict
+  one -- it preserves every marginal, outlier and missing-value pattern and breaks only the row
+  correspondence -- and the constants arm passes for a different reason worth stating: the model
+  emits one score for every flow, so nothing clears the cut and it degenerates to *alert on
+  nothing*, which is correct behaviour rather than an error.
 - **Preprocessing staleness** (`netsentry staleness`, `netsentry/features/staleness.py`): the
   leakage rules forbid fitting transformers outside the training split, correctly -- which means
   the imputer's medians and the scaler's constants are training-day statistics applied unchanged

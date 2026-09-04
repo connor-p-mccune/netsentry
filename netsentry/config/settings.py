@@ -2042,6 +2042,22 @@ class PublishedClaimConfig(BaseModel):
     metric: str
 
 
+class ControlsConfig(BaseModel):
+    """Does the pipeline return chance when the signal is removed?
+
+    The leakage study builds leakage up and watches PR-AUC climb; nothing had checked the
+    opposite and more basic thing. A model trained on scrambled labels must score at the
+    prevalence, and a threshold set at a 1% false-positive budget must detect 1% of attacks --
+    both exact, both predicted before the arm runs. Negative arms destroy the signal four ways;
+    positive arms put it back, because a suite of negative controls a broken harness would also
+    pass proves nothing."""
+
+    budget: float = 0.01  # the operating point every arm is judged at
+    tolerance: float = 0.03  # how far from its prediction an arm may land
+    signal_floor: float = 0.40  # the intact pipeline must clear this
+    leak_floor: float = 0.90  # training on the evaluation rows must clear this
+
+
 class StalenessConfig(BaseModel):
     """What does a train-era scaler cost when the traffic has moved?
 
@@ -3352,6 +3368,7 @@ class Settings(BaseSettings):
     calibration_attack: CalibrationAttackConfig = Field(default_factory=CalibrationAttackConfig)
     threat_model: ThreatModelConfig = Field(default_factory=ThreatModelConfig)
     staleness: StalenessConfig = Field(default_factory=StalenessConfig)
+    controls: ControlsConfig = Field(default_factory=ControlsConfig)
     private_inference: PrivateInferenceConfig = Field(default_factory=PrivateInferenceConfig)
     density: DensityConfig = Field(default_factory=DensityConfig)
     sequential_ab: SequentialABConfig = Field(default_factory=SequentialABConfig)

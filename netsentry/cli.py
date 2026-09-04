@@ -1503,6 +1503,19 @@ def bandit(
 
 
 @app.command()
+def controls(
+    config: ConfigOpt = None,
+    override: OverrideOpt = None,
+) -> None:
+    """Check the pipeline returns chance when the signal is removed, and skill when it is not."""
+    from netsentry.evaluation.controls import run_controls_report
+
+    settings = _load(config, override)
+    out = run_controls_report(settings)
+    logger.info("Controls report ready", extra={"path": str(out)})
+
+
+@app.command()
 def staleness(
     config: ConfigOpt = None,
     override: OverrideOpt = None,
